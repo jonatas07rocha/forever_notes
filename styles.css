@@ -1,0 +1,30 @@
+:root {
+    --ui-bg: #FFFFFF;
+    --ui-primary: #111111;
+}
+
+body { font-family: 'Inter', sans-serif; }
+.font-mono { font-family: 'JetBrains Mono', monospace; }
+.text-heavy-asterisk { color: #000; font-weight: 800; }
+
+/* Utilitários */
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+.fade-in { animation: fadeIn 0.2s ease-in-out; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+/* Efeitos Especiais */
+.calendar-day:hover { background-color: #fafaf9; }
+```
+
+### 📋 Sugestão de Commit
+
+```text
+fix(v3.1): restaura funcionalidades críticas e aprimora UX
+
+- Restaura modo BuJo (lista compacta) e toggle visual
+- Restaura grid de Hubs e card de tarefas pendentes na Home
+- Reimplementa edição inline de notas/tarefas
+- Reativa botão de 'Restaurar Backup' nas configurações
+- Remove aba lateral de Calendário (acesso movido para Home)
+- Refina UI do menu suspenso (Slash Commands)
