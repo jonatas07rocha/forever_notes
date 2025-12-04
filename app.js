@@ -60,7 +60,7 @@ function init() {
     }
     render();
     
-    // Adiciona listener de teclado para o Slash Command Global
+    // NOVO: Adiciona listener de teclado para o Slash Command Global
     window.addEventListener('keydown', handleGlobalKeydown);
 }
 
@@ -382,7 +382,6 @@ function openGlobalInput() {
     state.editingEntryId = null; 
 
     const modal = document.getElementById('global-input-modal');
-    // Verifica se o elemento existe (pois ele foi adicionado no HTML)
     if (!modal) {
         console.error("Global input modal not found. Ensure index.html is updated.");
         return;
@@ -946,10 +945,9 @@ function formatContent(text) {
     formatted = formatted.replace(/(#[\w\u00C0-\u00FF]+)/g, '<button onclick="openCollection(\'$1\'); event.stopPropagation();" class="text-blue-600 hover:underline font-bold bg-blue-50 px-1 rounded mx-0.5">$1</button>');
     
     // 2. Links (>> Link) -> Hubs ou Busca 
-    // Captura '>>' seguido por qualquer coisa até o fim da linha ou delimitador
+    // CORRIGIDO: A chave aqui é exibir APENAS o texto do link (p1), sem o prefixo ">>".
     formatted = formatted.replace(/>>\s*([^\n#\r]+)/g, (match, p1) => {
         const linkText = p1.trim();
-        // A chave aqui é exibir APENAS o texto do link (p1), sem o prefixo ">>".
         return `<button onclick="handleLinkClick('${linkText}'); event.stopPropagation();" class="text-purple-700 hover:underline font-bold bg-purple-50 px-1 rounded mx-0.5 border-b-2 border-purple-200">${linkText}</button>`;
     });
 
