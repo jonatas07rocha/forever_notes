@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Forever ✱ Notes | V3.5</title>
+    
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ctext x='0' y='14' font-size='16' fill='%23000'%3E%E2%9C%B1%3C/text%3E%3C/svg%3E" />
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -99,7 +102,7 @@
                     </button>
                     
                     <div class="flex-1 relative">
-                        <input type="text" id="global-entry-input" autocomplete="off" placeholder="Adicionar nova entrada (Nota, Tarefa, Evento...)" class="w-full bg-transparent text-sm outline-none font-medium placeholder:font-normal placeholder:text-stone-400 py-1.5">
+                        <textarea id="global-entry-input" autocomplete="off" placeholder="Adicionar nova entrada (Nota, Tarefa, Evento...)" class="w-full bg-transparent text-sm outline-none font-medium placeholder:font-normal placeholder:text-stone-400 py-1.5 resize-none h-10 overflow-hidden" rows="1"></textarea>
                         <div id="global-char-count" class="absolute right-0 top-1.5 text-[10px] font-mono text-stone-300">0/140</div>
                     </div>
 
