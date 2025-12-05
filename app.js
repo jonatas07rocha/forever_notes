@@ -42,13 +42,20 @@ let state = {
     // Menus Flutuantes
     showSlashMenu: false, 
     showLinkMenu: false,
+
+    // PREFERÊNCIAS
+    prefs: {
+        showAlertOnUnload: true // NOVO: Preferência para o alerta de backup
+    }
 };
 
 // --- INICIALIZAÇÃO ---
 function init() {
     loadData();
     const prefs = JSON.parse(localStorage.getItem(PREFS_KEY) || '{}');
-    if (prefs.viewMode) state.viewMode = prefs.viewMode;
+    // Carrega preferências, mantendo o default se não existirem
+    state.prefs.viewMode = prefs.viewMode || 'visual';
+    state.prefs.showAlertOnUnload = prefs.showAlertOnUnload !== undefined ? prefs.showAlertOnUnload : true;
     
     if (typeof state.journalDate === 'string') state.journalDate = new Date(state.journalDate);
     
@@ -62,6 +69,9 @@ function init() {
     
     // NOVO: Adiciona listener de teclado para o Slash Command Global
     window.addEventListener('keydown', handleGlobalKeydown);
+    
+    // NOVO: Configura o alerta de backup
+    setupUnloadAlert();
 }
 
 function loadData() {
@@ -79,7 +89,8 @@ function saveData() {
         hubs: state.hubs,
         tagUsage: state.tagUsage 
     }));
-    localStorage.setItem(PREFS_KEY, JSON.stringify({ viewMode: state.viewMode }));
+    // Salva as preferências de usuário
+    localStorage.setItem(PREFS_KEY, JSON.stringify(state.prefs));
 }
 
 function updateHubCounts() {
@@ -460,6 +471,12 @@ function renderGlobalInput() {
         }
     }
     
+    // NOVO: Aplica auto-resize (apenas no input global por enquanto)
+    if (input.tagName === 'TEXTAREA') {
+        input.style.height = 'auto';
+        input.style.height = (input.scrollHeight) + 'px';
+    }
+    
     lucide.createIcons(); // Re-renderiza ícones
 }
 
@@ -519,25 +536,23 @@ function addNewGlobalEntry() {
     showModal('Item Salvo', `O item foi adicionado como "${config.label}".`);
 }
 
+// NOVO: Adaptação do Handler para Textarea com Auto-Resize
 function setupGlobalInputHandler() {
     const input = document.getElementById('global-entry-input');
     if(!input) return;
     
     input.value = state.inputText; // Usa o texto do estado
     
-    input.onclick = () => {
-        // Ao clicar, mostra o slash menu, se o texto estiver vazio ou começar com /
-        if (!state.inputText.trim() || state.inputText.startsWith('/')) {
-             state.showSlashMenu = true;
-             renderGlobalInput();
-        }
-    };
-    
+    // NOVO: Adiciona a lógica de Auto-Resize e atualização de estado
     input.oninput = (e) => {
         let val = e.target.value;
         let menuStateChanged = false;
         
-        // Slash Command Trigger (/)
+        // 1. Auto-Resize
+        e.target.style.height = 'auto';
+        e.target.style.height = (e.target.scrollHeight) + 'px';
+
+        // 2. Lógica de Menu
         if (val.startsWith('/')) {
             if (!state.showSlashMenu) menuStateChanged = true;
             state.showSlashMenu = true;
@@ -550,7 +565,7 @@ function setupGlobalInputHandler() {
             }
         }
         
-        // Lógica de "✱" (prioridade)
+        // 3. Lógica de "✱" (prioridade)
         if (val.includes('**')) {
             const cursor = e.target.selectionStart;
             val = val.replace(/\*\*/g, '✱');
@@ -562,7 +577,7 @@ function setupGlobalInputHandler() {
         
         if (menuStateChanged) renderGlobalInput();
         
-        // Atualiza a contagem em tempo real (sem re-renderizar todo o modal)
+        // Atualiza a contagem em tempo real (necessário, pois não renderiza tudo)
         const config = ENTRY_TYPES[state.selectedType];
         const charCount = state.inputText.length;
         const limit = config.limit;
@@ -582,8 +597,9 @@ function setupGlobalInputHandler() {
         }, 0);
     };
     
+    // NOVO: ENTER agora submete apenas se não for SHIFT+ENTER
     input.onkeydown = (e) => { 
-        if(e.key === 'Enter') {
+        if(e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
             addNewGlobalEntry();
         }
@@ -1098,10 +1114,30 @@ function getCalendarHTML() {
     return html;
 }
 
+function toggleBackupAlert() {
+    state.prefs.showAlertOnUnload = !state.prefs.showAlertOnUnload;
+    saveData();
+    // Reconfigura o alerta imediatamente
+    setupUnloadAlert(); 
+    render(); // Renderiza settings para mostrar o novo estado do switch
+}
+
 function getSettingsHTML() {
     return `
         <div class="fade-in max-w-xl">
             <h2 class="text-2xl font-bold mb-6">Configurações</h2>
+            
+            <div class="bg-white border-2 border-stone-200 p-6 mb-4 flex justify-between items-center">
+                <div>
+                    <h3 class="font-bold mb-1">Alerta de Backup ao Sair</h3>
+                    <p class="text-sm text-stone-500">Perguntar se deseja fazer backup antes de fechar a aba ou recarregar.</p>
+                </div>
+                <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" value="" class="sr-only peer" onchange="toggleBackupAlert()" ${state.prefs.showAlertOnUnload ? 'checked' : ''}>
+                    <div class="w-11 h-6 bg-stone-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-black/30 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-stone-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
+                </label>
+            </div>
+            
             <div class="bg-white border-2 border-stone-200 p-6 mb-4">
                 <h3 class="font-bold mb-2">Backup & Dados</h3>
                 <p class="text-sm text-stone-500 mb-4">Gerencie seus dados. Exporte para segurança ou restaure um arquivo anterior.</p>
@@ -1175,7 +1211,7 @@ function getFilteredEntries() {
 
     if (state.activeTab === 'hubs' && state.activeHubId) {
         return filtered.filter(e => e.hubId == state.activeHubId)
-                       .sort((a,b) => (b.targetDate || b.id) - (a.targetDate || a.id));
+                       .sort((a,b) => (b.targetDate || b.id) - (a.a.targetDate || a.id));
     }
     
     if (state.activeTab === 'journal') {
@@ -1390,6 +1426,24 @@ function openDayModal(timestamp) {
 function toggleMobileNav() {
     const nav = document.getElementById('mobile-nav');
     nav.classList.toggle('-translate-x-full');
+}
+
+// NOVO: Alerta de Backup ao Fechar (Condicional)
+function setupUnloadAlert() {
+    // Remove o listener existente para reconfigurar, se necessário
+    window.removeEventListener('beforeunload', handleBeforeUnload);
+
+    if (state.prefs.showAlertOnUnload) {
+        window.addEventListener('beforeunload', handleBeforeUnload);
+    }
+}
+
+function handleBeforeUnload(e) {
+    const confirmationMessage = 'Deseja fazer o backup dos seus dados antes de sair?';
+    
+    // Configura o retorno para disparar a janela de confirmação do navegador
+    e.returnValue = confirmationMessage; 
+    return confirmationMessage;
 }
 
 init();
