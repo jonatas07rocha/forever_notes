@@ -45,7 +45,8 @@ let state = {
 
     // PREFERÊNCIAS
     prefs: {
-        showAlertOnUnload: true // NOVO: Preferência para o alerta de backup
+        showAlertOnUnload: true,
+        theme: 'light' // NOVO: Tema padrão
     }
 };
 
@@ -53,9 +54,14 @@ let state = {
 function init() {
     loadData();
     const prefs = JSON.parse(localStorage.getItem(PREFS_KEY) || '{}');
+    
     // Carrega preferências, mantendo o default se não existirem
     state.prefs.viewMode = prefs.viewMode || 'visual';
     state.prefs.showAlertOnUnload = prefs.showAlertOnUnload !== undefined ? prefs.showAlertOnUnload : true;
+    state.prefs.theme = prefs.theme || 'light'; // NOVO: Carrega o tema
+    
+    // NOVO: Aplica o tema
+    applyTheme(state.prefs.theme); 
     
     if (typeof state.journalDate === 'string') state.journalDate = new Date(state.journalDate);
     
@@ -97,6 +103,30 @@ function updateHubCounts() {
     state.hubs.forEach(h => {
         h.count = state.entries.filter(e => e.hubId == h.id && !e.completed).length;
     });
+}
+
+// --- LÓGICA DE TEMA (NOVO) ---
+function applyTheme(theme) {
+    const body = document.body;
+    // Remove classes de cor Tailwind existentes
+    body.classList.remove('bg-white', 'text-stone-900', 'bg-stone-900', 'text-stone-100');
+    
+    if (theme === 'dark') {
+        body.classList.add('bg-stone-900', 'text-stone-100');
+        // Adiciona a classe 'dark' ao body para que o Tailwind CSS utilize a variante 'dark:'
+        body.classList.add('dark');
+    } else {
+        body.classList.add('bg-white', 'text-stone-900');
+        body.classList.remove('dark');
+    }
+}
+
+function toggleTheme() {
+    const newTheme = state.prefs.theme === 'light' ? 'dark' : 'light';
+    state.prefs.theme = newTheme;
+    applyTheme(newTheme);
+    saveData();
+    render(); 
 }
 
 // --- LÓGICA DE EDIÇÃO INLINE ---
@@ -1123,23 +1153,36 @@ function toggleBackupAlert() {
 }
 
 function getSettingsHTML() {
+    const isDark = state.prefs.theme === 'dark'; // NOVO: Tema para o Dark Mode
+    
     return `
         <div class="fade-in max-w-xl">
             <h2 class="text-2xl font-bold mb-6">Configurações</h2>
             
-            <div class="bg-white border-2 border-stone-200 p-6 mb-4 flex justify-between items-center">
+            <div class="bg-white border-2 border-stone-200 p-6 mb-4 flex justify-between items-center dark:bg-stone-800 dark:border-stone-700">
                 <div>
-                    <h3 class="font-bold mb-1">Alerta de Backup ao Sair</h3>
+                    <h3 class="font-bold mb-1 text-black dark:text-white">Modo Escuro (Dark Mode)</h3>
+                    <p class="text-sm text-stone-500">Alterne entre o tema claro e escuro da aplicação.</p>
+                </div>
+                <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" value="" class="sr-only peer" onchange="toggleTheme()" ${isDark ? 'checked' : ''}>
+                    <div class="w-11 h-6 bg-stone-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-black/30 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-stone-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black dark:bg-stone-600"></div>
+                </label>
+            </div>
+            
+            <div class="bg-white border-2 border-stone-200 p-6 mb-4 flex justify-between items-center dark:bg-stone-800 dark:border-stone-700">
+                <div>
+                    <h3 class="font-bold mb-1 text-black dark:text-white">Alerta de Backup ao Sair</h3>
                     <p class="text-sm text-stone-500">Perguntar se deseja fazer backup antes de fechar a aba ou recarregar.</p>
                 </div>
                 <label class="relative inline-flex items-center cursor-pointer">
                     <input type="checkbox" value="" class="sr-only peer" onchange="toggleBackupAlert()" ${state.prefs.showAlertOnUnload ? 'checked' : ''}>
-                    <div class="w-11 h-6 bg-stone-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-black/30 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-stone-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
+                    <div class="w-11 h-6 bg-stone-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-black/30 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-stone-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black dark:bg-stone-600"></div>
                 </label>
             </div>
             
-            <div class="bg-white border-2 border-stone-200 p-6 mb-4">
-                <h3 class="font-bold mb-2">Backup & Dados</h3>
+            <div class="bg-white border-2 border-stone-200 p-6 mb-4 dark:bg-stone-800 dark:border-stone-700">
+                <h3 class="font-bold mb-2 text-black dark:text-white">Backup & Dados</h3>
                 <p class="text-sm text-stone-500 mb-4">Gerencie seus dados. Exporte para segurança ou restaure um arquivo anterior.</p>
                 
                 <div class="flex gap-2">
@@ -1147,7 +1190,7 @@ function getSettingsHTML() {
                         <i data-lucide="download" class="w-4 h-4"></i> BACKUP
                     </button>
 
-                    <button onclick="document.getElementById('import-file').click()" class="flex items-center gap-2 bg-white text-black px-4 py-2 text-xs font-bold border-2 border-stone-300 hover:border-black hover:bg-stone-50 transition-all">
+                    <button onclick="document.getElementById('import-file').click()" class="flex items-center gap-2 bg-white text-black px-4 py-2 text-xs font-bold border-2 border-stone-300 hover:border-black hover:bg-stone-50 transition-all dark:bg-stone-700 dark:text-white dark:border-stone-600 dark:hover:bg-stone-600">
                         <i data-lucide="upload" class="w-4 h-4"></i> RESTAURAR
                     </button>
                     
@@ -1175,9 +1218,11 @@ function importData(inputElement) {
                         state.entries = data.entries;
                         state.hubs = data.hubs || [];
                         state.tagUsage = data.tagUsage || {};
-                        if (data.viewMode) state.viewMode = data.viewMode; 
+                        // Garante que as novas preferências sejam carregadas
+                        state.prefs = {...state.prefs, ...data.prefs}; 
                         
                         saveData(); 
+                        applyTheme(state.prefs.theme); // Aplica tema carregado
                         render(); 
                         showModal('Sucesso', 'Backup restaurado com sucesso.');
                     }
@@ -1211,7 +1256,7 @@ function getFilteredEntries() {
 
     if (state.activeTab === 'hubs' && state.activeHubId) {
         return filtered.filter(e => e.hubId == state.activeHubId)
-                       .sort((a,b) => (b.targetDate || b.id) - (a.a.targetDate || a.id));
+                       .sort((a,b) => (b.targetDate || b.id) - (a.targetDate || a.id));
     }
     
     if (state.activeTab === 'journal') {
