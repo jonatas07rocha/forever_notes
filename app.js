@@ -2,12 +2,199 @@
 const STORAGE_KEY = 'forever_v3_data';
 const PREFS_KEY = 'forever_v3_prefs';
 
+let currentLang = 'pt-BR'; // Definido em init()
+
+const TRANSLATIONS = {
+    'pt-BR': {
+        // Branding
+        app_title: 'Forever ✱ Notes [PoC]',
+        // Entry Types
+        type_note: 'Nota',
+        type_task: 'Tarefa',
+        type_event: 'Evento',
+        type_reflection: 'Reflexão',
+        type_idea: 'Ideia',
+        // Navigation
+        nav_home: 'Home',
+        nav_journal: 'Diário',
+        nav_hubs: 'Hubs',
+        nav_collections: 'Coleções',
+        nav_settings: 'Configurações',
+        nav_feedback: 'Feedback',
+        // Journal Filters
+        filter_all: 'Todos',
+        filter_today: 'Hoje',
+        filter_future: 'Futuro',
+        filter_period: 'Período',
+        // Home View
+        home_today: 'Hoje',
+        home_priorities: 'Prioridades',
+        home_next_event: 'Próximo Evento',
+        home_no_priority: 'Nenhuma prioridade ativa.',
+        home_no_event: 'Nada agendado.',
+        // Hubs View
+        hubs_title: 'Hubs',
+        hubs_subtitle: 'Mapas de contexto.',
+        hubs_new_prompt: 'Nome do novo Hub (ex: Estudos):',
+        hubs_new_button: 'NOVO HUB',
+        // Collections View
+        collections_title: 'Coleções',
+        collections_subtitle: 'Organizadas por frequência.',
+        collections_empty: 'Nenhuma coleção encontrada. Use #tags em suas notas para criar coleções automaticamente.',
+        // Common UI
+        ui_delete_confirm: 'Confirmar',
+        ui_cancel: 'Cancelar',
+        ui_save: 'Salvar',
+        ui_add_note_placeholder: 'O que está acontecendo agora? (',
+        ui_add_note_placeholder_end: ' para opções, >> para links)',
+        ui_search_placeholder: 'Buscar itens',
+        ui_date: 'DATA',
+        ui_important: 'IMPORTANTE',
+        ui_edit: 'EDITANDO',
+        ui_view_mode_toggle: 'Alternar Visualização',
+        ui_item_scheduled: 'Item Agendado',
+        ui_item_saved: 'Item Salvo',
+        ui_item_long: 'Texto muito longo',
+        ui_delete_item_q: 'Excluir item?',
+        ui_delete_hub_q: 'Excluir Hub?',
+        ui_delete_item_msg: 'Deseja remover este item permanentemente?',
+        ui_delete_hub_msg: 'Deseja excluir "',
+        ui_delete_hub_msg_end: '"?',
+        // Settings
+        settings_title: 'Configurações',
+        settings_dark_mode: 'Modo Escuro (Dark Mode)',
+        settings_dark_mode_desc: 'Alterne entre o tema claro e escuro da aplicação.',
+        settings_backup_alert: 'Alerta de Backup ao Sair',
+        settings_backup_alert_desc: 'Perguntar se deseja fazer backup antes de fechar a aba ou recarregar.',
+        settings_backup_data: 'Backup & Dados',
+        settings_backup_data_desc: 'Gerencie seus dados. Exporte para segurança ou restaure um arquivo anterior.',
+        settings_backup_button: 'BACKUP',
+        settings_restore_button: 'RESTAURAR',
+        settings_restore_q: 'Restaurar Backup?',
+        settings_restore_msg: 'Atenção: Isso substituirá todos os dados atuais por este backup. Essa ação é irreversível.',
+        settings_restore_success: 'Backup restaurado com sucesso.',
+        settings_restore_invalid: 'Arquivo de backup inválido ou corrompido.',
+        settings_restore_fail: 'Falha ao ler o arquivo JSON.',
+        settings_language: 'Idioma',
+        settings_lang_pt: 'Português (Brasil)',
+        settings_lang_en: 'English',
+        // Feedback
+        feedback_send: 'Enviar Feedback',
+        feedback_desc: 'Sua opinião é importante! Relate erros ou envie sugestões.',
+        feedback_placeholder: 'Digite sua mensagem aqui...',
+        feedback_empty: 'Por favor, digite alguma mensagem antes de enviar.',
+    },
+    'en-US': {
+        // Branding
+        app_title: 'Forever ✱ Notes [PoC]',
+        // Entry Types
+        type_note: 'Note',
+        type_task: 'Task',
+        type_event: 'Event',
+        type_reflection: 'Reflection',
+        type_idea: 'Idea',
+        // Navigation
+        nav_home: 'Home',
+        nav_journal: 'Journal',
+        nav_hubs: 'Hubs',
+        nav_collections: 'Collections',
+        nav_settings: 'Settings',
+        nav_feedback: 'Feedback',
+        // Journal Filters
+        filter_all: 'All',
+        filter_today: 'Today',
+        filter_future: 'Future',
+        filter_period: 'Period',
+        // Home View
+        home_today: 'Today',
+        home_priorities: 'Priorities',
+        home_next_event: 'Next Event',
+        home_no_priority: 'No active priorities.',
+        home_no_event: 'Nothing scheduled.',
+        // Hubs View
+        hubs_title: 'Hubs',
+        hubs_subtitle: 'Context maps.',
+        hubs_new_prompt: 'Name of the new Hub (e.g., Studies):',
+        hubs_new_button: 'NEW HUB',
+        // Collections View
+        collections_title: 'Collections',
+        collections_subtitle: 'Organized by frequency.',
+        collections_empty: 'No collections found. Use #tags in your notes to create collections automatically.',
+        // Common UI
+        ui_delete_confirm: 'Confirm',
+        ui_cancel: 'Cancel',
+        ui_save: 'Save',
+        ui_add_note_placeholder: "What's happening now? (",
+        ui_add_note_placeholder_end: ' for options, >> for links)',
+        ui_search_placeholder: 'Search items',
+        ui_date: 'DATE',
+        ui_important: 'IMPORTANT',
+        ui_edit: 'EDITING',
+        ui_view_mode_toggle: 'Toggle View',
+        ui_item_scheduled: 'Item Scheduled',
+        ui_item_saved: 'Item Saved',
+        ui_item_long: 'Text too long',
+        ui_delete_item_q: 'Delete item?',
+        ui_delete_hub_q: 'Delete Hub?',
+        ui_delete_item_msg: 'Do you want to permanently remove this item?',
+        ui_delete_hub_msg: 'Do you want to delete "',
+        ui_delete_hub_msg_end: '"?',
+        // Settings
+        settings_title: 'Settings',
+        settings_dark_mode: 'Dark Mode',
+        settings_dark_mode_desc: 'Toggle between light and dark theme.',
+        settings_backup_alert: 'Unload Backup Alert',
+        settings_backup_alert_desc: 'Ask if you want to backup before closing the tab or reloading.',
+        settings_backup_data: 'Backup & Data',
+        settings_backup_data_desc: 'Manage your data. Export for security or restore a previous file.',
+        settings_backup_button: 'BACKUP',
+        settings_restore_button: 'RESTORE',
+        settings_restore_q: 'Restore Backup?',
+        settings_restore_msg: 'Warning: This will overwrite all current data with this backup. This action is irreversible.',
+        settings_restore_success: 'Backup restored successfully.',
+        settings_restore_invalid: 'Invalid or corrupt backup file.',
+        settings_restore_fail: 'Failed to read the JSON file.',
+        settings_language: 'Language',
+        settings_lang_pt: 'Português (Brasil)',
+        settings_lang_en: 'English',
+        // Feedback
+        feedback_send: 'Send Feedback',
+        feedback_desc: 'Your opinion is important! Report bugs or send suggestions.',
+        feedback_placeholder: 'Type your message here...',
+        feedback_empty: 'Please type a message before sending.',
+    }
+};
+
+const T = (key, lang = currentLang) => {
+    return (TRANSLATIONS[lang] && TRANSLATIONS[lang][key] !== undefined) ? TRANSLATIONS[lang][key] : TRANSLATIONS['pt-BR'][key] || key;
+};
+
+const getPreferredLanguage = () => {
+    // 1. Check saved preference
+    const savedLang = state.prefs.lang;
+    if (savedLang) return savedLang;
+    
+    // 2. Check browser language
+    const browserLang = navigator.language || navigator.userLanguage;
+    if (browserLang.toLowerCase().startsWith('pt')) return 'pt-BR';
+    
+    // 3. Default to English
+    return 'en-US';
+};
+
+function setLanguage(lang) {
+    currentLang = lang;
+    state.prefs.lang = lang;
+    saveData();
+    render();
+}
+
 const ENTRY_TYPES = {
-    note: { id: 'note', label: 'Nota', icon: 'align-left', symbol: '—', color: 'text-stone-600 dark:text-stone-400', limit: null }, 
-    task: { id: 'task', label: 'Tarefa', icon: 'check-square', symbol: '•', color: 'text-black dark:text-white', limit: 140 }, 
-    event: { id: 'event', label: 'Evento', icon: 'calendar', symbol: '○', color: 'text-black dark:text-white', limit: 140 },
-    reflection: { id: 'reflection', label: 'Reflexão', icon: 'moon', symbol: '>', color: 'text-black dark:text-white', limit: 280 }, 
-    idea: { id: 'idea', label: 'Ideia', icon: 'lightbulb', symbol: '!', color: 'text-black dark:text-white', limit: 140 }, 
+    note: { id: 'note', label: 'type_note', icon: 'align-left', symbol: '—', color: 'text-stone-600 dark:text-stone-400', limit: null }, 
+    task: { id: 'task', label: 'type_task', icon: 'check-square', symbol: '•', color: 'text-black dark:text-white', limit: 140 }, 
+    event: { id: 'event', label: 'type_event', icon: 'calendar', symbol: '○', color: 'text-black dark:text-white', limit: 140 },
+    reflection: { id: 'reflection', label: 'type_reflection', icon: 'moon', symbol: '>', color: 'text-black dark:text-white', limit: 280 }, 
+    idea: { id: 'idea', label: 'type_idea', icon: 'lightbulb', symbol: '!', color: 'text-black dark:text-white', limit: 140 }, 
 };
 
 // --- ESTADO ---
@@ -17,7 +204,7 @@ let state = {
     activeTab: 'home',
     
     // Navegação
-    activeJournalPeriod: 'Todos', // 'Hoje', 'Todos', 'Futuro', 'Período'
+    activeJournalPeriod: 'Todos',
     journalDate: new Date(),
     
     // Filtro de Período Personalizado
@@ -50,7 +237,8 @@ let state = {
     // PREFERÊNCIAS
     prefs: {
         showAlertOnUnload: true,
-        theme: 'light'
+        theme: 'light',
+        lang: null // Onde a preferência de idioma será salva
     }
 };
 
@@ -62,6 +250,8 @@ function init() {
     state.prefs.viewMode = prefs.viewMode || 'visual';
     state.prefs.showAlertOnUnload = prefs.showAlertOnUnload !== undefined ? prefs.showAlertOnUnload : true;
     state.prefs.theme = prefs.theme || 'light'; 
+    state.prefs.lang = prefs.lang || getPreferredLanguage(); // Carrega idioma preferido ou detectado
+    currentLang = state.prefs.lang; // Define o idioma global
     
     applyTheme(state.prefs.theme); 
     
@@ -241,7 +431,7 @@ function closeCollection() {
 // --- LÓGICA DE HUBS ---
 
 function createNewHub() {
-    const name = prompt("Nome do novo Hub (ex: Estudos):");
+    const name = prompt(T('hubs_new_prompt'));
     if (name && name.trim()) {
         const newHub = {
             id: Date.now(),
@@ -270,7 +460,7 @@ function closeHub() {
 function deleteHub(hubId) {
     const hub = state.hubs.find(h => h.id == hubId);
     if (!hub) return;
-    showModal("Excluir Hub?", `Deseja excluir "${hub.name}"?`, () => {
+    showModal(T('ui_delete_hub_q'), `${T('ui_delete_hub_msg')}${hub.name}${T('ui_delete_hub_msg_end')}`, T('ui_delete_confirm'), () => {
         state.hubs = state.hubs.filter(h => h.id != hubId);
         state.entries = state.entries.map(e => {
             if (e.hubId == hubId) return { ...e, hubId: null };
@@ -315,7 +505,7 @@ function addNewEntry() {
 
     const config = ENTRY_TYPES[type];
     if (config.limit && content.length > config.limit) {
-        showModal('Texto muito longo', `Para o modo BuJo, ${config.label} deve ter no máximo 140 caracteres. Para textos longos, use o tipo "Nota".`);
+        showModal(T('ui_item_long'), `${T('ui_item_long')} ${T(config.label)} deve ter no máximo 140 caracteres. Para textos longos, use o tipo "${T('type_note')}".`);
         return;
     }
 
@@ -352,7 +542,7 @@ function addNewEntry() {
     addedDate.setHours(0,0,0,0);
     
     if (targetDate && addedDate.getTime() !== viewedDate.getTime() && state.activeTab !== 'home') {
-        showModal('Item Agendado', `Item salvo em ${addedDate.toLocaleDateString('pt-BR')}.`);
+        showModal(T('ui_item_scheduled'), `${T('ui_item_scheduled')} em ${addedDate.toLocaleDateString(currentLang)}.`);
     }
 
     render();
@@ -378,7 +568,7 @@ function toggleEntry(id) {
 }
 
 function deleteEntry(id) {
-    showModal("Excluir item?", "Deseja remover este item permanentemente?", () => {
+    showModal(T('ui_delete_item_q'), T('ui_delete_item_msg'), T('ui_delete_confirm'), () => {
         state.entries = state.entries.filter(e => e.id !== id);
         saveData();
         render();
@@ -451,9 +641,9 @@ function renderGlobalInput() {
     charCountEl.classList.toggle('hidden', !limit);
     
     if (typeIcon) typeIcon.setAttribute('data-lucide', config.icon);
-    if (typeLabel) typeLabel.innerText = config.label;
+    if (typeLabel) typeLabel.innerText = T(config.label);
     
-    const typeOptions = Object.values(ENTRY_TYPES).map(t => `<button onclick="selectGlobalEntryType('${t.id}')" class="w-full text-left flex items-center gap-3 p-2 hover:bg-stone-100 transition-colors dark:hover:bg-stone-700 ${state.selectedType === t.id ? 'bg-stone-50 font-bold dark:bg-stone-600' : ''}"><i data-lucide="${t.icon}" class="w-4 h-4 text-black dark:text-white"></i><span class="text-sm text-black dark:text-white">${t.label}</span></button>`).join('');
+    const typeOptions = Object.values(ENTRY_TYPES).map(t => `<button onclick="selectGlobalEntryType('${t.id}')" class="w-full text-left flex items-center gap-3 p-2 hover:bg-stone-100 transition-colors dark:hover:bg-stone-700 ${state.selectedType === t.id ? 'bg-stone-50 font-bold dark:bg-stone-600' : ''}"><i data-lucide="${t.icon}" class="w-4 h-4 text-black dark:text-white"></i><span class="text-sm text-black dark:text-white">${T(t.label)}</span></button>`).join('');
     menu.innerHTML = typeOptions;
     menu.classList.toggle('hidden', !state.showSlashMenu);
     
@@ -499,7 +689,7 @@ function addNewGlobalEntry() {
     let targetDate = nlpResult.date;
     const config = ENTRY_TYPES[type];
     if (config.limit && content.length > config.limit) {
-        showModal('Texto muito longo', `Para o modo BuJo, ${config.label} deve ter no máximo ${config.limit} caracteres.`);
+        showModal(T('ui_item_long'), `${T('ui_item_long')} ${T(config.label)} deve ter no máximo ${config.limit} caracteres.`);
         return;
     }
     const foundTags = extractTags(content);
@@ -517,7 +707,7 @@ function addNewGlobalEntry() {
     closeGlobalInput();
     saveData();
     render(); 
-    showModal('Item Salvo', `O item foi adicionado como "${config.label}".`);
+    showModal(T('ui_item_saved'), `${T('ui_item_saved')} como "${T(config.label)}".`);
 }
 
 function setupGlobalInputHandler() {
@@ -583,6 +773,11 @@ function toggleViewMode() {
 
 function render() {
     renderSidebar();
+    
+    // Atualiza o título da aplicação com o novo branding/i18n
+    document.querySelector('title').textContent = T('app_title');
+    document.getElementById('app-branding').textContent = T('app_title');
+
     const main = document.getElementById('main-container');
     
     if (state.searchQuery && state.activeTab === 'home') {
@@ -593,7 +788,6 @@ function render() {
             case 'journal': main.innerHTML = getJournalHTML(); setupJournalInput(); break;
             case 'hubs': main.innerHTML = getHubsHTML(); setupJournalInput(); break;
             case 'collections': main.innerHTML = getCollectionsHTML(); setupJournalInput(); break;
-            // Removed Calendar
             case 'settings': main.innerHTML = getSettingsHTML(); break;
         }
     }
@@ -604,11 +798,10 @@ function renderSidebar() {
     const menu = document.getElementById('nav-menu');
     const mobileMenu = document.getElementById('nav-menu-mobile');
     const items = [
-        { id: 'home', icon: 'home', label: 'Home' },
-        { id: 'journal', icon: 'book', label: 'Diário' },
-        { id: 'hubs', icon: 'grid', label: 'Hubs' },
-        { id: 'collections', icon: 'tags', label: 'Coleções' },
-        // Item Calendário Removido
+        { id: 'home', icon: 'home', label: T('nav_home') },
+        { id: 'journal', icon: 'book', label: T('nav_journal') },
+        { id: 'hubs', icon: 'grid', label: T('nav_hubs') },
+        { id: 'collections', icon: 'tags', label: T('nav_collections') },
     ];
     
     const menuHTML = items.map(item => `
@@ -640,22 +833,24 @@ function getHomeHTML() {
         .filter(e => !e.completed && e.content.includes('✱'))
         .sort((a,b) => (b.targetDate || b.id) - (a.targetDate || a.id));
     
+    const langOptions = { weekday: 'long', day:'numeric', month:'long' };
+
     return `
         <div class="space-y-8 fade-in">
             <header>
-                <h1 class="text-3xl font-bold text-black dark:text-white">✱ Home</h1>
-                <p class="text-stone-500 dark:text-stone-400 capitalize">${new Date().toLocaleDateString('pt-BR', {weekday: 'long', day:'numeric', month:'long'})}</p>
+                <h1 class="text-3xl font-bold text-black dark:text-white">✱ ${T('nav_home')}</h1>
+                <p class="text-stone-500 dark:text-stone-400 capitalize">${new Date().toLocaleDateString(currentLang, langOptions)}</p>
             </header>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div class="bg-stone-900 text-white p-5 border-2 border-black cursor-default relative overflow-hidden group dark:bg-black dark:border-stone-700">
-                    <div class="flex items-center gap-2 mb-4 text-stone-400"><i data-lucide="calendar-days" class="w-4 h-4"></i> <span class="text-xs font-bold uppercase">Hoje</span></div>
+                    <div class="flex items-center gap-2 mb-4 text-stone-400"><i data-lucide="calendar-days" class="w-4 h-4"></i> <span class="text-xs font-bold uppercase">${T('home_today')}</span></div>
                     <div class="text-4xl font-black mb-1">${new Date().getDate()}</div>
-                    <div class="text-sm text-stone-400 uppercase tracking-widest">${new Date().toLocaleDateString('pt-BR', {month:'long'})}</div>
+                    <div class="text-sm text-stone-400 uppercase tracking-widest">${new Date().toLocaleDateString(currentLang, {month:'long'})}</div>
                 </div>
                 <div onclick="setActiveTab('journal'); state.activeJournalPeriod='Todos'; render();" class="bg-white border-2 border-stone-200 p-5 hover:border-black transition-all cursor-pointer dark:bg-stone-800 dark:border-stone-700 dark:hover:border-white">
                     <div class="flex items-center gap-2 mb-4 text-stone-500 dark:text-stone-400">
                         <i data-lucide="star" class="w-4 h-4 fill-black text-black dark:text-white dark:fill-white"></i> 
-                        <span class="text-xs font-bold uppercase text-black dark:text-white">Prioridades</span>
+                        <span class="text-xs font-bold uppercase text-black dark:text-white">${T('home_priorities')}</span>
                     </div>
                     ${priorities.length > 0
                         ? `<div class="space-y-2">
@@ -664,22 +859,22 @@ function getHomeHTML() {
                                     <span class="text-stone-400 text-[10px]">•</span> ${e.content.replace('✱', '').trim()}
                                 </div>
                              `).join('')}
-                             ${priorities.length > 3 ? `<div class="text-[10px] text-stone-400 font-bold mt-2">+${priorities.length - 3} itens</div>` : ''}
+                             ${priorities.length > 3 ? `<div class="text-[10px] text-stone-400 font-bold mt-2">+${priorities.length - 3} ${currentLang === 'pt-BR' ? 'itens' : 'items'}</div>` : ''}
                            </div>`
-                        : '<div class="text-stone-400 italic">Nenhuma prioridade ativa.</div>'
+                        : `<div class="text-stone-400 italic">${T('home_no_priority')}</div>`
                     }
                 </div>
                 <div onclick="setActiveTab('journal'); state.activeJournalPeriod='Futuro'; render();" class="bg-white border-2 border-stone-200 p-5 hover:border-black transition-all cursor-pointer dark:bg-stone-800 dark:border-stone-700 dark:hover:border-white">
-                    <div class="flex items-center gap-2 mb-4 text-stone-500 dark:text-stone-400"><i data-lucide="clock" class="w-4 h-4"></i> <span class="text-xs font-bold uppercase">Próximo Evento</span></div>
+                    <div class="flex items-center gap-2 mb-4 text-stone-500 dark:text-stone-400"><i data-lucide="clock" class="w-4 h-4"></i> <span class="text-xs font-bold uppercase">${T('home_next_event')}</span></div>
                     ${nextEvent 
                         ? `
                             <div class="font-bold text-lg leading-tight truncate dark:text-white">${nextEvent.content}</div>
                             <div class="text-xs text-black font-bold mt-2 bg-stone-100 inline-block px-2 py-1 border border-stone-200 dark:bg-stone-900 dark:text-stone-300 dark:border-stone-600">
-                                ${new Date(nextEvent.targetDate).toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'})} 
-                                ${new Date(nextEvent.targetDate).toDateString() === now.toDateString() ? '(Hoje)' : ''}
+                                ${new Date(nextEvent.targetDate).toLocaleDateString(currentLang, {day:'2-digit', month:'2-digit'})} 
+                                ${new Date(nextEvent.targetDate).toDateString() === now.toDateString() ? `(${T('filter_today')})` : ''}
                             </div>
                           ` 
-                        : '<div class="text-stone-400 italic">Nada agendado.</div>'
+                        : `<div class="text-stone-400 italic">${T('home_no_event')}</div>`
                     }
                 </div>
             </div>
@@ -696,24 +891,24 @@ function getSearchResultsHTML() {
                     <button onclick="clearSearch()" class="p-2 hover:bg-stone-100 rounded-full transition-colors dark:hover:bg-stone-800">
                         <i data-lucide="arrow-left" class="w-6 h-6 dark:text-white"></i>
                     </button>
-                    <h2 class="text-2xl font-bold dark:text-white">Busca: "${state.searchQuery}"</h2>
+                    <h2 class="text-2xl font-bold dark:text-white">${currentLang === 'pt-BR' ? 'Busca' : 'Search'}: "${state.searchQuery}"</h2>
                 </div>
             </div>
             <div class="flex-1 overflow-y-auto pb-20 scrollbar-hide space-y-1">
-                ${list.length > 0 ? list.map(entry => renderEntry(entry)).join('') : `<div class="text-center text-stone-400 mt-10 italic">Nenhum resultado encontrado.</div>`}
+                ${list.length > 0 ? list.map(entry => renderEntry(entry)).join('') : `<div class="text-center text-stone-400 mt-10 italic">${currentLang === 'pt-BR' ? 'Nenhum resultado encontrado.' : 'No results found.'}</div>`}
             </div>
         </div>
     `;
 }
 
 function getHubsHTML() {
-    if (state.activeHubId) return getCommonSingleViewHTML(state.hubs.find(h => h.id == state.activeHubId).name, closeHub, `Adicionar nota em ${state.hubs.find(h => h.id == state.activeHubId).name}...`, state.activeHubId);
+    if (state.activeHubId) return getCommonSingleViewHTML(state.hubs.find(h => h.id == state.activeHubId).name, closeHub, `${currentLang === 'pt-BR' ? 'Adicionar nota em' : 'Add note to'} ${state.hubs.find(h => h.id == state.activeHubId).name}...`, state.activeHubId);
     
     return `
         <div class="fade-in">
             <header class="flex justify-between items-center mb-8">
-                <div><h1 class="text-3xl font-bold text-black dark:text-white">✱ Hubs</h1><p class="text-stone-500 dark:text-stone-400">Mapas de contexto.</p></div>
-                <button onclick="createNewHub()" class="bg-black text-white px-4 py-2 text-xs font-bold border-2 border-black hover:bg-stone-800 transition-colors flex items-center gap-2 dark:bg-white dark:text-black dark:hover:bg-stone-200"><i data-lucide="plus" class="w-4 h-4"></i> NOVO HUB</button>
+                <div><h1 class="text-3xl font-bold text-black dark:text-white">✱ ${T('hubs_title')}</h1><p class="text-stone-500 dark:text-stone-400">${T('hubs_subtitle')}</p></div>
+                <button onclick="createNewHub()" class="bg-black text-white px-4 py-2 text-xs font-bold border-2 border-black hover:bg-stone-800 transition-colors flex items-center gap-2 dark:bg-white dark:text-black dark:hover:bg-stone-200"><i data-lucide="plus" class="w-4 h-4"></i> ${T('hubs_new_button')}</button>
             </header>
             <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                 ${state.hubs.map(hub => `
@@ -731,13 +926,13 @@ function getHubsHTML() {
 }
 
 function getCollectionsHTML() {
-    if (state.activeTag) return getCommonSingleViewHTML(state.activeTag, closeCollection, `Adicionar novo item em ${state.activeTag}...`);
+    if (state.activeTag) return getCommonSingleViewHTML(state.activeTag, closeCollection, `${currentLang === 'pt-BR' ? 'Adicionar novo item em' : 'Add new item to'} ${state.activeTag}...`);
     const tags = getUniqueTags(); 
     return `
         <div class="fade-in">
             <header class="mb-8">
-                <h1 class="text-3xl font-bold text-black dark:text-white">✱ Coleções</h1>
-                <p class="text-stone-500 dark:text-stone-400">Organizadas por frequência.</p>
+                <h1 class="text-3xl font-bold text-black dark:text-white">✱ ${T('collections_title')}</h1>
+                <p class="text-stone-500 dark:text-stone-400">${T('collections_subtitle')}</p>
             </header>
             <div class="flex flex-wrap gap-3">
                 ${tags.length > 0 
@@ -749,7 +944,7 @@ function getCollectionsHTML() {
                             </div>
                         </button>
                     `).join('')
-                    : `<div class="w-full text-stone-400 italic border-2 border-dashed border-stone-200 p-8 text-center dark:border-stone-700">Nenhuma coleção encontrada.</div>`
+                    : `<div class="w-full text-stone-400 italic border-2 border-dashed border-stone-200 p-8 text-center dark:border-stone-700">${T('collections_empty')}</div>`
                 }
             </div>
         </div>
@@ -761,7 +956,7 @@ function getCommonSingleViewHTML(title, closeFunc, placeholder, hubId = null) {
     const config = ENTRY_TYPES[state.selectedType];
     const charCount = state.inputText.length;
     const limit = config.limit;
-    const typeOptions = Object.values(ENTRY_TYPES).map(t => `<button onclick="selectEntryType('${t.id}')" class="w-full text-left flex items-center gap-3 p-2 hover:bg-stone-100 transition-colors dark:hover:bg-stone-700 ${state.selectedType === t.id ? 'bg-stone-50 font-bold dark:bg-stone-600' : ''}"><i data-lucide="${t.icon}" class="w-4 h-4 text-black dark:text-white"></i><span class="text-sm text-black dark:text-white">${t.label}</span></button>`).join('');
+    const typeOptions = Object.values(ENTRY_TYPES).map(t => `<button onclick="selectEntryType('${t.id}')" class="w-full text-left flex items-center gap-3 p-2 hover:bg-stone-100 transition-colors dark:hover:bg-stone-700 ${state.selectedType === t.id ? 'bg-stone-50 font-bold dark:bg-stone-600' : ''}"><i data-lucide="${t.icon}" class="w-4 h-4 text-black dark:text-white"></i><span class="text-sm text-black dark:text-white">${T(t.label)}</span></button>`).join('');
 
     return `
         <div class="h-full flex flex-col fade-in relative">
@@ -774,7 +969,7 @@ function getCommonSingleViewHTML(title, closeFunc, placeholder, hubId = null) {
             </div>
             
             <div class="relative mb-6 z-20 group bg-stone-50 p-3 border border-stone-200 focus-within:border-black focus-within:shadow-lg transition-all flex items-start gap-3 dark:bg-stone-800 dark:border-stone-700 dark:focus-within:border-white">
-                <button onclick="state.showSlashMenu = !state.showSlashMenu; state.showLinkMenu = false; render()" class="flex-shrink-0 flex items-center gap-2 bg-white border border-stone-300 px-2 py-1.5 rounded-sm hover:border-black transition-colors dark:bg-stone-900 dark:border-stone-600 dark:hover:border-white"><i data-lucide="${config.icon}" class="w-4 h-4 text-black dark:text-white"></i><span class="text-xs font-bold text-black hidden sm:inline-block dark:text-white">${config.label}</span><i data-lucide="chevron-down" class="w-3 h-3 text-stone-400"></i></button>
+                <button onclick="state.showSlashMenu = !state.showSlashMenu; state.showLinkMenu = false; render()" class="flex-shrink-0 flex items-center gap-2 bg-white border border-stone-300 px-2 py-1.5 rounded-sm hover:border-black transition-colors dark:bg-stone-900 dark:border-stone-600 dark:hover:border-white"><i data-lucide="${config.icon}" class="w-4 h-4 text-black dark:text-white"></i><span class="text-xs font-bold text-black hidden sm:inline-block dark:text-white">${T(config.label)}</span><i data-lucide="chevron-down" class="w-3 h-3 text-stone-400"></i></button>
                 <div class="flex-1 relative">
                     <input type="text" id="entry-input" autocomplete="off" placeholder="${placeholder}" class="w-full bg-transparent text-sm outline-none font-medium placeholder:font-normal placeholder:text-stone-400 py-1.5 dark:text-white dark:placeholder:text-stone-500">
                     ${limit ? `<div class="absolute right-0 top-1.5 text-[10px] font-mono text-stone-400">${charCount}/${limit}</div>` : ''}
@@ -783,7 +978,7 @@ function getCommonSingleViewHTML(title, closeFunc, placeholder, hubId = null) {
                 <div class="relative flex-shrink-0"><input type="date" id="date-picker-native" class="absolute inset-0 opacity-0 cursor-pointer" onchange="state.inputDate = this.valueAsDate ? this.valueAsDate.getTime() : null; render()"><button class="p-1.5 hover:bg-stone-200 rounded text-stone-400 hover:text-black dark:hover:bg-stone-700 dark:hover:text-white ${state.inputDate ? 'text-black font-bold dark:text-white' : ''}"><i data-lucide="calendar" class="w-4 h-4"></i></button></div>
             </div>
             <div class="flex-1 overflow-y-auto pb-20 scrollbar-hide space-y-1" onclick="if(state.showSlashMenu || state.showLinkMenu){state.showSlashMenu=false; state.showLinkMenu=false; render()}">
-                ${list.length > 0 ? list.map(entry => renderEntry(entry)).join('') : `<div class="text-center text-stone-400 mt-10 italic">Nenhum item ainda.</div>`}
+                ${list.length > 0 ? list.map(entry => renderEntry(entry)).join('') : `<div class="text-center text-stone-400 mt-10 italic">${currentLang === 'pt-BR' ? 'Nenhum item ainda.' : 'No items yet.'}</div>`}
             </div>
         </div>
     `;
@@ -800,9 +995,9 @@ function getJournalHTML() {
     if (state.activeJournalPeriod === 'Período') {
         dateFilterHTML = `
             <div class="flex items-center gap-2 text-sm text-stone-600 bg-stone-50 p-2 border-b border-stone-200 mb-2 fade-in dark:bg-stone-800 dark:border-stone-700 dark:text-stone-400">
-                <span>De:</span>
+                <span>${currentLang === 'pt-BR' ? 'De:' : 'From:'}</span>
                 <input type="date" value="${state.filterStartDate}" onchange="state.filterStartDate=this.value; render()" class="bg-white border border-stone-300 rounded px-2 py-1 text-xs dark:bg-stone-900 dark:border-stone-600 dark:text-white">
-                <span>Até:</span>
+                <span>${currentLang === 'pt-BR' ? 'Até:' : 'To:'}</span>
                 <input type="date" value="${state.filterEndDate}" onchange="state.filterEndDate=this.value; render()" class="bg-white border border-stone-300 rounded px-2 py-1 text-xs dark:bg-stone-900 dark:border-stone-600 dark:text-white">
             </div>
         `;
@@ -811,18 +1006,18 @@ function getJournalHTML() {
     const periodButtons = ['Todos', 'Hoje', 'Futuro', 'Período'].map(p => `
         <button onclick="state.activeJournalPeriod='${p}'; render()" 
             class="px-3 py-1 text-xs font-bold transition-all ${state.activeJournalPeriod === p ? 'bg-black text-white dark:bg-white dark:text-black' : 'text-stone-500 hover:text-black dark:text-stone-400 dark:hover:text-white'}">
-            ${p}
+            ${T(`filter_${p.toLowerCase()}`)}
         </button>
     `).join('');
 
-    const typeOptions = Object.values(ENTRY_TYPES).map(t => `<button onclick="selectEntryType('${t.id}')" class="w-full text-left flex items-center gap-3 p-2 hover:bg-stone-100 transition-colors dark:hover:bg-stone-700 ${state.selectedType === t.id ? 'bg-stone-50 font-bold dark:bg-stone-600' : ''}"><i data-lucide="${t.icon}" class="w-4 h-4 text-black dark:text-white"></i><span class="text-sm text-black dark:text-white">${t.label}</span></button>`).join('');
+    const typeOptions = Object.values(ENTRY_TYPES).map(t => `<button onclick="selectEntryType('${t.id}')" class="w-full text-left flex items-center gap-3 p-2 hover:bg-stone-100 transition-colors dark:hover:bg-stone-700 ${state.selectedType === t.id ? 'bg-stone-50 font-bold dark:bg-stone-600' : ''}"><i data-lucide="${t.icon}" class="w-4 h-4 text-black dark:text-white"></i><span class="text-sm text-black dark:text-white">${T(t.label)}</span></button>`).join('');
     const linkOptions = state.hubs.map(h => `<button onclick="insertLink('${h.name}')" class="w-full text-left p-2 hover:bg-stone-100 transition-colors text-sm font-bold flex items-center gap-2 dark:text-stone-300 dark:hover:bg-stone-700"><i data-lucide="hash" class="w-3 h-3 text-stone-400"></i> ${h.name}</button>`).join('');
 
     return `
         <div class="h-full flex flex-col fade-in relative">
             <div class="flex flex-col md:flex-row md:items-center justify-between border-b-2 border-stone-800 pb-4 mb-4 gap-3 dark:border-stone-700">
                 <div class="flex items-center gap-4">
-                    <h2 class="text-2xl font-bold dark:text-white">✱ Diário</h2>
+                    <h2 class="text-2xl font-bold dark:text-white">✱ ${T('nav_journal')}</h2>
                     <button onclick="toggleViewMode()" class="p-2 rounded hover:bg-stone-100 transition-colors dark:hover:bg-stone-800"><i data-lucide="${state.viewMode === 'visual' ? 'layout-list' : 'layout-template'}" class="w-5 h-5 text-stone-500 hover:text-black dark:hover:text-white"></i></button>
                 </div>
                 
@@ -834,10 +1029,10 @@ function getJournalHTML() {
             ${dateFilterHTML}
 
             <div class="relative mb-6 z-20 group bg-stone-50 p-3 border border-stone-200 focus-within:border-black focus-within:shadow-lg transition-all flex items-start gap-3 dark:bg-stone-800 dark:border-stone-700 dark:focus-within:border-white">
-                <button onclick="state.showSlashMenu = !state.showSlashMenu; state.showLinkMenu = false; render()" class="flex-shrink-0 flex items-center gap-2 bg-white border border-stone-300 px-2 py-1.5 rounded-sm hover:border-black transition-colors dark:bg-stone-900 dark:border-stone-600 dark:hover:border-white"><i data-lucide="${config.icon}" class="w-4 h-4 text-black dark:text-white"></i><span class="text-xs font-bold text-black hidden sm:inline-block dark:text-white">${config.label}</span><i data-lucide="chevron-down" class="w-3 h-3 text-stone-400"></i></button>
-                <div class="flex-1 relative"><input type="text" id="entry-input" autocomplete="off" placeholder="O que está acontecendo agora? ('/' para opções, '>>' para links)" class="w-full bg-transparent text-sm outline-none font-medium placeholder:font-normal placeholder:text-stone-400 py-1.5 dark:text-white dark:placeholder:text-stone-500">${limit ? `<div class="absolute right-0 top-1.5 text-[10px] font-mono text-stone-400">${charCount}/${limit}</div>` : ''}</div>
+                <button onclick="state.showSlashMenu = !state.showSlashMenu; state.showLinkMenu = false; render()" class="flex-shrink-0 flex items-center gap-2 bg-white border border-stone-300 px-2 py-1.5 rounded-sm hover:border-black transition-colors dark:bg-stone-900 dark:border-stone-600 dark:hover:border-white"><i data-lucide="${config.icon}" class="w-4 h-4 text-black dark:text-white"></i><span class="text-xs font-bold text-black hidden sm:inline-block dark:text-white">${T(config.label)}</span><i data-lucide="chevron-down" class="w-3 h-3 text-stone-400"></i></button>
+                <div class="flex-1 relative"><input type="text" id="entry-input" autocomplete="off" placeholder="${T('ui_add_note_placeholder')}/${T('ui_add_note_placeholder_end')}" class="w-full bg-transparent text-sm outline-none font-medium placeholder:font-normal placeholder:text-stone-400 py-1.5 dark:text-white dark:placeholder:text-stone-500">${limit ? `<div class="absolute right-0 top-1.5 text-[10px] font-mono text-stone-400">${charCount}/${limit}</div>` : ''}</div>
                 ${state.showSlashMenu ? `<div class="absolute top-full left-0 mt-1 w-48 bg-white border-2 border-black shadow-xl z-50 fade-in py-1 dark:bg-stone-800 dark:border-stone-600">${typeOptions}</div>` : ''}
-                ${state.showLinkMenu ? `<div class="absolute top-full left-20 mt-1 w-48 bg-white border-2 border-black shadow-xl z-50 fade-in py-1 dark:bg-stone-800 dark:border-stone-600"><div class="px-2 py-1 text-[10px] font-bold text-stone-400 uppercase tracking-wider border-b border-stone-100 mb-1 dark:border-stone-700">Linkar para...</div>${linkOptions}</div>` : ''}
+                ${state.showLinkMenu ? `<div class="absolute top-full left-20 mt-1 w-48 bg-white border-2 border-black shadow-xl z-50 fade-in py-1 dark:bg-stone-800 dark:border-stone-600"><div class="px-2 py-1 text-[10px] font-bold text-stone-400 uppercase tracking-wider border-b border-stone-100 mb-1 dark:border-stone-700">${currentLang === 'pt-BR' ? 'Linkar para...' : 'Link to...'}</div>${linkOptions}</div>` : ''}
                 <div class="relative flex-shrink-0"><input type="date" id="date-picker-native" class="absolute inset-0 opacity-0 cursor-pointer" onchange="state.inputDate = this.valueAsDate ? this.valueAsDate.getTime() : null; render()"><button class="p-1.5 hover:bg-stone-200 rounded text-stone-400 hover:text-black dark:hover:bg-stone-700 dark:hover:text-white ${state.inputDate ? 'text-black font-bold dark:text-white' : ''}"><i data-lucide="calendar" class="w-4 h-4"></i></button></div>
             </div>
             <div class="flex-1 overflow-y-auto pb-20 scrollbar-hide space-y-1" onclick="if(state.showSlashMenu || state.showLinkMenu){state.showSlashMenu=false; state.showLinkMenu=false; render()}">
@@ -864,7 +1059,7 @@ function getEditEntryHTML(entry) {
     return `
         <div class="p-3 bg-stone-50 border-2 border-black rounded shadow-md ${isClassic ? 'font-mono' : 'font-sans'} dark:bg-stone-800 dark:border-stone-600">
             <div class="text-[10px] font-bold uppercase text-stone-600 mb-1 flex items-center gap-2 dark:text-stone-400">
-                 <i data-lucide="${config.icon}" class="w-3 h-3"></i> EDITANDO ${config.label}
+                 <i data-lucide="${config.icon}" class="w-3 h-3"></i> ${T('ui_edit')} ${T(config.label)}
             </div>
             <textarea 
                 id="edit-content-${entry.id}" 
@@ -874,10 +1069,10 @@ function getEditEntryHTML(entry) {
                 onkeydown="if(event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); saveEditEntry(${entry.id}, this.value); } else if(event.key === 'Escape') { state.editingEntryId = null; render(); }"
             >${entry.content}</textarea>
             <button onclick="saveEditEntry(${entry.id}, document.getElementById('edit-content-${entry.id}').value)" class="mt-2 bg-black text-white px-3 py-1 text-xs font-bold rounded hover:bg-stone-800 dark:bg-white dark:text-black dark:hover:bg-stone-200">
-                Salvar (Enter)
+                ${T('ui_save')} (Enter)
             </button>
             <button onclick="state.editingEntryId = null; render()" class="mt-2 bg-white text-black px-3 py-1 text-xs font-bold rounded border border-stone-300 hover:bg-stone-100 dark:bg-stone-800 dark:text-stone-200 dark:border-stone-700 dark:hover:bg-stone-700">
-                Cancelar (Esc)
+                ${T('ui_cancel')} (Esc)
             </button>
         </div>
     `;
@@ -904,7 +1099,7 @@ function formatContent(text) {
 
 function renderVisualEntry(entry) {
     const config = ENTRY_TYPES[entry.type];
-    const dateDisplay = entry.targetDate ? new Date(entry.targetDate).toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'}) : '';
+    const dateDisplay = entry.targetDate ? new Date(entry.targetDate).toLocaleDateString(currentLang, {day:'2-digit', month:'2-digit'}) : '';
     const isCompleted = entry.completed;
     const isPriority = entry.content.includes('✱');
     const contentHtml = formatContent(entry.content);
@@ -920,9 +1115,9 @@ function renderVisualEntry(entry) {
                     ${entry.recurring ? '<i data-lucide="repeat" class="w-3 h-3 inline text-stone-400 ml-1"></i>' : ''}
                 </p>
                 <div class="flex gap-3 mt-1">
-                    <span class="text-[10px] text-stone-400 uppercase font-bold">${config.label}</span>
-                    ${dateDisplay ? `<span class="text-[10px] bg-stone-100 text-stone-600 px-1 border border-stone-200 dark:bg-stone-800 dark:text-stone-400 dark:border-stone-700">DATA: ${dateDisplay}</span>` : ''}
-                    ${isPriority && !isCompleted ? '<span class="text-[10px] bg-black text-white px-1 font-bold dark:bg-white dark:text-black">IMPORTANTE</span>' : ''}
+                    <span class="text-[10px] text-stone-400 uppercase font-bold">${T(config.label)}</span>
+                    ${dateDisplay ? `<span class="text-[10px] bg-stone-100 text-stone-600 px-1 border border-stone-200 dark:bg-stone-800 dark:text-stone-400 dark:border-stone-700">${T('ui_date')}: ${dateDisplay}</span>` : ''}
+                    ${isPriority && !isCompleted ? `<span class="text-[10px] bg-black text-white px-1 font-bold dark:bg-white dark:text-black">${T('ui_important')}</span>` : ''}
                 </div>
             </div>
             <button onclick="deleteEntry(${entry.id})" class="text-stone-300 hover:text-black opacity-0 group-hover:opacity-100 transition-opacity dark:hover:text-white">
@@ -936,7 +1131,7 @@ function renderClassicEntry(entry) {
     const config = ENTRY_TYPES[entry.type];
     const isCompleted = entry.completed;
     const isPriority = entry.content.includes('✱');
-    const dateDisplay = entry.targetDate ? new Date(entry.targetDate).toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'}) : '';
+    const dateDisplay = entry.targetDate ? new Date(entry.targetDate).toLocaleDateString(currentLang, {day:'2-digit', month:'2-digit'}) : '';
     const contentHtml = formatContent(entry.content);
 
     return `
@@ -961,12 +1156,23 @@ function getSettingsHTML() {
     
     return `
         <div class="fade-in max-w-xl">
-            <h2 class="text-2xl font-bold mb-6 dark:text-white">Configurações</h2>
+            <h2 class="text-2xl font-bold mb-6 dark:text-white">${T('settings_title')}</h2>
             
             <div class="bg-white border-2 border-stone-200 p-6 mb-4 flex justify-between items-center dark:bg-stone-800 dark:border-stone-700">
                 <div>
-                    <h3 class="font-bold mb-1 text-black dark:text-white">Modo Escuro (Dark Mode)</h3>
-                    <p class="text-sm text-stone-500 dark:text-stone-400">Alterne entre o tema claro e escuro da aplicação.</p>
+                    <h3 class="font-bold mb-1 text-black dark:text-white">${T('settings_language')}</h3>
+                    <p class="text-sm text-stone-500 dark:text-stone-400">${currentLang === 'pt-BR' ? 'Escolha o idioma da interface.' : 'Choose the interface language.'}</p>
+                </div>
+                <select id="language-select" onchange="setLanguage(this.value)" class="bg-white border border-stone-300 rounded px-2 py-1 text-sm dark:bg-stone-900 dark:border-stone-600 dark:text-white">
+                    <option value="pt-BR" ${currentLang === 'pt-BR' ? 'selected' : ''}>${T('settings_lang_pt')}</option>
+                    <option value="en-US" ${currentLang === 'en-US' ? 'selected' : ''}>${T('settings_lang_en')}</option>
+                </select>
+            </div>
+
+            <div class="bg-white border-2 border-stone-200 p-6 mb-4 flex justify-between items-center dark:bg-stone-800 dark:border-stone-700">
+                <div>
+                    <h3 class="font-bold mb-1 text-black dark:text-white">${T('settings_dark_mode')}</h3>
+                    <p class="text-sm text-stone-500 dark:text-stone-400">${T('settings_dark_mode_desc')}</p>
                 </div>
                 <label class="relative inline-flex items-center cursor-pointer">
                     <input type="checkbox" value="" class="sr-only peer" onchange="toggleTheme()" ${isDark ? 'checked' : ''}>
@@ -976,8 +1182,8 @@ function getSettingsHTML() {
             
             <div class="bg-white border-2 border-stone-200 p-6 mb-4 flex justify-between items-center dark:bg-stone-800 dark:border-stone-700">
                 <div>
-                    <h3 class="font-bold mb-1 text-black dark:text-white">Alerta de Backup ao Sair</h3>
-                    <p class="text-sm text-stone-500 dark:text-stone-400">Perguntar se deseja fazer backup antes de fechar a aba ou recarregar.</p>
+                    <h3 class="font-bold mb-1 text-black dark:text-white">${T('settings_backup_alert')}</h3>
+                    <p class="text-sm text-stone-500 dark:text-stone-400">${T('settings_backup_alert_desc')}</p>
                 </div>
                 <label class="relative inline-flex items-center cursor-pointer">
                     <input type="checkbox" value="" class="sr-only peer" onchange="toggleBackupAlert()" ${state.prefs.showAlertOnUnload ? 'checked' : ''}>
@@ -986,16 +1192,16 @@ function getSettingsHTML() {
             </div>
             
             <div class="bg-white border-2 border-stone-200 p-6 mb-4 dark:bg-stone-800 dark:border-stone-700">
-                <h3 class="font-bold mb-2 text-black dark:text-white">Backup & Dados</h3>
-                <p class="text-sm text-stone-500 mb-4 dark:text-stone-400">Gerencie seus dados. Exporte para segurança ou restaure um arquivo anterior.</p>
+                <h3 class="font-bold mb-2 text-black dark:text-white">${T('settings_backup_data')}</h3>
+                <p class="text-sm text-stone-500 mb-4 dark:text-stone-400">${T('settings_backup_data_desc')}</p>
                 
                 <div class="flex gap-2">
                     <button onclick="exportData()" class="flex items-center gap-2 bg-black text-white px-4 py-2 text-xs font-bold border-2 border-black hover:bg-stone-800 transition-colors dark:bg-white dark:text-black dark:hover:bg-stone-200">
-                        <i data-lucide="download" class="w-4 h-4"></i> BACKUP
+                        <i data-lucide="download" class="w-4 h-4"></i> ${T('settings_backup_button')}
                     </button>
 
                     <button onclick="document.getElementById('import-file').click()" class="flex items-center gap-2 bg-white text-black px-4 py-2 text-xs font-bold border-2 border-stone-300 hover:border-black hover:bg-stone-50 transition-all dark:bg-stone-700 dark:text-white dark:border-stone-600 dark:hover:bg-stone-600">
-                        <i data-lucide="upload" class="w-4 h-4"></i> RESTAURAR
+                        <i data-lucide="upload" class="w-4 h-4"></i> ${T('settings_restore_button')}
                     </button>
                     
                     <input type="file" id="import-file" class="hidden" accept=".json" onchange="importData(this)">
@@ -1003,6 +1209,45 @@ function getSettingsHTML() {
             </div>
         </div>
     `;
+}
+
+function importData(inputElement) {
+    const file = inputElement.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const data = JSON.parse(e.target.result);
+            
+            if (data.entries && Array.isArray(data.entries)) {
+                showModal(
+                    T('settings_restore_q'), 
+                    T('settings_restore_msg'), 
+                    T('ui_delete_confirm'), 
+                    () => {
+                        state.entries = data.entries;
+                        state.hubs = data.hubs || [];
+                        state.tagUsage = data.tagUsage || {};
+                        
+                        state.prefs = {...state.prefs, ...data.prefs}; 
+                        
+                        saveData(); 
+                        applyTheme(state.prefs.theme); 
+                        render(); 
+                        showModal(T('ui_item_saved'), T('settings_restore_success'));
+                    }
+                );
+            } else {
+                showModal('Erro', T('settings_restore_invalid'));
+            }
+        } catch (err) {
+            console.error(err);
+            showModal('Erro', T('settings_restore_fail'));
+        }
+        inputElement.value = '';
+    };
+    reader.readAsText(file);
 }
 
 function getFilteredEntries() {
@@ -1200,10 +1445,12 @@ function showModal(title, msg, onConfirm = null) {
 
     titleEl.innerText = title;
     msgEl.innerText = msg;
+    titleEl.classList.toggle('dark:text-white', state.prefs.theme === 'dark');
+    msgEl.classList.toggle('dark:text-stone-400', state.prefs.theme === 'dark');
 
     if (onConfirm) {
         cancelBtn.classList.remove('hidden');
-        confirmBtn.innerText = 'Confirmar';
+        confirmBtn.innerText = T('ui_delete_confirm');
         confirmBtn.onclick = () => {
             onConfirm();
             closeModal();
@@ -1269,16 +1516,23 @@ function sendFeedback() {
     const text = textarea ? textarea.value.trim() : '';
     
     if (!text) {
-        showModal("Atenção", "Por favor, digite alguma mensagem antes de enviar.");
+        showModal("Atenção", T('feedback_empty'));
         return;
     }
     
     const email = "jonatas.rocha@outlook.es";
-    const subject = "Feedback - Forever Notes";
+    const subject = T('app_title') + " Feedback";
     const body = encodeURIComponent(text);
     
     window.location.href = `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${body}`;
     closeFeedbackModal();
+}
+
+function toggleBackupAlert() {
+    state.prefs.showAlertOnUnload = !state.prefs.showAlertOnUnload;
+    saveData();
+    setupUnloadAlert(); 
+    render(); 
 }
 
 function setupUnloadAlert() {
@@ -1290,7 +1544,7 @@ function setupUnloadAlert() {
 }
 
 function handleBeforeUnload(e) {
-    const confirmationMessage = 'Deseja fazer o backup dos seus dados antes de sair?';
+    const confirmationMessage = currentLang === 'pt-BR' ? 'Deseja fazer o backup dos seus dados antes de sair?' : 'Do you want to backup your data before leaving?';
     e.returnValue = confirmationMessage; 
     return confirmationMessage;
 }
