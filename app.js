@@ -1455,6 +1455,48 @@ function toggleMobileNav() {
     nav.classList.toggle('-translate-x-full');
 }
 
+// NOVO: Lógica de Feedback
+function openFeedbackModal() {
+    const modal = document.getElementById('feedback-modal');
+    if (!modal) return;
+    const textarea = document.getElementById('feedback-text');
+    if (textarea) textarea.value = ''; // Limpa texto anterior
+    
+    modal.classList.remove('hidden');
+    setTimeout(() => {
+        modal.classList.remove('opacity-0');
+        if (textarea) textarea.focus();
+    }, 10);
+}
+
+function closeFeedbackModal() {
+    const modal = document.getElementById('feedback-modal');
+    if (!modal) return;
+    modal.classList.add('opacity-0');
+    setTimeout(() => {
+        modal.classList.add('hidden');
+    }, 200);
+}
+
+function sendFeedback() {
+    const textarea = document.getElementById('feedback-text');
+    const text = textarea ? textarea.value.trim() : '';
+    
+    if (!text) {
+        showModal("Atenção", "Por favor, digite alguma mensagem antes de enviar.");
+        return;
+    }
+    
+    const email = "jonatas.rocha@outlook.es";
+    const subject = "Feedback - Forever Notes";
+    const body = encodeURIComponent(text);
+    
+    // Abre o cliente de e-mail padrão do usuário
+    window.location.href = `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${body}`;
+    
+    closeFeedbackModal();
+}
+
 // Alerta de Backup ao Fechar (Condicional)
 function setupUnloadAlert() {
     window.removeEventListener('beforeunload', handleBeforeUnload);
