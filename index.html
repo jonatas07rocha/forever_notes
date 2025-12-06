@@ -29,7 +29,7 @@
                 <i data-lucide="settings" class="w-4 h-4 text-black"></i>
                 Configurações
             </button>
-            <button onclick="showModal('Feedback', 'Agradecemos seu feedback! Para enviar sugestões, você pode entrar em contato diretamente com o desenvolvedor.')" class="w-full flex items-center gap-3 px-3 py-2 text-sm text-stone-600 hover:bg-stone-100 border border-transparent hover:border-black transition-colors">
+            <button onclick="openFeedbackModal()" class="w-full flex items-center gap-3 px-3 py-2 text-sm text-stone-600 hover:bg-stone-100 border border-transparent hover:border-black transition-colors">
                 <i data-lucide="mail" class="w-4 h-4 text-black"></i>
                 Feedback
             </button>
@@ -51,11 +51,23 @@
                     <i data-lucide="x" class="w-5 h-5"></i>
                  </button>
             </div>
+            
             <nav class="space-y-1 flex-1" id="nav-menu-mobile"></nav>
+
+            <div class="pt-4 border-t-2 border-stone-800 space-y-1 mt-auto">
+                <button onclick="setActiveTab('settings'); toggleMobileNav()" class="w-full flex items-center gap-3 px-3 py-2 text-sm text-stone-600 hover:bg-stone-100 border border-transparent hover:border-black transition-colors">
+                    <i data-lucide="settings" class="w-4 h-4 text-black"></i>
+                    Configurações
+                </button>
+                <button onclick="openFeedbackModal(); toggleMobileNav()" class="w-full flex items-center gap-3 px-3 py-2 text-sm text-stone-600 hover:bg-stone-100 border border-transparent hover:border-black transition-colors">
+                    <i data-lucide="mail" class="w-4 h-4 text-black"></i>
+                    Feedback
+                </button>
+            </div>
         </div>
 
         <main id="main-container" class="flex-1 overflow-y-auto p-4 md:p-8 lg:px-12 pt-16 lg:pt-8 max-w-5xl mx-auto w-full scrollbar-hide">
-            </main>
+        </main>
     </div>
 
     <div id="app-modal" class="fixed inset-0 z-50 hidden opacity-0 transition-opacity duration-200" aria-hidden="true">
@@ -88,6 +100,29 @@
         </div>
     </div>
     
+    <div id="feedback-modal" class="fixed inset-0 z-50 hidden opacity-0 transition-opacity duration-200" aria-hidden="true">
+        <div class="absolute inset-0 bg-stone-900/40 backdrop-blur-sm transition-opacity" onclick="closeFeedbackModal()"></div>
+        <div class="flex min-h-full items-center justify-center p-4 text-center">
+            <div class="relative transform overflow-hidden bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg border-2 border-black p-6 fade-in">
+                <div class="mb-4">
+                    <h3 class="text-lg font-bold leading-6 text-black">Enviar Feedback</h3>
+                    <p class="text-sm text-stone-600 mt-1">Sua opinião é importante! Relate erros ou envie sugestões.</p>
+                </div>
+                
+                <textarea id="feedback-text" rows="4" class="w-full border-2 border-stone-200 p-2 text-sm rounded mb-4 focus:border-black outline-none resize-none font-sans" placeholder="Digite sua mensagem aqui..."></textarea>
+                
+                <div class="flex flex-row-reverse gap-2">
+                    <button type="button" onclick="sendFeedback()" class="inline-flex w-full justify-center bg-black px-3 py-2 text-sm font-bold text-white shadow-sm hover:bg-stone-800 sm:w-auto border-2 border-transparent transition-colors items-center gap-2">
+                        <i data-lucide="send" class="w-3 h-3"></i> Enviar
+                    </button>
+                    <button type="button" onclick="closeFeedbackModal()" class="inline-flex w-full justify-center bg-white px-3 py-2 text-sm font-bold text-stone-900 shadow-sm ring-1 ring-inset ring-stone-300 hover:bg-stone-50 sm:w-auto border-2 border-transparent transition-colors">
+                        Cancelar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div id="global-input-modal" class="fixed inset-0 z-40 hidden opacity-0 transition-opacity duration-200" aria-hidden="true">
         <div class="absolute inset-0 bg-stone-900/10 backdrop-blur-sm transition-opacity" onclick="closeGlobalInput()"></div>
         
