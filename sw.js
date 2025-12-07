@@ -1,16 +1,15 @@
-// Nome do Cache estático (Versão 1)
-const CACHE_NAME = 'forever-notes-cache-v1';
+// Nome do Cache estático (Versão 2)
+// ⚠️ ALTERADO PARA FORÇAR A ATUALIZAÇÃO DO CACHE EM TODOS OS CLIENTES
+const CACHE_NAME = 'forever-notes-cache-v2';
 
 // Lista de arquivos essenciais para o funcionamento offline
-// Adicione aqui todos os seus HTML, CSS, JS, e a pasta de ícones do PWA
 const urlsToCache = [
     './', // Raiz (index.html)
     './index.html',
     './manifest.json',
-    './css/main.css', // Assumindo que você tem um arquivo CSS principal
-    './js/lucide.js', // Assumindo que lucide.js está sendo carregado
-    // Adicione os caminhos para as imagens dos ícones do PWA
-    '/icons/icon-192x192.png',
+    './css/main.css', 
+    './js/lucide.js', 
+    // ✅ CORREÇÃO: Usando apenas o caminho do ícone existente (512x512)
     '/icons/icon-512x512.png'
     // ... adicione todos os outros assets necessários
 ];
@@ -26,7 +25,8 @@ self.addEventListener('install', event => {
                 return cache.addAll(urlsToCache);
             })
             .catch(error => {
-                console.error('Service Worker: Falha ao adicionar ao cache durante a instalação:', error);
+                // Se algum arquivo da lista urlsToCache não for encontrado, a instalação falha.
+                console.error('Service Worker: Falha ao adicionar ao cache durante a instalação. Verifique se todos os arquivos em urlsToCache existem.', error);
             })
     );
 });
@@ -40,6 +40,7 @@ self.addEventListener('activate', event => {
         caches.keys().then(cacheNames => {
             return Promise.all(
                 cacheNames.map(cacheName => {
+                    // Se o cache não estiver na lista branca (CACHE_NAME atual), ele é deletado
                     if (cacheWhitelist.indexOf(cacheName) === -1) {
                         console.log('Service Worker: Deletando cache antigo:', cacheName);
                         return caches.delete(cacheName);
