@@ -2,7 +2,14 @@
 const STORAGE_KEY = 'forever_v3_data';
 const PREFS_KEY = 'forever_v3_prefs';
 
-let currentLang = 'pt-BR'; // Definido em init()
+let currentLang = 'pt-BR'; 
+
+const PERIOD_MAP = { // Mapeamento para chaves de tradução
+    'Todos': 'filter_all',
+    'Hoje': 'filter_today',
+    'Futuro': 'filter_future',
+    'Período': 'filter_period'
+};
 
 const TRANSLATIONS = {
     'pt-BR': {
@@ -155,7 +162,7 @@ const TRANSLATIONS = {
         settings_restore_invalid: 'Invalid or corrupt backup file.',
         settings_restore_fail: 'Failed to read the JSON file.',
         settings_language: 'Language',
-        settings_lang_pt: 'Português (Brasil)',
+        settings_lang_pt: 'Portuguese (Brazil)',
         settings_lang_en: 'English',
         // Feedback
         feedback_send: 'Send Feedback',
@@ -238,7 +245,7 @@ let state = {
     prefs: {
         showAlertOnUnload: true,
         theme: 'light',
-        lang: null // Onde a preferência de idioma será salva
+        lang: null
     }
 };
 
@@ -250,8 +257,8 @@ function init() {
     state.prefs.viewMode = prefs.viewMode || 'visual';
     state.prefs.showAlertOnUnload = prefs.showAlertOnUnload !== undefined ? prefs.showAlertOnUnload : true;
     state.prefs.theme = prefs.theme || 'light'; 
-    state.prefs.lang = prefs.lang || getPreferredLanguage(); // Carrega idioma preferido ou detectado
-    currentLang = state.prefs.lang; // Define o idioma global
+    state.prefs.lang = prefs.lang || getPreferredLanguage();
+    currentLang = state.prefs.lang;
     
     applyTheme(state.prefs.theme); 
     
@@ -744,7 +751,7 @@ function setupGlobalInputHandler() {
         const limit = config.limit;
         const charCountEl = document.getElementById('global-char-count');
         if (charCountEl) {
-            charCountEl.innerText = limit ? `${state.inputText.length}/${limit}` : state.inputText.length;
+            charCountEl.innerText = limit ? `${state.inputText.length}/${limit}` : charCount;
             charCountEl.classList.toggle('text-red-600', limit && state.inputText.length > limit);
             charCountEl.classList.toggle('font-bold', limit && state.inputText.length > limit);
         }
@@ -777,7 +784,17 @@ function render() {
     // Atualiza o título da aplicação com o novo branding/i18n
     document.querySelector('title').textContent = T('app_title');
     document.getElementById('app-branding').textContent = T('app_title');
-
+    document.getElementById('mobile-branding').textContent = T('app_title');
+    document.getElementById('mobile-settings-text').textContent = T('nav_settings');
+    document.getElementById('mobile-feedback-text').textContent = T('nav_feedback');
+    document.getElementById('nav-settings-text').textContent = T('nav_settings');
+    document.getElementById('nav-feedback-text').textContent = T('nav_feedback');
+    document.getElementById('feedback-title-text').textContent = T('feedback_send');
+    document.getElementById('feedback-desc-text').textContent = T('feedback_desc');
+    document.getElementById('feedback-text').placeholder = T('feedback_placeholder');
+    document.getElementById('feedback-send-button-text').textContent = T('feedback_send');
+    document.getElementById('feedback-cancel-button-text').textContent = T('ui_cancel');
+    
     const main = document.getElementById('main-container');
     
     if (state.searchQuery && state.activeTab === 'home') {
@@ -895,7 +912,7 @@ function getSearchResultsHTML() {
                 </div>
             </div>
             <div class="flex-1 overflow-y-auto pb-20 scrollbar-hide space-y-1">
-                ${list.length > 0 ? list.map(entry => renderEntry(entry)).join('') : `<div class="text-center text-stone-400 mt-10 italic">${currentLang === 'pt-BR' ? 'Nenhum resultado encontrado.' : 'No results found.'}</div>`}
+                ${list.length > 0 ? list.map(entry => renderEntry(entry)).join('') : `<div class="text-center text-stone-400 mt-10 italic">Nenhum resultado encontrado para "${state.searchQuery}".</div>`}
             </div>
         </div>
     `;
@@ -956,7 +973,10 @@ function getCommonSingleViewHTML(title, closeFunc, placeholder, hubId = null) {
     const config = ENTRY_TYPES[state.selectedType];
     const charCount = state.inputText.length;
     const limit = config.limit;
-    const typeOptions = Object.values(ENTRY_TYPES).map(t => `<button onclick="selectEntryType('${t.id}')" class="w-full text-left flex items-center gap-3 p-2 hover:bg-stone-100 transition-colors dark:hover:bg-stone-700 ${state.selectedType === t.id ? 'bg-stone-50 font-bold dark:bg-stone-600' : ''}"><i data-lucide="${t.icon}" class="w-4 h-4 text-black dark:text-white"></i><span class="text-sm text-black dark:text-white">${T(t.label)}</span></button>`).join('');
+    
+    const typeOptions = Object.values(ENTRY_TYPES).map(t => `<button onclick="selectEntryType('${t.id}')" class="w-full text-left flex items-center gap-3 p-2 hover:bg-stone-100 transition-colors dark:hover:bg-stone-700 ${state.selectedType === t.id ? 'bg-stone-50 font-bold dark:bg-stone-600' : ''}"><i data-lucide="${t.icon}" class="w-4 h-4 text-black dark:text-white"></i><span class="text-sm text-black dark:text-white">${T(config.label)}</span></button>`).join('');
+
+    const linkOptions = state.hubs.map(h => `<button onclick="insertLink('${h.name}')" class="w-full text-left p-2 hover:bg-stone-100 transition-colors text-sm font-bold flex items-center gap-2 dark:text-stone-300 dark:hover:bg-stone-700"><i data-lucide="hash" class="w-3 h-3 text-stone-400"></i> ${h.name}</button>`).join('');
 
     return `
         <div class="h-full flex flex-col fade-in relative">
@@ -975,6 +995,7 @@ function getCommonSingleViewHTML(title, closeFunc, placeholder, hubId = null) {
                     ${limit ? `<div class="absolute right-0 top-1.5 text-[10px] font-mono text-stone-400">${charCount}/${limit}</div>` : ''}
                 </div>
                 ${state.showSlashMenu ? `<div class="absolute top-full left-0 mt-1 w-48 bg-white border-2 border-black shadow-xl z-50 fade-in py-1 dark:bg-stone-800 dark:border-stone-600">${typeOptions}</div>` : ''}
+                ${state.showLinkMenu ? `<div class="absolute top-full left-20 mt-1 w-48 bg-white border-2 border-black shadow-xl z-50 fade-in py-1 dark:bg-stone-800 dark:border-stone-600"><div class="px-2 py-1 text-[10px] font-bold text-stone-400 uppercase tracking-wider border-b border-stone-100 mb-1 dark:border-stone-700">${currentLang === 'pt-BR' ? 'Linkar para...' : 'Link to...'}</div>${linkOptions}</div>` : ''}
                 <div class="relative flex-shrink-0"><input type="date" id="date-picker-native" class="absolute inset-0 opacity-0 cursor-pointer" onchange="state.inputDate = this.valueAsDate ? this.valueAsDate.getTime() : null; render()"><button class="p-1.5 hover:bg-stone-200 rounded text-stone-400 hover:text-black dark:hover:bg-stone-700 dark:hover:text-white ${state.inputDate ? 'text-black font-bold dark:text-white' : ''}"><i data-lucide="calendar" class="w-4 h-4"></i></button></div>
             </div>
             <div class="flex-1 overflow-y-auto pb-20 scrollbar-hide space-y-1" onclick="if(state.showSlashMenu || state.showLinkMenu){state.showSlashMenu=false; state.showLinkMenu=false; render()}">
@@ -1003,10 +1024,11 @@ function getJournalHTML() {
         `;
     }
     
+    // FIX 1: Usa PERIOD_MAP para traduzir corretamente os nomes dos filtros
     const periodButtons = ['Todos', 'Hoje', 'Futuro', 'Período'].map(p => `
         <button onclick="state.activeJournalPeriod='${p}'; render()" 
             class="px-3 py-1 text-xs font-bold transition-all ${state.activeJournalPeriod === p ? 'bg-black text-white dark:bg-white dark:text-black' : 'text-stone-500 hover:text-black dark:text-stone-400 dark:hover:text-white'}">
-            ${T(`filter_${p.toLowerCase()}`)}
+            ${T(PERIOD_MAP[p])}
         </button>
     `).join('');
 
@@ -1272,11 +1294,20 @@ function getFilteredEntries() {
     
     if (state.activeTab === 'journal') {
         if (state.activeJournalPeriod === 'Hoje') {
+            // FIX 2: Restringe o filtro 'Hoje'
             filtered = filtered.filter(e => {
-                if (e.completed) return true; 
                 const d = e.targetDate ? new Date(e.targetDate) : new Date(e.id);
                 d.setHours(0,0,0,0);
-                return d.getTime() <= now.getTime(); 
+                
+                const isDueTodayOrPast = d.getTime() <= now.getTime();
+                
+                // Se concluído: só mantém se for item do dia (para mostrar o que foi feito HOJE).
+                if (e.completed) {
+                    return d.getTime() === now.getTime(); 
+                }
+                
+                // Se NÃO concluído: mantém se estiver agendado para hoje ou no passado (backlog).
+                return isDueTodayOrPast;
             });
         } else if (state.activeJournalPeriod === 'Futuro') {
             filtered = filtered.filter(e => {
