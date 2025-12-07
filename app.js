@@ -44,6 +44,9 @@ const TRANSLATIONS = {
         hubs_subtitle: 'Mapas de contexto.',
         hubs_new_prompt: 'Nome do novo Hub (ex: Estudos):',
         hubs_new_button: 'NOVO HUB',
+        modal_title_new_hub: 'Criar Novo Hub',
+        placeholder_hub_name: 'Nome do Hub',
+        button_create_hub: 'Criar Hub',
         // Collections View
         collections_title: 'Coleções',
         collections_subtitle: 'Organizadas por frequência.',
@@ -67,6 +70,7 @@ const TRANSLATIONS = {
         ui_delete_item_msg: 'Deseja remover este item permanentemente?',
         ui_delete_hub_msg: 'Deseja excluir "',
         ui_delete_hub_msg_end: '"?',
+        message_hub_created: 'Hub criado com sucesso!',
         // Settings
         settings_title: 'Configurações',
         settings_dark_mode: 'Modo Escuro (Dark Mode)',
@@ -84,7 +88,7 @@ const TRANSLATIONS = {
         settings_restore_fail: 'Falha ao ler o arquivo JSON.',
         settings_language: 'Idioma',
         settings_lang_pt: 'Português (Brasil)',
-        settings_lang_en: 'English',
+        settings_lang_en: 'Inglês',
         // Feedback
         feedback_send: 'Enviar Feedback',
         feedback_desc: 'Sua opinião é importante! Relate erros ou envie sugestões.',
@@ -123,6 +127,9 @@ const TRANSLATIONS = {
         hubs_subtitle: 'Context maps.',
         hubs_new_prompt: 'Name of the new Hub (e.g., Studies):',
         hubs_new_button: 'NEW HUB',
+        modal_title_new_hub: 'Create New Hub',
+        placeholder_hub_name: 'Hub Name',
+        button_create_hub: 'Create Hub',
         // Collections View
         collections_title: 'Collections',
         collections_subtitle: 'Organized by frequency.',
@@ -146,6 +153,7 @@ const TRANSLATIONS = {
         ui_delete_item_msg: 'Do you want to permanently remove this item?',
         ui_delete_hub_msg: 'Do you want to delete "',
         ui_delete_hub_msg_end: '"?',
+        message_hub_created: 'Hub created successfully!',
         // Settings
         settings_title: 'Settings',
         settings_dark_mode: 'Dark Mode',
@@ -437,18 +445,40 @@ function closeCollection() {
 
 // --- LÓGICA DE HUBS ---
 
-function createNewHub() {
-    const name = prompt(T('hubs_new_prompt'));
-    if (name && name.trim()) {
+// FIX C: Substitui o prompt() por um modal customizado
+function showNewHubModal() {
+    const content = `
+        <input type="text" id="hub-name-input" placeholder="${T('placeholder_hub_name')}" class="modal-input w-full p-2 border border-stone-300 rounded focus:border-black outline-none dark:bg-stone-800 dark:border-stone-700 dark:text-white dark:focus:border-white">
+    `;
+    showModal(
+        T('modal_title_new_hub'), 
+        content, 
+        T('button_create_hub'), 
+        handleCreateHub
+    );
+    // Adiciona foco ao input assim que o modal for renderizado
+    setTimeout(() => {
+        const input = document.getElementById('hub-name-input');
+        if (input) input.focus();
+    }, 150);
+}
+
+function handleCreateHub() {
+    const hubName = document.getElementById('hub-name-input')?.value.trim();
+    if (hubName && hubName.trim()) {
         const newHub = {
             id: Date.now(),
-            name: `✱ ${name.trim().replace('✱', '').trim()}`,
+            name: `✱ ${hubName.replace('✱', '').trim()}`,
             icon: 'hash', 
             count: 0
         };
         state.hubs.push(newHub);
         saveData();
         render();
+        // showModal(T('ui_item_saved'), T('message_hub_created')); // Feedback após fechar o modal principal
+    } else {
+        // Não é necessário fechar o modal, apenas mostrar erro
+        showModal(T('ui_delete_confirm'), T('placeholder_hub_name') + " não pode estar vazio.");
     }
 }
 
@@ -484,9 +514,11 @@ function deleteHub(hubId) {
 function selectEntryType(typeId) {
     state.selectedType = typeId;
     state.showSlashMenu = false;
+    
     if (state.inputText.startsWith('/')) {
         state.inputText = state.inputText.substring(1).trim();
     }
+    
     render();
     setTimeout(() => {
         const input = document.getElementById('entry-input');
@@ -582,7 +614,7 @@ function deleteEntry(id) {
     });
 }
 
-// --- GLOBAL SLASH COMMAND ---
+// --- LÓGICA DO GLOBAL SLASH COMMAND ---
 
 function handleGlobalKeydown(e) {
     if (e.key === '/') {
@@ -599,12 +631,17 @@ function openGlobalInput() {
     state.inputDate = null;
     state.selectedType = 'task';
     state.showSlashMenu = false; 
+    
     state.editingEntryId = null; 
 
     const modal = document.getElementById('global-input-modal');
-    if (!modal) return;
+    if (!modal) {
+        console.error("Global input modal not found.");
+        return;
+    }
     
     modal.classList.remove('hidden');
+    
     renderGlobalInput();
     setupGlobalInputHandler();
     
@@ -620,9 +657,11 @@ function openGlobalInput() {
 function closeGlobalInput() {
     const modal = document.getElementById('global-input-modal');
     if(!modal) return;
+    
     modal.classList.add('opacity-0');
     const container = document.getElementById('global-input-container');
     if (container) container.classList.add('scale-95');
+
     setTimeout(() => {
         modal.classList.add('hidden');
     }, 200);
@@ -638,13 +677,17 @@ function renderGlobalInput() {
     const datePicker = document.getElementById('global-date-picker-native');
 
     if (!input || !menu) return;
+    
     const config = ENTRY_TYPES[state.selectedType];
     const charCount = state.inputText.length;
     const limit = config.limit;
-    
+    const isOver = limit && charCount > limit;
+
     input.value = state.inputText;
+
     charCountEl.innerText = limit ? `${charCount}/${limit}` : charCount;
-    charCountEl.classList.toggle('text-red-600', limit && charCount > limit);
+    charCountEl.classList.toggle('text-red-600', isOver);
+    charCountEl.classList.toggle('font-bold', isOver);
     charCountEl.classList.toggle('hidden', !limit);
     
     if (typeIcon) typeIcon.setAttribute('data-lucide', config.icon);
@@ -668,16 +711,20 @@ function renderGlobalInput() {
         input.style.height = 'auto';
         input.style.height = (input.scrollHeight) + 'px';
     }
+    
     lucide.createIcons();
 }
 
 function selectGlobalEntryType(typeId) {
     state.selectedType = typeId;
     state.showSlashMenu = false;
+    
     if (state.inputText.startsWith('/')) {
         state.inputText = state.inputText.substring(1).trim();
     }
+    
     renderGlobalInput();
+    
     setTimeout(() => {
         const input = document.getElementById('global-entry-input');
         if(input) {
@@ -690,15 +737,18 @@ function selectGlobalEntryType(typeId) {
 
 function addNewGlobalEntry() {
     if (!state.inputText.trim()) return;
+
     const nlpResult = handleNaturalLanguageDate(state.inputText);
     let content = nlpResult.text;
     let type = state.selectedType;
     let targetDate = nlpResult.date;
+    
     const config = ENTRY_TYPES[type];
     if (config.limit && content.length > config.limit) {
         showModal(T('ui_item_long'), `${T('ui_item_long')} ${T(config.label)} deve ter no máximo ${config.limit} caracteres.`);
         return;
     }
+
     const foundTags = extractTags(content);
     foundTags.forEach(t => boostTagRelevance(t));
 
@@ -711,19 +761,24 @@ function addNewGlobalEntry() {
         targetDate: targetDate, 
         recurring: nlpResult.recurring
     });
+
     closeGlobalInput();
     saveData();
     render(); 
+    
     showModal(T('ui_item_saved'), `${T('ui_item_saved')} como "${T(config.label)}".`);
 }
 
 function setupGlobalInputHandler() {
     const input = document.getElementById('global-entry-input');
     if(!input) return;
-    input.value = state.inputText; 
+    
+    input.value = state.inputText;
+    
     input.oninput = (e) => {
         let val = e.target.value;
         let menuStateChanged = false;
+        
         e.target.style.height = 'auto';
         e.target.style.height = (e.target.scrollHeight) + 'px';
 
@@ -738,37 +793,47 @@ function setupGlobalInputHandler() {
                 }
             }
         }
+
         if (val.includes('**')) {
             const cursor = e.target.selectionStart;
             val = val.replace(/\*\*/g, '✱');
             input.value = val;
             if(cursor > 0) input.setSelectionRange(cursor - 1, cursor - 1);
         }
-        state.inputText = val;
-        if (menuStateChanged) renderGlobalInput();
         
+        state.inputText = val;
+        
+        if (menuStateChanged) renderGlobalInput();
+
         const config = ENTRY_TYPES[state.selectedType];
+        const charCount = state.inputText.length;
         const limit = config.limit;
         const charCountEl = document.getElementById('global-char-count');
+        
         if (charCountEl) {
-            charCountEl.innerText = limit ? `${state.inputText.length}/${limit}` : charCount;
-            charCountEl.classList.toggle('text-red-600', limit && state.inputText.length > limit);
-            charCountEl.classList.toggle('font-bold', limit && state.inputText.length > limit);
+            charCountEl.innerText = limit ? `${charCount}/${limit}` : charCount;
+            charCountEl.classList.toggle('text-red-600', limit && charCount > limit);
+            charCountEl.classList.toggle('font-bold', limit && charCount > limit);
         }
+
         setTimeout(() => {
             const len = input.value.length;
             input.focus();
             input.setSelectionRange(len, len);
         }, 0);
     };
+    
     input.onkeydown = (e) => { 
         if(e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
             addNewGlobalEntry();
         }
-        if(e.key === 'Escape') closeGlobalInput();
+        if(e.key === 'Escape') {
+            closeGlobalInput();
+        }
     };
 }
+
 
 // --- RENDER SYSTEM ---
 
@@ -781,7 +846,7 @@ function toggleViewMode() {
 function render() {
     renderSidebar();
     
-    // Atualiza o título da aplicação com o novo branding/i18n
+    // Atualiza strings estáticas após i18n
     document.querySelector('title').textContent = T('app_title');
     document.getElementById('app-branding').textContent = T('app_title');
     document.getElementById('mobile-branding').textContent = T('app_title');
@@ -794,7 +859,8 @@ function render() {
     document.getElementById('feedback-text').placeholder = T('feedback_placeholder');
     document.getElementById('feedback-send-button-text').textContent = T('feedback_send');
     document.getElementById('feedback-cancel-button-text').textContent = T('ui_cancel');
-    
+
+
     const main = document.getElementById('main-container');
     
     if (state.searchQuery && state.activeTab === 'home') {
@@ -805,15 +871,18 @@ function render() {
             case 'journal': main.innerHTML = getJournalHTML(); setupJournalInput(); break;
             case 'hubs': main.innerHTML = getHubsHTML(); setupJournalInput(); break;
             case 'collections': main.innerHTML = getCollectionsHTML(); setupJournalInput(); break;
+            case 'calendar': main.innerHTML = getCalendarHTML(); break; 
             case 'settings': main.innerHTML = getSettingsHTML(); break;
         }
     }
+    
     lucide.createIcons();
 }
 
 function renderSidebar() {
     const menu = document.getElementById('nav-menu');
     const mobileMenu = document.getElementById('nav-menu-mobile');
+
     const items = [
         { id: 'home', icon: 'home', label: T('nav_home') },
         { id: 'journal', icon: 'book', label: T('nav_journal') },
@@ -834,8 +903,11 @@ function renderSidebar() {
 }
 
 // --- VIEWS ---
+
 function getHomeHTML() {
-    const now = new Date(); now.setHours(0,0,0,0);
+    const now = new Date();
+    now.setHours(0,0,0,0);
+    
     const upcomingEvents = state.entries
         .filter(e => e.type === 'event' && !e.completed)
         .filter(e => {
@@ -851,19 +923,21 @@ function getHomeHTML() {
         .sort((a,b) => (b.targetDate || b.id) - (a.targetDate || a.id));
     
     const langOptions = { weekday: 'long', day:'numeric', month:'long' };
-
+    
     return `
         <div class="space-y-8 fade-in">
             <header>
                 <h1 class="text-3xl font-bold text-black dark:text-white">✱ ${T('nav_home')}</h1>
-                <p class="text-stone-500 dark:text-stone-400 capitalize">${new Date().toLocaleDateString(currentLang, langOptions)}</p>
+                <p class="text-stone-500 capitalize dark:text-stone-400">${new Date().toLocaleDateString(currentLang, langOptions)}</p>
             </header>
+
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div class="bg-stone-900 text-white p-5 border-2 border-black cursor-default relative overflow-hidden group dark:bg-black dark:border-stone-700">
                     <div class="flex items-center gap-2 mb-4 text-stone-400"><i data-lucide="calendar-days" class="w-4 h-4"></i> <span class="text-xs font-bold uppercase">${T('home_today')}</span></div>
                     <div class="text-4xl font-black mb-1">${new Date().getDate()}</div>
                     <div class="text-sm text-stone-400 uppercase tracking-widest">${new Date().toLocaleDateString(currentLang, {month:'long'})}</div>
                 </div>
+
                 <div onclick="setActiveTab('journal'); state.activeJournalPeriod='Todos'; render();" class="bg-white border-2 border-stone-200 p-5 hover:border-black transition-all cursor-pointer dark:bg-stone-800 dark:border-stone-700 dark:hover:border-white">
                     <div class="flex items-center gap-2 mb-4 text-stone-500 dark:text-stone-400">
                         <i data-lucide="star" class="w-4 h-4 fill-black text-black dark:text-white dark:fill-white"></i> 
@@ -881,6 +955,7 @@ function getHomeHTML() {
                         : `<div class="text-stone-400 italic">${T('home_no_priority')}</div>`
                     }
                 </div>
+
                 <div onclick="setActiveTab('journal'); state.activeJournalPeriod='Futuro'; render();" class="bg-white border-2 border-stone-200 p-5 hover:border-black transition-all cursor-pointer dark:bg-stone-800 dark:border-stone-700 dark:hover:border-white">
                     <div class="flex items-center gap-2 mb-4 text-stone-500 dark:text-stone-400"><i data-lucide="clock" class="w-4 h-4"></i> <span class="text-xs font-bold uppercase">${T('home_next_event')}</span></div>
                     ${nextEvent 
@@ -908,11 +983,11 @@ function getSearchResultsHTML() {
                     <button onclick="clearSearch()" class="p-2 hover:bg-stone-100 rounded-full transition-colors dark:hover:bg-stone-800">
                         <i data-lucide="arrow-left" class="w-6 h-6 dark:text-white"></i>
                     </button>
-                    <h2 class="text-2xl font-bold dark:text-white">${currentLang === 'pt-BR' ? 'Busca' : 'Search'}: "${state.searchQuery}"</h2>
+                    <h2 class="text-2xl font-bold dark:text-white">${T('ui_search_placeholder')}: "${state.searchQuery}"</h2>
                 </div>
             </div>
             <div class="flex-1 overflow-y-auto pb-20 scrollbar-hide space-y-1">
-                ${list.length > 0 ? list.map(entry => renderEntry(entry)).join('') : `<div class="text-center text-stone-400 mt-10 italic">Nenhum resultado encontrado para "${state.searchQuery}".</div>`}
+                ${list.length > 0 ? list.map(entry => renderEntry(entry)).join('') : `<div class="text-center text-stone-400 mt-10 italic">${currentLang === 'pt-BR' ? 'Nenhum resultado encontrado para' : 'No results found for'} "${state.searchQuery}".</div>`}
             </div>
         </div>
     `;
@@ -925,7 +1000,7 @@ function getHubsHTML() {
         <div class="fade-in">
             <header class="flex justify-between items-center mb-8">
                 <div><h1 class="text-3xl font-bold text-black dark:text-white">✱ ${T('hubs_title')}</h1><p class="text-stone-500 dark:text-stone-400">${T('hubs_subtitle')}</p></div>
-                <button onclick="createNewHub()" class="bg-black text-white px-4 py-2 text-xs font-bold border-2 border-black hover:bg-stone-800 transition-colors flex items-center gap-2 dark:bg-white dark:text-black dark:hover:bg-stone-200"><i data-lucide="plus" class="w-4 h-4"></i> ${T('hubs_new_button')}</button>
+                <button onclick="showNewHubModal()" class="bg-black text-white px-4 py-2 text-xs font-bold border-2 border-black hover:bg-stone-800 transition-colors flex items-center gap-2 dark:bg-white dark:text-black dark:hover:bg-stone-200"><i data-lucide="plus" class="w-4 h-4"></i> ${T('hubs_new_button')}</button>
             </header>
             <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                 ${state.hubs.map(hub => `
@@ -944,13 +1019,16 @@ function getHubsHTML() {
 
 function getCollectionsHTML() {
     if (state.activeTag) return getCommonSingleViewHTML(state.activeTag, closeCollection, `${currentLang === 'pt-BR' ? 'Adicionar novo item em' : 'Add new item to'} ${state.activeTag}...`);
+
     const tags = getUniqueTags(); 
+    
     return `
         <div class="fade-in">
             <header class="mb-8">
                 <h1 class="text-3xl font-bold text-black dark:text-white">✱ ${T('collections_title')}</h1>
                 <p class="text-stone-500 dark:text-stone-400">${T('collections_subtitle')}</p>
             </header>
+
             <div class="flex flex-wrap gap-3">
                 ${tags.length > 0 
                     ? tags.map(t => `
@@ -974,8 +1052,7 @@ function getCommonSingleViewHTML(title, closeFunc, placeholder, hubId = null) {
     const charCount = state.inputText.length;
     const limit = config.limit;
     
-    const typeOptions = Object.values(ENTRY_TYPES).map(t => `<button onclick="selectEntryType('${t.id}')" class="w-full text-left flex items-center gap-3 p-2 hover:bg-stone-100 transition-colors dark:hover:bg-stone-700 ${state.selectedType === t.id ? 'bg-stone-50 font-bold dark:bg-stone-600' : ''}"><i data-lucide="${t.icon}" class="w-4 h-4 text-black dark:text-white"></i><span class="text-sm text-black dark:text-white">${T(config.label)}</span></button>`).join('');
-
+    const typeOptions = Object.values(ENTRY_TYPES).map(t => `<button onclick="selectEntryType('${t.id}')" class="w-full text-left flex items-center gap-3 p-2 hover:bg-stone-100 transition-colors dark:hover:bg-stone-700 ${state.selectedType === t.id ? 'bg-stone-50 font-bold dark:bg-stone-600' : ''}"><i data-lucide="${t.icon}" class="w-4 h-4 text-black dark:text-white"></i><span class="text-sm text-black dark:text-white">${T(t.label)}</span></button>`).join('');
     const linkOptions = state.hubs.map(h => `<button onclick="insertLink('${h.name}')" class="w-full text-left p-2 hover:bg-stone-100 transition-colors text-sm font-bold flex items-center gap-2 dark:text-stone-300 dark:hover:bg-stone-700"><i data-lucide="hash" class="w-3 h-3 text-stone-400"></i> ${h.name}</button>`).join('');
 
     return `
@@ -985,7 +1062,7 @@ function getCommonSingleViewHTML(title, closeFunc, placeholder, hubId = null) {
                     <button onclick="${closeFunc.name}()" class="p-2 hover:bg-stone-100 rounded-full transition-colors dark:hover:bg-stone-800"><i data-lucide="arrow-left" class="w-6 h-6 dark:text-white"></i></button>
                     <h2 class="text-2xl font-bold dark:text-white">${title}</h2>
                 </div>
-                ${hubId ? `<div class="flex items-center gap-2"><button onclick="deleteHub(${hubId})" class="p-2 text-stone-400 hover:text-red-600 transition-colors"><i data-lucide="trash-2" class="w-5 h-5"></i></button><button onclick="toggleViewMode()" class="p-2 rounded hover:bg-stone-100 transition-colors dark:hover:bg-stone-800"><i data-lucide="${state.viewMode === 'visual' ? 'layout-list' : 'layout-template'}" class="w-5 h-5 text-stone-500 hover:text-black dark:hover:text-white"></i></button></div>` : `<button onclick="toggleViewMode()" class="p-2 rounded hover:bg-stone-100 transition-colors dark:hover:bg-stone-800"><i data-lucide="${state.viewMode === 'visual' ? 'layout-list' : 'layout-template'}" class="w-5 h-5 text-stone-500 hover:text-black dark:hover:text-white"></i></button>`}
+                ${hubId ? `<div class="flex items-center gap-2"><button onclick="deleteHub(${hubId})" class="p-2 text-stone-400 hover:text-red-600 transition-colors dark:hover:text-red-400"><i data-lucide="trash-2" class="w-5 h-5"></i></button><button onclick="toggleViewMode()" class="p-2 rounded hover:bg-stone-100 transition-colors dark:hover:bg-stone-800"><i data-lucide="${state.viewMode === 'visual' ? 'layout-list' : 'layout-template'}" class="w-5 h-5 text-stone-500 hover:text-black dark:hover:text-white"></i></button></div>` : `<button onclick="toggleViewMode()" class="p-2 rounded hover:bg-stone-100 transition-colors dark:hover:bg-stone-800"><i data-lucide="${state.viewMode === 'visual' ? 'layout-list' : 'layout-template'}" class="w-5 h-5 text-stone-500 hover:text-black dark:hover:text-white"></i></button>`}
             </div>
             
             <div class="relative mb-6 z-20 group bg-stone-50 p-3 border border-stone-200 focus-within:border-black focus-within:shadow-lg transition-all flex items-start gap-3 dark:bg-stone-800 dark:border-stone-700 dark:focus-within:border-white">
@@ -1011,7 +1088,6 @@ function getJournalHTML() {
     const charCount = state.inputText.length;
     const limit = config.limit;
     
-    // Filtro de data personalizado
     let dateFilterHTML = '';
     if (state.activeJournalPeriod === 'Período') {
         dateFilterHTML = `
@@ -1024,7 +1100,7 @@ function getJournalHTML() {
         `;
     }
     
-    // FIX 1: Usa PERIOD_MAP para traduzir corretamente os nomes dos filtros
+    // FIX A: Usa PERIOD_MAP para traduzir corretamente os nomes dos filtros
     const periodButtons = ['Todos', 'Hoje', 'Futuro', 'Período'].map(p => `
         <button onclick="state.activeJournalPeriod='${p}'; render()" 
             class="px-3 py-1 text-xs font-bold transition-all ${state.activeJournalPeriod === p ? 'bg-black text-white dark:bg-white dark:text-black' : 'text-stone-500 hover:text-black dark:text-stone-400 dark:hover:text-white'}">
@@ -1173,8 +1249,77 @@ function renderClassicEntry(entry) {
     `;
 }
 
+function getCalendarHTML() {
+    const month = state.calendarMonth;
+    const year = month.getFullYear();
+    const m = month.getMonth();
+    
+    const firstDay = new Date(year, m, 1);
+    const lastDay = new Date(year, m + 1, 0);
+    const daysInMonth = lastDay.getDate();
+    const startDayOfWeek = firstDay.getDay(); 
+    
+    let html = `
+        <div class="fade-in h-full flex flex-col">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold capitalize dark:text-white">${month.toLocaleDateString(currentLang, {month:'long', year:'numeric'})}</h2>
+                <div class="flex gap-2">
+                    <button onclick="changeMonth(-1)" class="p-2 border border-black hover:bg-stone-100 dark:border-white dark:hover:bg-stone-800"><i data-lucide="chevron-left" class="w-4 h-4 dark:text-white"></i></button>
+                    <button onclick="changeMonth(1)" class="p-2 border border-black hover:bg-stone-100 dark:border-white dark:hover:bg-stone-800"><i data-lucide="chevron-right" class="w-4 h-4 dark:text-white"></i></button>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-7 gap-1 text-center font-bold text-xs text-stone-500 mb-2 uppercase dark:text-stone-400">
+                <div>${currentLang === 'pt-BR' ? 'Dom' : 'Sun'}</div><div>${currentLang === 'pt-BR' ? 'Seg' : 'Mon'}</div><div>${currentLang === 'pt-BR' ? 'Ter' : 'Tue'}</div><div>${currentLang === 'pt-BR' ? 'Qua' : 'Wed'}</div><div>${currentLang === 'pt-BR' ? 'Qui' : 'Thu'}</div><div>${currentLang === 'pt-BR' ? 'Sex' : 'Fri'}</div><div>${currentLang === 'pt-BR' ? 'Sáb' : 'Sat'}</div>
+            </div>
+            
+            <div class="calendar-grid grid grid-cols-7 flex-1 border-t border-l border-stone-200 dark:border-stone-700">
+    `;
+
+    for (let i = 0; i < startDayOfWeek; i++) {
+        html += `<div class="bg-stone-50 border-r border-b border-stone-200 dark:bg-stone-800 dark:border-stone-700"></div>`;
+    }
+
+    for (let d = 1; d <= daysInMonth; d++) {
+        const currentTs = new Date(year, m, d).setHours(0,0,0,0);
+        const isToday = currentTs === new Date().setHours(0,0,0,0);
+        
+        const events = state.entries.filter(e => {
+            const eDate = e.targetDate ? new Date(e.targetDate) : new Date(e.id);
+            return eDate.setHours(0,0,0,0) === currentTs;
+        });
+
+        html += `
+            <div class="calendar-day bg-white border-r border-b border-stone-200 p-2 min-h-[100px] hover:bg-stone-50 transition-colors cursor-pointer dark:bg-stone-900 dark:border-stone-700 dark:hover:bg-stone-800" onclick="openDayModal(${currentTs})">
+                <div class="flex justify-between items-start">
+                    <span class="text-sm font-bold ${isToday ? 'bg-black text-white w-6 h-6 flex items-center justify-center rounded-full dark:bg-white dark:text-black' : 'text-stone-700 dark:text-stone-300'}">${d}</span>
+                    ${events.length > 0 ? `<span class="text-[10px] font-bold text-stone-400">${events.length}</span>` : ''}
+                </div>
+                <div class="mt-2 space-y-1">
+                    ${events.slice(0, 3).map(e => `
+                        <div class="text-[10px] truncate px-1 py-0.5 ${e.completed ? 'line-through text-stone-300 dark:text-stone-500' : 'bg-stone-100 text-black dark:bg-stone-700 dark:text-stone-200'} rounded-sm border border-stone-100 dark:border-stone-700">
+                           ${ENTRY_TYPES[e.type].symbol} ${e.content}
+                        </div>
+                    `).join('')}
+                    ${events.length > 3 ? `<div class="text-[10px] text-stone-400 pl-1">+${events.length - 3} ${currentLang === 'pt-BR' ? 'mais' : 'more'}</div>` : ''}
+                </div>
+            </div>
+        `;
+    }
+
+    html += `</div></div>`;
+    return html;
+}
+
+function toggleBackupAlert() {
+    state.prefs.showAlertOnUnload = !state.prefs.showAlertOnUnload;
+    saveData();
+    setupUnloadAlert(); 
+    render(); 
+}
+
 function getSettingsHTML() {
-    const isDark = state.prefs.theme === 'dark';
+    const isDark = state.prefs.theme === 'dark'; 
     
     return `
         <div class="fade-in max-w-xl">
@@ -1294,20 +1439,30 @@ function getFilteredEntries() {
     
     if (state.activeTab === 'journal') {
         if (state.activeJournalPeriod === 'Hoje') {
-            // FIX 2: Restringe o filtro 'Hoje'
+            // FIX B: Lógica aprimorada para migração de backlog
             filtered = filtered.filter(e => {
                 const d = e.targetDate ? new Date(e.targetDate) : new Date(e.id);
                 d.setHours(0,0,0,0);
                 
+                const isToday = d.getTime() === now.getTime();
+                // Tipos acionáveis que devem migrar: tasks e events
+                const isActionable = e.type === 'task' || e.type === 'event';
                 const isDueTodayOrPast = d.getTime() <= now.getTime();
                 
-                // Se concluído: só mantém se for item do dia (para mostrar o que foi feito HOJE).
+                // 1. Itens Concluídos: só mantém se forem do dia ATUAL (para mostrar o que foi feito HOJE).
                 if (e.completed) {
-                    return d.getTime() === now.getTime(); 
+                    return isToday;
                 }
                 
-                // Se NÃO concluído: mantém se estiver agendado para hoje ou no passado (backlog).
-                return isDueTodayOrPast;
+                // 2. Itens NÃO Concluídos:
+                
+                // 2a. Acionáveis (Task/Event): Mantém se forem do backlog (passado ou hoje).
+                if (isActionable) {
+                    return isDueTodayOrPast;
+                }
+                
+                // 2b. Não-Acionáveis (Note/Idea/Reflection): Não migram. Só mantém se forem do dia HOJE.
+                return isToday;
             });
         } else if (state.activeJournalPeriod === 'Futuro') {
             filtered = filtered.filter(e => {
@@ -1465,7 +1620,8 @@ function exportData() {
     URL.revokeObjectURL(url);
 }
 
-function showModal(title, msg, onConfirm = null) {
+// FIX A: Função showModal ajustada para ser mais robusta e garantir o fechamento.
+function showModal(title, msg, actionBtnText, onAction) { 
     const modal = document.getElementById('app-modal');
     const titleEl = document.getElementById('modal-title');
     const msgEl = document.getElementById('modal-message');
@@ -1475,20 +1631,25 @@ function showModal(title, msg, onConfirm = null) {
     if(!modal) return;
 
     titleEl.innerText = title;
-    msgEl.innerText = msg;
-    titleEl.classList.toggle('dark:text-white', state.prefs.theme === 'dark');
-    msgEl.classList.toggle('dark:text-stone-400', state.prefs.theme === 'dark');
+    msgEl.innerHTML = msg; 
 
-    if (onConfirm) {
+    if (onAction) {
         cancelBtn.classList.remove('hidden');
-        confirmBtn.innerText = T('ui_delete_confirm');
+        confirmBtn.innerText = actionBtnText || T('ui_delete_confirm');
+        
+        // Ação de confirmação que executa a função e FECHA o modal.
         confirmBtn.onclick = () => {
-            onConfirm();
-            closeModal();
+            onAction();
+            closeModal(); 
         };
+        // Para Hub Modal, garante que o input tenha foco
+        if (document.getElementById('hub-name-input')) {
+             setTimeout(() => document.getElementById('hub-name-input').focus(), 150);
+        }
+
     } else {
         cancelBtn.classList.add('hidden'); 
-        confirmBtn.innerText = 'OK';
+        confirmBtn.innerText = actionBtnText || 'OK';
         confirmBtn.onclick = closeModal;
     }
 
@@ -1547,7 +1708,7 @@ function sendFeedback() {
     const text = textarea ? textarea.value.trim() : '';
     
     if (!text) {
-        showModal("Atenção", T('feedback_empty'));
+        showModal(T('ui_delete_confirm'), T('feedback_empty'));
         return;
     }
     
