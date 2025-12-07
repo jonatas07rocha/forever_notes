@@ -1151,7 +1151,7 @@ function getJournalHTML() {
                 <div class="flex-1 relative"><input type="text" id="entry-input" autocomplete="off" placeholder="${T('ui_add_note_placeholder')}/${T('ui_add_note_placeholder_end')}" class="w-full bg-transparent text-sm outline-none font-medium placeholder:font-normal placeholder:text-stone-400 py-1.5 dark:text-white dark:placeholder:text-stone-500">${limit ? `<div class="absolute right-0 top-1.5 text-[10px] font-mono text-stone-400">${charCount}/${limit}</div>` : ''}</div>
                 ${state.showSlashMenu ? `<div class="absolute top-full left-0 mt-1 w-48 bg-white border-2 border-black shadow-xl z-50 fade-in py-1 dark:bg-stone-800 dark:border-stone-600">${typeOptions}</div>` : ''}
                 ${state.showLinkMenu ? `<div class="absolute top-full left-20 mt-1 w-48 bg-white border-2 border-black shadow-xl z-50 fade-in py-1 dark:bg-stone-800 dark:border-stone-600"><div class="px-2 py-1 text-[10px] font-bold text-stone-400 uppercase tracking-wider border-b border-stone-100 mb-1 dark:border-stone-700">${currentLang === 'pt-BR' ? 'Linkar para...' : 'Link to...'}</div>${linkOptions}</div>` : ''}
-                <div class="relative flex-shrink-0"><input type="date" id="date-picker-native" class="absolute inset-0 opacity-0 cursor-pointer" onchange="state.inputDate = this.valueAsDate ? this.valueAsDate.getTime() : null; render()"><button class="p-1.5 hover:bg-stone-200 rounded text-stone-400 hover:text-black dark:hover:bg-stone-700 dark:hover:text-white ${state.inputDate ? 'text-black font-bold dark:text-white' : ''}"><i data-lucide="calendar" class="w-4 h-4"></i></button></div>
+                <div class="relative flex-shrink-0"><input type="date" id="date-picker-native" class="absolute inset-0 opacity-0 cursor-pointer" onchange="state.inputDate = this.valueAsDate ? this.valueAsDate.getTime() : null; render()"><button class="p-1.5 hover:bg-stone-200 rounded text-stone-400 hover:text-black dark:hover:bg-stone-700 dark:hover:text-white"><i data-lucide="calendar" class="w-4 h-4"></i></button></div>
             </div>
             <div class="flex-1 overflow-y-auto pb-20 scrollbar-hide space-y-1" onclick="if(state.showSlashMenu || state.showLinkMenu){state.showSlashMenu=false; state.showLinkMenu=false; render()}">
                 ${list.map(entry => renderEntry(entry)).join('')}
@@ -1398,6 +1398,54 @@ function getSettingsHTML() {
     `;
 }
 
+function exportData() {
+    const dataStr = JSON.stringify(state);
+    const blob = new Blob([dataStr], {type: "application/json"});
+    
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `forever_backup_${new Date().toISOString().slice(0,10)}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+function mergeImportedData(currentData, importedData) {
+    // 1. Mesclar Entradas (Entries)
+    // Cria um Set com os IDs das entradas atuais para uma verificação rápida
+    const existingEntryIds = new Set(currentData.entries.map(e => e.id));
+    // Filtra as entradas importadas para manter apenas as que não existem (baseado no ID)
+    const uniqueImportedEntries = importedData.entries.filter(importedEntry => !existingEntryIds.has(importedEntry.id));
+    const newEntries = [...currentData.entries, ...uniqueImportedEntries]; // Junta as entradas atuais com as novas
+
+    // 2. Mesclar Hubs
+    const existingHubIds = new Set(currentData.hubs.map(h => h.id));
+    // Filtra os hubs importados para manter apenas os que não existem (baseado no ID)
+    const uniqueImportedHubs = importedData.hubs.filter(importedHub => !existingHubIds.has(importedHub.id));
+    const newHubs = [...currentData.hubs, ...uniqueImportedHubs]; // Junta os hubs atuais com os novos
+
+    // 3. Mesclar Uso de Tags (somar a relevância)
+    const newTagUsage = { ...currentData.tagUsage };
+    const importedTagUsage = importedData.tagUsage || {};
+    
+    // Soma o uso de tags do backup ao uso de tags atual
+    for (const tag in importedTagUsage) {
+        newTagUsage[tag] = (newTagUsage[tag] || 0) + importedTagUsage[tag];
+    }
+    
+    // 4. Mesclar Preferências (mantém as atuais, sobrescreve apenas as chaves presentes no importado)
+    const newPrefs = {...currentData.prefs, ...importedData.prefs};
+
+    return {
+        entries: newEntries,
+        hubs: newHubs,
+        tagUsage: newTagUsage,
+        prefs: newPrefs
+    };
+}
+
 function importData(inputElement) {
     const file = inputElement.files[0];
     if (!file) return;
@@ -1408,16 +1456,26 @@ function importData(inputElement) {
             const data = JSON.parse(e.target.result);
             
             if (data.entries && Array.isArray(data.entries)) {
+                const mergeMessage = currentLang === 'pt-BR' 
+                    ? 'Atenção: Isso combinará os dados atuais com os do backup. Entradas duplicadas (pelo ID) serão ignoradas.' 
+                    : 'Warning: This will merge current data with the backup. Duplicate entries (by ID) will be ignored.';
+                
                 showModal(
                     T('settings_restore_q'), 
-                    T('settings_restore_msg'), 
+                    mergeMessage, 
                     T('ui_delete_confirm'), 
                     () => {
-                        state.entries = data.entries;
-                        state.hubs = data.hubs || [];
-                        state.tagUsage = data.tagUsage || {};
+                        const mergedData = mergeImportedData({
+                            entries: state.entries,
+                            hubs: state.hubs,
+                            tagUsage: state.tagUsage,
+                            prefs: state.prefs
+                        }, data);
                         
-                        state.prefs = {...state.prefs, ...data.prefs}; 
+                        state.entries = mergedData.entries;
+                        state.hubs = mergedData.hubs;
+                        state.tagUsage = mergedData.tagUsage;
+                        state.prefs = mergedData.prefs;
                         
                         saveData(); 
                         applyTheme(state.prefs.theme); 
@@ -1435,209 +1493,6 @@ function importData(inputElement) {
         inputElement.value = '';
     };
     reader.readAsText(file);
-}
-
-function getFilteredEntries() {
-    let filtered = state.entries;
-    const now = new Date(); 
-    now.setHours(0,0,0,0);
-
-    if (state.searchQuery) {
-        return filtered.filter(e => e.content.toLowerCase().includes(state.searchQuery.toLowerCase()))
-                       .sort((a,b) => (b.targetDate || b.id) - (a.targetDate || a.id));
-    }
-
-    if (state.activeTab === 'collections' && state.activeTag) {
-        return filtered.filter(e => e.content.includes(state.activeTag))
-                       .sort((a,b) => (b.targetDate || b.id) - (a.targetDate || a.id));
-    }
-
-    if (state.activeTab === 'hubs' && state.activeHubId) {
-        return filtered.filter(e => e.hubId == state.activeHubId)
-                       .sort((a,b) => (b.targetDate || b.id) - (a.targetDate || a.id));
-    }
-    
-    if (state.activeTab === 'journal') {
-        if (state.activeJournalPeriod === 'Hoje') {
-            // FIX B: Lógica aprimorada para migração de backlog
-            filtered = filtered.filter(e => {
-                const d = e.targetDate ? new Date(e.targetDate) : new Date(e.id);
-                d.setHours(0,0,0,0);
-                
-                const isToday = d.getTime() === now.getTime();
-                // Tipos acionáveis que devem migrar: tasks e events
-                const isActionable = e.type === 'task' || e.type === 'event';
-                const isDueTodayOrPast = d.getTime() <= now.getTime();
-                
-                // 1. Itens Concluídos: só mantém se forem do dia ATUAL (para mostrar o que foi feito HOJE).
-                if (e.completed) {
-                    return isToday;
-                }
-                
-                // 2. Itens NÃO Concluídos:
-                
-                // 2a. Acionáveis (Task/Event): Mantém se forem do backlog (passado ou hoje).
-                if (isActionable) {
-                    return isDueTodayOrPast;
-                }
-                
-                // 2b. Não-Acionáveis (Note/Idea/Reflection): Não migram. Só mantém se forem do dia HOJE.
-                return isToday;
-            });
-        } else if (state.activeJournalPeriod === 'Futuro') {
-            filtered = filtered.filter(e => {
-                const d = e.targetDate ? new Date(e.targetDate) : new Date(e.id);
-                d.setHours(0,0,0,0);
-                return d.getTime() > now.getTime();
-            });
-        } else if (state.activeJournalPeriod === 'Período') {
-            const start = new Date(state.filterStartDate);
-            start.setHours(0,0,0,0);
-            const end = new Date(state.filterEndDate);
-            end.setHours(23,59,59,999);
-
-            filtered = filtered.filter(e => {
-                const d = e.targetDate ? new Date(e.targetDate) : new Date(e.id);
-                return d.getTime() >= start.getTime() && d.getTime() <= end.getTime();
-            });
-        }
-    }
-
-    return filtered.sort((a,b) => (b.targetDate || b.id) - (a.targetDate || a.id));
-}
-
-function setActiveTab(tab) {
-    state.activeTab = tab;
-    state.editingEntryId = null; 
-    
-    if (tab !== 'hubs') state.activeHubId = null;
-    if (tab !== 'collections') state.activeTag = null;
-    if (tab !== 'home') state.searchQuery = '';
-    
-    render();
-}
-
-function changeMonth(delta) {
-    state.calendarMonth.setMonth(state.calendarMonth.getMonth() + delta);
-    render();
-}
-
-function handleNaturalLanguageDate(text) {
-    const lower = text.toLowerCase();
-    const today = new Date();
-    let targetDate = null;
-    let cleanText = text;
-
-    if (lower.includes('amanhã') || lower.includes('amanha')) {
-        targetDate = new Date(today);
-        targetDate.setDate(today.getDate() + 1);
-        cleanText = text.replace(/amanhã|amanha/gi, '').trim();
-    } else if (lower.includes('hoje')) {
-        targetDate = new Date(today);
-        cleanText = text.replace(/hoje/gi, '').trim();
-    } else if (lower.includes('todos os dias') || lower.includes('todo dia')) {
-        targetDate = new Date(today); 
-        cleanText = text.replace(/todos os dias|todo dia/gi, '').trim();
-        return { date: targetDate.getTime(), text: cleanText, recurring: 'daily' };
-    } else {
-        const regex = /@(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?/;
-        const match = text.match(regex);
-        if (match) {
-            const year = match[3] ? (match[3].length === 2 ? '20'+match[3] : match[3]) : today.getFullYear();
-            targetDate = new Date(year, parseInt(match[2])-1, parseInt(match[1]));
-        }
-    }
-
-    if (state.inputDate) {
-        targetDate = new Date(state.inputDate);
-        targetDate.setMinutes(targetDate.getMinutes() + targetDate.getTimezoneOffset());
-    }
-    
-    if (!targetDate) {
-        targetDate = new Date();
-    }
-
-    return { 
-        date: targetDate ? targetDate.getTime() : null, 
-        text: cleanText,
-        recurring: null 
-    };
-}
-
-function setupJournalInput() {
-    const input = document.getElementById('entry-input');
-    if(!input) return;
-    input.value = state.inputText;
-    input.focus();
-    
-    input.onclick = () => {
-        state.showSlashMenu = true;
-        state.showLinkMenu = false;
-        render();
-        setTimeout(() => document.getElementById('entry-input').focus(), 10);
-    };
-
-    input.oninput = (e) => {
-        let val = e.target.value;
-        let menuStateChanged = false;
-        
-        if (val.startsWith('/')) {
-            if (!state.showSlashMenu || state.showLinkMenu) menuStateChanged = true;
-            state.showSlashMenu = true; state.showLinkMenu = false;
-        } 
-        else if (val.endsWith('>>')) {
-             if (!state.showLinkMenu || state.showSlashMenu) menuStateChanged = true;
-             state.showLinkMenu = true; state.showSlashMenu = false;
-        }
-        else { 
-            if(state.showSlashMenu || state.showLinkMenu) { 
-                if (!val.trim() || (!val.endsWith('/') && !val.endsWith('>>'))) {
-                    menuStateChanged = true;
-                    state.showSlashMenu = false; 
-                    state.showLinkMenu = false;
-                }
-            }
-        }
-
-        if (val.includes('**')) {
-            const cursor = e.target.selectionStart;
-            val = val.replace(/\*\*/g, '✱');
-            input.value = val;
-            if(cursor > 0) input.setSelectionRange(cursor - 1, cursor - 1);
-        }
-        state.inputText = val;
-        
-        if (menuStateChanged) render();
-
-        setTimeout(() => {
-            const len = input.value.length;
-            input.focus();
-            input.setSelectionRange(len, len);
-        }, 0);
-    };
-    
-    input.onkeydown = (e) => { 
-        if(e.key === 'Enter') addNewEntry();
-        if(e.key === 'Escape') {
-            state.showSlashMenu = false;
-            state.showLinkMenu = false;
-            render();
-        }
-    };
-}
-
-function exportData() {
-    const dataStr = JSON.stringify(state);
-    const blob = new Blob([dataStr], {type: "application/json"});
-    
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `forever_backup_${new Date().toISOString().slice(0,10)}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
 }
 
 // FIX A: Função showModal ajustada para ser mais robusta e garantir o fechamento.
