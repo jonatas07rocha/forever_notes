@@ -347,6 +347,13 @@ function startEditEntry(id) {
 function saveEditEntry(id, newContent) {
     const entry = state.entries.find(e => e.id === id);
     if (entry) {
+        // Valida o conteúdo ao salvar a edição
+        if (!validateEntryContent(newContent, entry.type)) {
+             // Se a validação falhar, não salva e re-renderiza para que a edição continue
+             startEditEntry(id);
+             return;
+        }
+
         const oldContent = entry.content;
         entry.content = newContent.trim();
         state.editingEntryId = null; 
@@ -509,6 +516,20 @@ function deleteHub(hubId) {
     });
 }
 
+// --- FUNÇÃO CONSOLIDADA DE VALIDAÇÃO DE CONTEÚDO (Novo) ---
+
+function validateEntryContent(content, type) {
+    const config = ENTRY_TYPES[type];
+    if (config.limit && content.length > config.limit) {
+        showModal(
+            T('ui_item_long'), 
+            `${T('ui_item_long')} ${T(config.label)} ${T('pt-BR') === currentLang ? 'deve ter no máximo' : 'must have a maximum of'} ${config.limit} ${T('pt-BR') === currentLang ? 'caracteres. Para textos longos, use o tipo' : 'characters. For long texts, use the type'} "${T('type_note')}".`
+        );
+        return false;
+    }
+    return true;
+}
+
 // --- GESTÃO DE DATAS E ENTRADAS ---
 
 function selectEntryType(typeId) {
@@ -542,9 +563,8 @@ function addNewEntry() {
          content = content.replace(/^\/\w*\s?/, '');
     }
 
-    const config = ENTRY_TYPES[type];
-    if (config.limit && content.length > config.limit) {
-        showModal(T('ui_item_long'), `${T('ui_item_long')} ${T(config.label)} deve ter no máximo 140 caracteres. Para textos longos, use o tipo "${T('type_note')}".`);
+    // 🚨 USO DA FUNÇÃO CONSOLIDADA 🚨
+    if (!validateEntryContent(content, type)) {
         return;
     }
 
@@ -743,9 +763,8 @@ function addNewGlobalEntry() {
     let type = state.selectedType;
     let targetDate = nlpResult.date;
     
-    const config = ENTRY_TYPES[type];
-    if (config.limit && content.length > config.limit) {
-        showModal(T('ui_item_long'), `${T('ui_item_long')} ${T(config.label)} deve ter no máximo ${config.limit} caracteres.`);
+    // 🚨 USO DA FUNÇÃO CONSOLIDADA 🚨
+    if (!validateEntryContent(content, type)) {
         return;
     }
 
@@ -766,6 +785,7 @@ function addNewGlobalEntry() {
     saveData();
     render(); 
     
+    const config = ENTRY_TYPES[type];
     showModal(T('ui_item_saved'), `${T('ui_item_saved')} como "${T(config.label)}".`);
 }
 
