@@ -2,8 +2,11 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    
     <title>Forever ✱ Notes [PoC]</title>
+    
+    <link rel="manifest" href="/manifest.json">
     
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ctext x='0' y='14' font-size='16' fill='%23000'%3E%E2%9C%B1%3C/text%3E%3C/svg%3E" />
     
@@ -24,7 +27,7 @@
     </script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="styles.css"> 
 </head>
 <body class="bg-white text-stone-900 h-screen w-full flex overflow-hidden selection:bg-stone-200 selection:text-black dark:bg-stone-900 dark:text-stone-100 dark:selection:bg-stone-700 dark:selection:text-white transition-colors duration-200">
 
@@ -119,15 +122,15 @@
         <div class="flex min-h-full items-center justify-center p-4 text-center">
             <div class="relative transform overflow-hidden bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg border-2 border-black p-6 fade-in dark:bg-stone-900 dark:border-stone-600">
                 <div class="mb-4">
-                    <h3 class="text-lg font-bold leading-6 text-black dark:text-white" id="feedback-title-text">${T('feedback_send')}</h3>
-                    <p class="text-sm text-stone-600 mt-1 dark:text-stone-400" id="feedback-desc-text">${T('feedback_desc')}</p>
+                    <h3 class="text-lg font-bold leading-6 text-black dark:text-white" id="feedback-title-text">Enviar Feedback</h3>
+                    <p class="text-sm text-stone-600 mt-1 dark:text-stone-400" id="feedback-desc-text">Sua opinião é importante! Relate erros ou envie sugestões.</p>
                 </div>
                 
-                <textarea id="feedback-text" rows="4" class="w-full border-2 border-stone-200 p-2 text-sm rounded mb-4 focus:border-black outline-none resize-none font-sans dark:bg-stone-800 dark:border-stone-700 dark:text-white dark:focus:border-white" placeholder="${T('feedback_placeholder')}"></textarea>
+                <textarea id="feedback-text" rows="4" class="w-full border-2 border-stone-200 p-2 text-sm rounded mb-4 focus:border-black outline-none resize-none font-sans dark:bg-stone-800 dark:border-stone-700 dark:text-white dark:focus:border-white" placeholder="Digite sua mensagem aqui..."></textarea>
                 
                 <div class="flex flex-row-reverse gap-2">
                     <button type="button" onclick="sendFeedback()" class="inline-flex w-full justify-center bg-black px-3 py-2 text-sm font-bold text-white shadow-sm hover:bg-stone-800 sm:w-auto border-2 border-transparent transition-colors items-center gap-2 dark:bg-white dark:text-black dark:hover:bg-stone-200">
-                        <i data-lucide="send" class="w-3 h-3"></i> <span id="feedback-send-button-text">${T('feedback_send')}</span>
+                        <i data-lucide="send" class="w-3 h-3"></i> <span id="feedback-send-button-text">Enviar Feedback</span>
                     </button>
                     <button type="button" onclick="closeFeedbackModal()" class="inline-flex w-full justify-center bg-white px-3 py-2 text-sm font-bold text-stone-900 shadow-sm ring-1 ring-inset ring-stone-300 hover:bg-stone-50 sm:w-auto border-2 border-transparent transition-colors dark:bg-stone-800 dark:text-stone-200 dark:border-stone-700 dark:hover:bg-stone-700">
                         <span id="feedback-cancel-button-text">Cancelar</span>
@@ -163,6 +166,21 @@
             </div>
         </div>
     </div>
+    
     <script src="app.js"></script>
+    
+    <script>
+        if ('serviceWorker' in navigator) {
+          window.addEventListener('load', () => {
+            navigator.serviceWorker.register('/sw.js')
+              .then(registration => {
+                console.log('Service Worker registrado com sucesso:', registration.scope);
+              })
+              .catch(error => {
+                console.error('Falha no registro do Service Worker:', error);
+              });
+          });
+        }
+    </script>
 </body>
 </html>
