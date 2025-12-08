@@ -1,23 +1,23 @@
 # Forever Notes
 
-> Um aplicativo web de produtividade moderno que combina Bullet Journal, Task Manager e Sistema de Notas em uma unica plataforma intuitiva.
+> Um aplicativo web de produtividade moderno que combina Bullet Journal, Task Manager e Sistema de Notas em uma única plataforma intuitiva.
 
-## Caracteristicas Principais
+## Características Principais
 
-### Multiplos Tipos de Entradas
-- **Notas**: Texto ilimitado com suporte a formatacao
+### Múltiplos Tipos de Entradas
+- **Notas**: Texto ilimitado com suporte a formatação
 - **Tarefas**: Com limite de 140 caracteres (BuJo style)
 - **Eventos**: Agendamento com datas e alertas
-- **Reflexoes**: Anotacoes reflexivas de ate 280 caracteres
-- **Ideias**: Captura rapida de conceitos (140 caracteres)
+- **Reflexões**: Anotações reflexivas de ate 280 caracteres
+- **Ideias**: Captura rápida de conceitos (140 caracteres)
 
-### Funcionalidades Avancadas
+### Funcionalidades Avançadas
 - **Hubs**: Organize por contextos (Pessoal, Trabalho, etc)
-- **Colecoes por Tags**: #hashtags para categorizacao automatica
-- **Sistema de Prioridades**: Marque com para priorizacao
-- **Linking**: Use >> para vincular a Hubs ou executar buscas rapidas
-- **Diario com Periodos**: Visualize Hoje, Todos os Itens ou Futuros
-- **Calendario Interativo**: Visualize eventos por data
+- **Coleções por Tags**: #hashtags para categorização automatica
+- **Sistema de Prioridades**: Marque com para priorização
+- **Linking**: Use >> para vincular a Hubs ou executar buscas rápidas
+- **Diario com Períodos**: Visualize Hoje, Todos os Itens ou Futuros
+- **Calendário Interativo**: Visualize eventos por data
 - **Busca Global**: Encontre qualquer item instantaneamente
 - **Modo Visual e Classico**: Escolha sua preferencia de visualizacao
 - **Dark Mode**: Tema claro/escuro
@@ -32,7 +32,7 @@
 
 ### Atalhos Principais
 - **/** : Abre a entrada global de itens (funciona em qualquer lugar)
-- **#tag** : Cria colecoes automaticamente
+- **#tag** : Cria Coleções automaticamente
 - **>>** : Cria links para Hubs ou executa buscas
 - **✱** : Marca item como prioridade
 - **Amanha/Hoje/@dia/mes** : Interpreta datas naturais
@@ -71,7 +71,7 @@ forever_notes/
 - `openHub(hubId)` : Abre hub específico
 - `deleteHub(hubId)` : Deleta hub
 
-**Tags e Colecoes:**
+**Tags e Coleções:**
 - `extractTags(content)` : Extrai #tags do texto
 - `getUniqueTags()` : Retorna lista de tags únicas
 - `openCollection(tagName)` : Abre colecao por tag
@@ -82,7 +82,7 @@ forever_notes/
 - `renderEntry(entry)` : Renderiza item individual
 - `getHomeHTML()` : Dashboard principal
 - `getJournalHTML()` : View de diario
-- `getCalendarHTML()` : Visualizacao em calendario
+- `getCalendarHTML()` : Visualizacao em Calendário
 
 **Dados:**
 - `saveData()` : Persiste em localStorage
@@ -122,7 +122,7 @@ forever_notes/
 - [ ] Compartilhamento de hubs
 - [ ] API REST
 - [ ] Mobile app nativa
-- [ ] Integracao com calendarios
+- [ ] Integracao com Calendários
 - [ ] Modo colaborativo
 
 ## Licenca
