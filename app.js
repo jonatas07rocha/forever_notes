@@ -32,8 +32,10 @@ const TRANSLATIONS = {
         home_today: 'Hoje',
         home_priorities: 'Prioridades',
         home_next_event: 'Próximo Evento',
+        home_recent: 'Adicionados Recentemente',
         home_no_priority: 'Nenhuma prioridade ativa.',
         home_no_event: 'Nada agendado.',
+        home_no_recent: 'Nenhum item recente.',
         hubs_title: 'Hubs',
         hubs_subtitle: 'Mapas de contexto.',
         hubs_new_prompt: 'Nome do novo Hub (ex: Estudos):',
@@ -63,6 +65,9 @@ const TRANSLATIONS = {
         ui_delete_hub_msg: 'Deseja excluir "',
         ui_delete_hub_msg_end: '"?',
         message_hub_created: 'Hub criado com sucesso!',
+        modal_search_title: 'Busca Rápida',
+        modal_search_msg: 'Filtrando itens relacionados a:',
+        error_empty_hub: 'O nome do Hub não pode estar vazio.',
         settings_title: 'Configurações',
         settings_dark_mode: 'Modo Escuro (Dark Mode)',
         settings_dark_mode_desc: 'Alterne entre o tema claro e escuro da aplicação.',
@@ -105,8 +110,10 @@ const TRANSLATIONS = {
         home_today: 'Today',
         home_priorities: 'Priorities',
         home_next_event: 'Next Event',
+        home_recent: 'Recently Added',
         home_no_priority: 'No active priorities.',
         home_no_event: 'Nothing scheduled.',
+        home_no_recent: 'No recent items.',
         hubs_title: 'Hubs',
         hubs_subtitle: 'Context maps.',
         hubs_new_prompt: 'Name of the new Hub (e.g., Studies):',
@@ -136,6 +143,9 @@ const TRANSLATIONS = {
         ui_delete_hub_msg: 'Do you want to delete "',
         ui_delete_hub_msg_end: '"?',
         message_hub_created: 'Hub created successfully!',
+        modal_search_title: 'Quick Search',
+        modal_search_msg: 'Filtering items related to:',
+        error_empty_hub: 'Hub name cannot be empty.',
         settings_title: 'Settings',
         settings_dark_mode: 'Dark Mode',
         settings_dark_mode_desc: 'Toggle between light and dark theme.',
@@ -204,7 +214,6 @@ let state = {
     viewMode: 'visual', 
     calendarMonth: new Date(),
     inputText: '',
-    // FIX: inputDate agora armazena a string 'YYYY-MM-DD' para evitar problemas de fuso horário
     inputDate: null, 
     selectedType: 'task', 
     showSlashMenu: false, 
@@ -282,7 +291,7 @@ function applyTheme(theme) {
     const body = document.body;
     body.classList.remove('bg-white', 'text-stone-900', 'bg-stone-900', 'text-stone-100');
     if (theme === 'dark') {
-        body.classList.add('bg-stone-900', 'text-stone-100');
+        body.classList.add('bg-stone-900', 'text-stone-100'); // Note: 'bg-stone-900' is kept as base class for Tailwind compatibility, but CSS var will override to #000000
         body.classList.add('dark');
     } else {
         body.classList.add('bg-white', 'text-stone-900');
@@ -362,7 +371,7 @@ function handleLinkClick(linkText) {
     }
     state.searchQuery = linkText;
     setActiveTab('home');
-    showModal('Busca Rápida', `Filtrando itens relacionados a: "${linkText}"`);
+    showModal(T('modal_search_title'), `${T('modal_search_msg')} "${linkText}"`);
 }
 
 function clearSearch() {
@@ -435,7 +444,7 @@ function handleCreateHub() {
         saveData();
         render();
     } else {
-        showModal(T('ui_delete_confirm'), T('placeholder_hub_name') + " não pode estar vazio.");
+        showModal(T('ui_delete_confirm'), T('error_empty_hub'));
     }
 }
 
@@ -479,19 +488,14 @@ function handleNaturalLanguageDate(text) {
     return { text: text, date: null, recurring: null };
 }
 
-// --- FIX: AJUDANTE DE DATA LOCAL ---
-// Converte string '2025-12-09' para timestamp local
 function parseLocalInputDate(dateStr) {
     if (!dateStr) return null;
     const parts = dateStr.split('-');
-    // new Date(ano, mes-1, dia) cria a data no horário local
     const date = new Date(parts[0], parts[1] - 1, parts[2]);
     return date.getTime();
 }
 
-// --- FIX: MANIPULAÇÃO DO INPUT DATE SEM RE-RENDER ---
 function handleDateInput(val) {
-    // Apenas atualiza o estado e a UI do botão, NÃO chama render()
     state.inputDate = val; 
     const btn = document.getElementById('date-btn-icon');
     if (btn) {
@@ -527,8 +531,6 @@ function addNewEntry() {
     const nlpResult = handleNaturalLanguageDate(state.inputText);
     let content = nlpResult.text;
     let type = state.selectedType;
-    
-    // FIX: Usa a função de parse local para evitar o bug de D-1
     let targetDate = nlpResult.date || (state.inputDate ? parseLocalInputDate(state.inputDate) : null);
     
     if (content.startsWith('/')) {
@@ -679,7 +681,6 @@ function renderGlobalInput() {
     menu.classList.toggle('hidden', !state.showSlashMenu);
     
     if (dateBtn && datePicker) {
-        // FIX: Usa o valor string direto para evitar reset
         if (state.inputDate) {
             dateBtn.classList.add('text-black', 'font-bold', 'dark:text-white');
             datePicker.value = state.inputDate; 
@@ -719,7 +720,6 @@ function addNewGlobalEntry() {
     const nlpResult = handleNaturalLanguageDate(state.inputText);
     let content = nlpResult.text;
     let type = state.selectedType;
-    // FIX: Parse local aqui também
     let targetDate = nlpResult.date || (state.inputDate ? parseLocalInputDate(state.inputDate) : null);
     
     if (!validateEntryContent(content, type)) {
@@ -941,6 +941,11 @@ function getHomeHTML() {
     const priorities = state.entries
         .filter(e => !e.completed && e.content.includes('✱'))
         .sort((a,b) => (b.targetDate || b.id) - (a.targetDate || a.id));
+
+    // NOVO: Recentes
+    const recentItems = [...state.entries]
+        .sort((a, b) => b.id - a.id)
+        .slice(0, 3);
     
     const langOptions = { weekday: 'long', day:'numeric', month:'long' };
     
@@ -952,13 +957,13 @@ function getHomeHTML() {
             </header>
 
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                <div class="bg-stone-900 text-white p-5 border-2 border-black cursor-default relative overflow-hidden group dark:bg-black dark:border-stone-700">
+                <div class="bg-stone-900 text-white p-5 border-2 border-black cursor-default relative overflow-hidden group dark:bg-stone-800 dark:border-stone-700">
                     <div class="flex items-center gap-2 mb-4 text-stone-400"><i data-lucide="calendar-days" class="w-4 h-4"></i> <span class="text-xs font-bold uppercase">${T('home_today')}</span></div>
                     <div class="text-4xl font-black mb-1">${new Date().getDate()}</div>
                     <div class="text-sm text-stone-400 uppercase tracking-widest">${new Date().toLocaleDateString(currentLang, {month:'long'})}</div>
                 </div>
 
-                <div onclick="setActiveTab('journal'); state.activeJournalPeriod='Todos'; render();" class="bg-white border-2 border-stone-200 p-5 hover:border-black transition-all cursor-pointer dark:bg-stone-800 dark:border-stone-700 dark:hover:border-white">
+                <div onclick="setActiveTab('journal'); state.activeJournalPeriod='Todos'; render();" class="bg-white border-2 border-stone-200 p-5 hover:border-black transition-all cursor-pointer dark:bg-stone-900 dark:border-stone-700 dark:hover:border-white">
                     <div class="flex items-center gap-2 mb-4 text-stone-500 dark:text-stone-400">
                         <i data-lucide="star" class="w-4 h-4 fill-black text-black dark:text-white dark:fill-white"></i> 
                         <span class="text-xs font-bold uppercase text-black dark:text-white">${T('home_priorities')}</span>
@@ -970,23 +975,39 @@ function getHomeHTML() {
                                     <span class="text-stone-400 text-[10px]">•</span> ${e.content.replace('✱', '').trim()}
                                 </div>
                              `).join('')}
-                             ${priorities.length > 3 ? `<div class="text-[10px] text-stone-400 font-bold mt-2">+${priorities.length - 3} ${currentLang === 'pt-BR' ? 'itens' : 'items'}</div>` : ''}
                            </div>`
                         : `<div class="text-stone-400 italic">${T('home_no_priority')}</div>`
                     }
                 </div>
 
-                <div onclick="setActiveTab('journal'); state.activeJournalPeriod='Futuro'; render();" class="bg-white border-2 border-stone-200 p-5 hover:border-black transition-all cursor-pointer dark:bg-stone-800 dark:border-stone-700 dark:hover:border-white">
+                <div onclick="setActiveTab('journal'); state.activeJournalPeriod='Futuro'; render();" class="bg-white border-2 border-stone-200 p-5 hover:border-black transition-all cursor-pointer dark:bg-stone-900 dark:border-stone-700 dark:hover:border-white">
                     <div class="flex items-center gap-2 mb-4 text-stone-500 dark:text-stone-400"><i data-lucide="clock" class="w-4 h-4"></i> <span class="text-xs font-bold uppercase">${T('home_next_event')}</span></div>
                     ${nextEvent 
                         ? `
                             <div class="font-bold text-lg leading-tight truncate dark:text-white">${nextEvent.content}</div>
-                            <div class="text-xs text-black font-bold mt-2 bg-stone-100 inline-block px-2 py-1 border border-stone-200 dark:bg-stone-900 dark:text-stone-300 dark:border-stone-600">
+                            <div class="text-xs text-black font-bold mt-2 bg-stone-100 inline-block px-2 py-1 border border-stone-200 dark:bg-stone-800 dark:text-stone-300 dark:border-stone-600">
                                 ${new Date(nextEvent.targetDate).toLocaleDateString(currentLang, {day:'2-digit', month:'2-digit'})} 
-                                ${new Date(nextEvent.targetDate).toDateString() === now.toDateString() ? `(${T('filter_today')})` : ''}
                             </div>
                           ` 
                         : `<div class="text-stone-400 italic">${T('home_no_event')}</div>`
+                    }
+                </div>
+            </div>
+
+            <div class="mt-8">
+                <h3 class="text-sm font-bold text-stone-500 uppercase mb-3 dark:text-stone-400">${T('home_recent')}</h3>
+                <div class="bg-stone-50 border border-stone-200 rounded p-4 dark:bg-stone-900 dark:border-stone-700">
+                    ${recentItems.length > 0 ? 
+                        `<div class="space-y-3">
+                            ${recentItems.map(e => `
+                                <div class="flex items-center gap-3 text-sm border-b border-stone-100 last:border-0 pb-2 last:pb-0 dark:border-stone-800">
+                                    <i data-lucide="${ENTRY_TYPES[e.type].icon}" class="w-3 h-3 text-stone-400"></i>
+                                    <span class="truncate text-stone-700 dark:text-stone-300 flex-1">${e.content}</span>
+                                    <span class="text-[10px] text-stone-400 whitespace-nowrap">${new Date(e.id).toLocaleTimeString(currentLang, {hour:'2-digit', minute:'2-digit'})}</span>
+                                </div>
+                            `).join('')}
+                        </div>` 
+                        : `<div class="text-stone-400 italic text-sm">${T('home_no_recent')}</div>`
                     }
                 </div>
             </div>
@@ -1062,7 +1083,6 @@ function getCollectionsHTML() {
     `;
 }
 
-// FIX: HTML atualizado com o manipulador de data corrigido
 function getCommonSingleViewHTML(title, closeFunc, placeholder, hubId = null) {
     const list = getFilteredEntries();
     const config = ENTRY_TYPES[state.selectedType];
@@ -1143,7 +1163,6 @@ function getFilteredEntries() {
     return list.sort((a,b) => b.id - a.id);
 }
 
-// FIX: HTML atualizado com o manipulador de data corrigido
 function getJournalHTML() {
     const list = getFilteredEntries();
     const config = ENTRY_TYPES[state.selectedType];
@@ -1372,6 +1391,11 @@ function getCalendarHTML() {
     }
     html += `</div></div>`;
     return html;
+}
+
+function changeMonth(delta) {
+    state.calendarMonth.setMonth(state.calendarMonth.getMonth() + delta);
+    render();
 }
 
 function toggleBackupAlert() {
