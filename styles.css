@@ -7,28 +7,42 @@
     --color-border-primary: #e7e5e4; /* stone-200 */
 }
 
-/* Tema Escuro (Quando o <body> tem a classe 'dark') */
+/* Tema Escuro (OLED Friendly) */
 .dark {
-    --color-bg-primary: #1c1917; /* stone-900 */
-    --color-bg-secondary: #292524; /* stone-800 */
+    /* Fundo Preto Absoluto para economizar bateria em OLED e dar contraste premium */
+    --color-bg-primary: #000000; 
+    
+    /* Elementos secundários (cards) levemente mais claros (stone-900) */
+    --color-bg-secondary: #1c1917; 
+    
     --color-text-primary: #f5f5f4; /* stone-100 */
-    --color-border-primary: #44403c; /* stone-700 */
+    --color-border-primary: #333333; /* Cinza escuro para bordas sutis */
 }
 
 /* --- 2. TIPOGRAFIA & BASE --- */
 
 body { 
     font-family: 'Inter', sans-serif;
-    /* FIX DE ZOOM LATERAL */
+    
+    /* Aplica as variáveis de cor dinamicamente */
+    background-color: var(--color-bg-primary);
+    color: var(--color-text-primary);
+    
+    /* FIX DE ZOOM LATERAL E SCROLL BOUNCE */
     width: 100%;
     max-width: 100%;
     overflow-x: hidden;
     margin: 0;
     padding: 0;
+    
+    /* Evita o efeito elástico branco/preto ao rolar além do limite no iOS */
+    overscroll-behavior-y: none;
 }
+
 .font-mono { 
     font-family: 'JetBrains Mono', monospace; 
 }
+
 .text-heavy-asterisk { 
     color: var(--color-text-primary); 
     font-weight: 800; 
@@ -36,12 +50,24 @@ body {
 
 /* --- 3. OTIMIZAÇÕES MOBILE (CRÍTICO) --- */
 
-/* 1. Remove o delay de 300ms em dispositivos touch e evita zoom duplo no clique */
+/* 1. Remove o delay de 300ms em toques e evita zoom duplo */
 html, body, button, input, textarea, select {
     touch-action: manipulation;
 }
 
-/* 2. Aplica fonte 16px para inputs e textareas para evitar o zoom involuntário (Safari/iOS) */
+/* 2. Ajuste para o Notch/Ilha Dinâmica do iPhone */
+#mobile-header, aside {
+    padding-top: env(safe-area-inset-top);
+}
+
+#mobile-header {
+    /* Garante altura suficiente para o conteúdo não ficar sob o notch */
+    height: calc(3.5rem + env(safe-area-inset-top)); 
+    padding-bottom: 0.5rem;
+    align-items: flex-end; 
+}
+
+/* 3. Evita zoom automático em inputs no iOS (font-size < 16px causa zoom) */
 input[type="text"], 
 input[type="date"], 
 select, 
@@ -51,7 +77,7 @@ textarea {
 
 /* --- 4. UTILITY CLASSES --- */
 
-/* Esconde barras de rolagem em containers específicos */
+/* Esconde barras de rolagem */
 .scrollbar-hide::-webkit-scrollbar { 
     display: none; 
 }
@@ -60,10 +86,11 @@ textarea {
     scrollbar-width: none; /* Firefox */
 }
 
-/* Animação de entrada */
+/* Animação de entrada suave */
 .fade-in { 
     animation: fadeIn 0.2s ease-in-out; 
 }
+
 @keyframes fadeIn { 
     from { 
         opacity: 0; 
@@ -77,19 +104,22 @@ textarea {
 
 /* --- 5. ESTILOS ESPECÍFICOS COMPLEMENTARES --- */
 
-/* Ajusta o hover do calendário para respeitar os temas */
+/* Ajusta o hover do calendário para respeitar o tema OLED */
 .calendar-day:hover { 
     background-color: var(--color-bg-secondary); 
+    border-color: var(--color-border-primary);
 }
 
-/* Estilos de Linkar (>>link) - Usados na função formatContent */
+/* Estilos de Linkar (>>link) */
 .text-purple-700 { color: #6d28d9; }
 .bg-purple-50 { background-color: #f3f4ff; }
 .dark .text-purple-400 { color: #a78bfa; }
-.dark .bg-purple-900\/30 { background-color: rgba(60, 43, 89, 0.3); }
+/* Ajuste de transparência para ficar visível no fundo preto */
+.dark .bg-purple-900\/30 { background-color: rgba(139, 92, 246, 0.25); }
 
-/* Estilos de Tag (#tag) - Usados na função formatContent */
+/* Estilos de Tag (#tag) */
 .text-blue-600 { color: #2563eb; }
 .bg-blue-50 { background-color: #eff6ff; }
 .dark .text-blue-400 { color: #60a5fa; }
-.dark .bg-blue-900\/30 { background-color: rgba(29, 78, 216, 0.3); }
+/* Ajuste de transparência para ficar visível no fundo preto */
+.dark .bg-blue-900\/30 { background-color: rgba(59, 130, 246, 0.25); }
