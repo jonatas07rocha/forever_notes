@@ -34,9 +34,14 @@ body {
     font-weight: 800; 
 }
 
-/* --- 3. FIX CRÍTICO PARA PREVENIR ZOOM AUTOMÁTICO DO MOBILE --- */
+/* --- 3. OTIMIZAÇÕES MOBILE (CRÍTICO) --- */
 
-/* Aplica fonte 16px para inputs e textareas para evitar o zoom involuntário (Safari/iOS) */
+/* 1. Remove o delay de 300ms em dispositivos touch e evita zoom duplo no clique */
+html, body, button, input, textarea, select {
+    touch-action: manipulation;
+}
+
+/* 2. Aplica fonte 16px para inputs e textareas para evitar o zoom involuntário (Safari/iOS) */
 input[type="text"], 
 input[type="date"], 
 select, 
