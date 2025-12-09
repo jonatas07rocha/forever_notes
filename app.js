@@ -284,6 +284,24 @@ function init() {
     setupUnloadAlert();
 }
 
+// --- FUNÇÃO DE NAVEGAÇÃO (CORREÇÃO APLICADA) ---
+function setActiveTab(tabId) {
+    state.activeTab = tabId;
+    
+    // Limpa estados específicos ao sair de abas de contexto
+    if (tabId !== 'hubs') state.activeHubId = null;
+    if (tabId !== 'collections') state.activeTag = null;
+    
+    // Se sair de uma busca para outra aba que não seja Home (onde a busca é mostrada), limpa a busca
+    if (state.searchQuery && tabId !== 'home') state.searchQuery = '';
+
+    // Scroll para o topo para melhorar UX no mobile
+    const main = document.getElementById('main-container');
+    if (main) main.scrollTop = 0;
+
+    render();
+}
+
 function loadData() {
     const data = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{"entries":[], "hubs":[], "tagUsage":{}}');
     state.entries = data.entries || [];
@@ -330,7 +348,7 @@ function toggleTheme() {
     render(); 
 }
 
-// --- LÓGICA DE EDIÇÃO INLINE ---
+// --- LÓGICA DE EDIAÇÃO INLINE ---
 
 function startEditEntry(id) {
     state.editingEntryId = id;
@@ -452,7 +470,6 @@ function closeCollection() {
 
 // --- LÓGICA DE HUBS ---
 
-// FIX C: Substitui o prompt() por um modal customizado
 function showNewHubModal() {
     const content = `
         <input type="text" id="hub-name-input" placeholder="${T('placeholder_hub_name')}" class="modal-input w-full p-2 border border-stone-300 rounded focus:border-black outline-none dark:bg-stone-800 dark:border-stone-700 dark:text-white dark:focus:border-white">
@@ -482,9 +499,7 @@ function handleCreateHub() {
         state.hubs.push(newHub);
         saveData();
         render();
-        // showModal(T('ui_item_saved'), T('message_hub_created')); // Feedback após fechar o modal principal
     } else {
-        // Não é necessário fechar o modal, apenas mostrar erro
         showModal(T('ui_delete_confirm'), T('placeholder_hub_name') + " não pode estar vazio.");
     }
 }
@@ -516,7 +531,7 @@ function deleteHub(hubId) {
     });
 }
 
-// --- FUNÇÃO CONSOLIDADA DE VALIDAÇÃO DE CONTEÚDO (Novo) ---
+// --- FUNÇÃO CONSOLIDADA DE VALIDAÇÃO DE CONTEÚDO ---
 
 function validateEntryContent(content, type) {
     const config = ENTRY_TYPES[type];
@@ -528,6 +543,18 @@ function validateEntryContent(content, type) {
         return false;
     }
     return true;
+}
+
+// --- NLP DATE HANDLER (Simulado / Simplificado) ---
+// Adicionando a função handleNaturalLanguageDate que estava implícita mas não definida no código anterior
+function handleNaturalLanguageDate(text) {
+    // Implementação básica para evitar erro de referência
+    // Futuramente pode ser expandida com regex para "amanhã", "segunda", etc.
+    return {
+        text: text,
+        date: null,
+        recurring: null
+    };
 }
 
 // --- GESTÃO DE DATAS E ENTRADAS ---
@@ -557,13 +584,12 @@ function addNewEntry() {
     const nlpResult = handleNaturalLanguageDate(state.inputText);
     let content = nlpResult.text;
     let type = state.selectedType;
-    let targetDate = nlpResult.date;
+    let targetDate = nlpResult.date || state.inputDate; // Usa data do picker se NLP não achar
     
     if (content.startsWith('/')) {
          content = content.replace(/^\/\w*\s?/, '');
     }
 
-    // 🚨 USO DA FUNÇÃO CONSOLIDADA 🚨
     if (!validateEntryContent(content, type)) {
         return;
     }
@@ -597,8 +623,8 @@ function addNewEntry() {
     
     const viewedDate = new Date();
     viewedDate.setHours(0,0,0,0);
-    const addedDate = new Date(targetDate);
-    addedDate.setHours(0,0,0,0);
+    const addedDate = targetDate ? new Date(targetDate) : null;
+    if (addedDate) addedDate.setHours(0,0,0,0);
     
     if (targetDate && addedDate.getTime() !== viewedDate.getTime() && state.activeTab !== 'home') {
         showModal(T('ui_item_scheduled'), `${T('ui_item_scheduled')} em ${addedDate.toLocaleDateString(currentLang)}.`);
@@ -761,9 +787,8 @@ function addNewGlobalEntry() {
     const nlpResult = handleNaturalLanguageDate(state.inputText);
     let content = nlpResult.text;
     let type = state.selectedType;
-    let targetDate = nlpResult.date;
+    let targetDate = nlpResult.date || state.inputDate;
     
-    // 🚨 USO DA FUNÇÃO CONSOLIDADA 🚨
     if (!validateEntryContent(content, type)) {
         return;
     }
@@ -922,6 +947,63 @@ function renderSidebar() {
     if (mobileMenu) mobileMenu.innerHTML = menuHTML;
 }
 
+// Funções auxiliares de renderização de inputs do Journal
+function setupJournalInput() {
+    // Garante que o input do journal tenha os eventos corretos anexados após ser renderizado no DOM
+    const input = document.getElementById('entry-input');
+    if (!input) return;
+
+    input.value = state.inputText;
+    
+    input.oninput = (e) => {
+        let val = e.target.value;
+        let menuStateChanged = false;
+        
+        if (val.startsWith('/')) {
+            if (!state.showSlashMenu) menuStateChanged = true;
+            state.showSlashMenu = true;
+        } else if (val.includes('>>')) {
+             if (!state.showLinkMenu) menuStateChanged = true;
+             state.showLinkMenu = true;
+        } else { 
+            if(state.showSlashMenu || state.showLinkMenu) { 
+                menuStateChanged = true;
+                state.showSlashMenu = false; 
+                state.showLinkMenu = false;
+            }
+        }
+
+        if (val.includes('**')) {
+            const cursor = e.target.selectionStart;
+            val = val.replace(/\*\*/g, '✱');
+            input.value = val;
+            if(cursor > 0) input.setSelectionRange(cursor - 1, cursor - 1);
+        }
+        
+        state.inputText = val;
+        
+        if (menuStateChanged) render();
+        
+        // Foco automático de volta no input após render (crucial)
+        setTimeout(() => {
+             const refocusedInput = document.getElementById('entry-input');
+             if(refocusedInput) {
+                 refocusedInput.focus();
+                 const len = refocusedInput.value.length;
+                 refocusedInput.setSelectionRange(len, len);
+             }
+        }, 10);
+    };
+
+    input.onkeydown = (e) => {
+        if(e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            addNewEntry();
+        }
+    };
+}
+
+
 // --- VIEWS ---
 
 function getHomeHTML() {
@@ -1066,6 +1148,7 @@ function getCollectionsHTML() {
     `;
 }
 
+// Helper para visualizar lista filtrada (usado em Hubs e Collections)
 function getCommonSingleViewHTML(title, closeFunc, placeholder, hubId = null) {
     const list = getFilteredEntries();
     const config = ENTRY_TYPES[state.selectedType];
@@ -1102,6 +1185,51 @@ function getCommonSingleViewHTML(title, closeFunc, placeholder, hubId = null) {
     `;
 }
 
+// Filtra as entradas baseadas na aba ativa
+function getFilteredEntries() {
+    let list = [];
+    if (state.searchQuery) {
+        const q = state.searchQuery.toLowerCase();
+        list = state.entries.filter(e => e.content.toLowerCase().includes(q));
+    } else if (state.activeTab === 'journal') {
+        const now = new Date();
+        now.setHours(0,0,0,0);
+        
+        if (state.activeJournalPeriod === 'Todos') {
+            list = state.entries;
+        } else if (state.activeJournalPeriod === 'Hoje') {
+            list = state.entries.filter(e => {
+               const target = e.targetDate ? new Date(e.targetDate) : new Date(e.id);
+               target.setHours(0,0,0,0);
+               return target.getTime() === now.getTime();
+            });
+        } else if (state.activeJournalPeriod === 'Futuro') {
+            list = state.entries.filter(e => {
+                const target = e.targetDate ? new Date(e.targetDate) : new Date(e.id);
+                target.setHours(0,0,0,0);
+                return target.getTime() > now.getTime();
+            });
+        } else if (state.activeJournalPeriod === 'Período') {
+            const start = new Date(state.filterStartDate);
+            const end = new Date(state.filterEndDate);
+            end.setHours(23,59,59,999);
+            
+            list = state.entries.filter(e => {
+                const target = e.targetDate ? new Date(e.targetDate) : new Date(e.id);
+                return target >= start && target <= end;
+            });
+        }
+    } else if (state.activeTab === 'hubs' && state.activeHubId) {
+        list = state.entries.filter(e => e.hubId == state.activeHubId);
+    } else if (state.activeTab === 'collections' && state.activeTag) {
+        list = state.entries.filter(e => e.content.includes(state.activeTag));
+    }
+    
+    // Ordenação padrão: mais recentes primeiro (por ID/Criação)
+    // Para 'Futuro', talvez seja melhor inverter? Manter padrão por enquanto.
+    return list.sort((a,b) => b.id - a.id);
+}
+
 function getJournalHTML() {
     const list = getFilteredEntries();
     const config = ENTRY_TYPES[state.selectedType];
@@ -1120,7 +1248,6 @@ function getJournalHTML() {
         `;
     }
     
-    // FIX A: Usa PERIOD_MAP para traduzir corretamente os nomes dos filtros
     const periodButtons = ['Todos', 'Hoje', 'Futuro', 'Período'].map(p => `
         <button onclick="state.activeJournalPeriod='${p}'; render()" 
             class="px-3 py-1 text-xs font-bold transition-all ${state.activeJournalPeriod === p ? 'bg-black text-white dark:bg-white dark:text-black' : 'text-stone-500 hover:text-black dark:text-stone-400 dark:hover:text-white'}">
@@ -1196,8 +1323,22 @@ function getEditEntryHTML(entry) {
     `;
 }
 
+// --- SANITIZAÇÃO DE HTML (NOVO) ---
+function escapeHtml(text) {
+    if (!text) return text;
+    return text
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
 function formatContent(text) {
-    let formatted = text.replace(/\n/g, '<br>');
+    // APLICA A SANITIZAÇÃO PRIMEIRO PARA EVITAR XSS
+    let formatted = escapeHtml(text);
+    
+    formatted = formatted.replace(/\n/g, '<br>');
     formatted = formatted.replace(/(#[\w\u00C0-\u00FF]+)/g, '<button onclick="openCollection(\'$1\'); event.stopPropagation();" class="text-blue-600 hover:underline font-bold bg-blue-50 px-1 rounded mx-0.5 dark:bg-blue-900/30 dark:text-blue-400">$1</button>');
     formatted = formatted.replace(/>>\s*([^\n#\r]+)/g, (match, p1) => {
         const linkText = p1.trim();
@@ -1495,7 +1636,6 @@ function importData(inputElement) {
     reader.readAsText(file);
 }
 
-// FIX A: Função showModal ajustada para ser mais robusta e garantir o fechamento.
 function showModal(title, msg, actionBtnText, onAction) { 
     const modal = document.getElementById('app-modal');
     const titleEl = document.getElementById('modal-title');
@@ -1593,13 +1733,6 @@ function sendFeedback() {
     
     window.location.href = `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${body}`;
     closeFeedbackModal();
-}
-
-function toggleBackupAlert() {
-    state.prefs.showAlertOnUnload = !state.prefs.showAlertOnUnload;
-    saveData();
-    setupUnloadAlert(); 
-    render(); 
 }
 
 function setupUnloadAlert() {
