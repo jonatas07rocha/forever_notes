@@ -4,7 +4,7 @@ const PREFS_KEY = 'forever_v3_prefs';
 
 let currentLang = 'pt-BR'; 
 
-const PERIOD_MAP = { // Mapeamento para chaves de tradução
+const PERIOD_MAP = { 
     'Todos': 'filter_all',
     'Hoje': 'filter_today',
     'Futuro': 'filter_future',
@@ -13,33 +13,27 @@ const PERIOD_MAP = { // Mapeamento para chaves de tradução
 
 const TRANSLATIONS = {
     'pt-BR': {
-        // Branding
         app_title: 'Forever ✱ Notes [PoC]',
-        // Entry Types
         type_note: 'Nota',
         type_task: 'Tarefa',
         type_event: 'Evento',
         type_reflection: 'Reflexão',
         type_idea: 'Ideia',
-        // Navigation
         nav_home: 'Home',
         nav_journal: 'Diário',
         nav_hubs: 'Hubs',
         nav_collections: 'Coleções',
         nav_settings: 'Configurações',
         nav_feedback: 'Feedback',
-        // Journal Filters
         filter_all: 'Todos',
         filter_today: 'Hoje',
         filter_future: 'Futuro',
         filter_period: 'Período',
-        // Home View
         home_today: 'Hoje',
         home_priorities: 'Prioridades',
         home_next_event: 'Próximo Evento',
         home_no_priority: 'Nenhuma prioridade ativa.',
         home_no_event: 'Nada agendado.',
-        // Hubs View
         hubs_title: 'Hubs',
         hubs_subtitle: 'Mapas de contexto.',
         hubs_new_prompt: 'Nome do novo Hub (ex: Estudos):',
@@ -47,11 +41,9 @@ const TRANSLATIONS = {
         modal_title_new_hub: 'Criar Novo Hub',
         placeholder_hub_name: 'Nome do Hub',
         button_create_hub: 'Criar Hub',
-        // Collections View
         collections_title: 'Coleções',
         collections_subtitle: 'Organizadas por frequência.',
         collections_empty: 'Nenhuma coleção encontrada. Use #tags em suas notas para criar coleções automaticamente.',
-        // Common UI
         ui_delete_confirm: 'Confirmar',
         ui_cancel: 'Cancelar',
         ui_save: 'Salvar',
@@ -71,7 +63,6 @@ const TRANSLATIONS = {
         ui_delete_hub_msg: 'Deseja excluir "',
         ui_delete_hub_msg_end: '"?',
         message_hub_created: 'Hub criado com sucesso!',
-        // Settings
         settings_title: 'Configurações',
         settings_dark_mode: 'Modo Escuro (Dark Mode)',
         settings_dark_mode_desc: 'Alterne entre o tema claro e escuro da aplicação.',
@@ -89,40 +80,33 @@ const TRANSLATIONS = {
         settings_language: 'Idioma',
         settings_lang_pt: 'Português (Brasil)',
         settings_lang_en: 'Inglês',
-        // Feedback
         feedback_send: 'Enviar Feedback',
         feedback_desc: 'Sua opinião é importante! Relate erros ou envie sugestões.',
         feedback_placeholder: 'Digite sua mensagem aqui...',
         feedback_empty: 'Por favor, digite alguma mensagem antes de enviar.',
     },
     'en-US': {
-        // Branding
         app_title: 'Forever ✱ Notes [PoC]',
-        // Entry Types
         type_note: 'Note',
         type_task: 'Task',
         type_event: 'Event',
         type_reflection: 'Reflection',
         type_idea: 'Idea',
-        // Navigation
         nav_home: 'Home',
         nav_journal: 'Journal',
         nav_hubs: 'Hubs',
         nav_collections: 'Collections',
         nav_settings: 'Settings',
         nav_feedback: 'Feedback',
-        // Journal Filters
         filter_all: 'All',
         filter_today: 'Today',
         filter_future: 'Future',
         filter_period: 'Period',
-        // Home View
         home_today: 'Today',
         home_priorities: 'Priorities',
         home_next_event: 'Next Event',
         home_no_priority: 'No active priorities.',
         home_no_event: 'Nothing scheduled.',
-        // Hubs View
         hubs_title: 'Hubs',
         hubs_subtitle: 'Context maps.',
         hubs_new_prompt: 'Name of the new Hub (e.g., Studies):',
@@ -130,11 +114,9 @@ const TRANSLATIONS = {
         modal_title_new_hub: 'Create New Hub',
         placeholder_hub_name: 'Hub Name',
         button_create_hub: 'Create Hub',
-        // Collections View
         collections_title: 'Collections',
         collections_subtitle: 'Organized by frequency.',
         collections_empty: 'No collections found. Use #tags in your notes to create collections automatically.',
-        // Common UI
         ui_delete_confirm: 'Confirm',
         ui_cancel: 'Cancel',
         ui_save: 'Save',
@@ -154,7 +136,6 @@ const TRANSLATIONS = {
         ui_delete_hub_msg: 'Do you want to delete "',
         ui_delete_hub_msg_end: '"?',
         message_hub_created: 'Hub created successfully!',
-        // Settings
         settings_title: 'Settings',
         settings_dark_mode: 'Dark Mode',
         settings_dark_mode_desc: 'Toggle between light and dark theme.',
@@ -172,7 +153,6 @@ const TRANSLATIONS = {
         settings_language: 'Language',
         settings_lang_pt: 'Portuguese (Brazil)',
         settings_lang_en: 'English',
-        // Feedback
         feedback_send: 'Send Feedback',
         feedback_desc: 'Your opinion is important! Report bugs or send suggestions.',
         feedback_placeholder: 'Type your message here...',
@@ -185,15 +165,10 @@ const T = (key, lang = currentLang) => {
 };
 
 const getPreferredLanguage = () => {
-    // 1. Check saved preference
     const savedLang = state.prefs.lang;
     if (savedLang) return savedLang;
-    
-    // 2. Check browser language
     const browserLang = navigator.language || navigator.userLanguage;
     if (browserLang.toLowerCase().startsWith('pt')) return 'pt-BR';
-    
-    // 3. Default to English
     return 'en-US';
 };
 
@@ -217,39 +192,23 @@ let state = {
     entries: [],
     hubs: [],
     activeTab: 'home',
-    
-    // Navegação
     activeJournalPeriod: 'Todos',
     journalDate: new Date(),
-    
-    // Filtro de Período Personalizado
     filterStartDate: new Date().toISOString().split('T')[0], 
     filterEndDate: new Date().toISOString().split('T')[0],   
-    
-    // Contextos
     activeHubId: null, 
     activeTag: null,
-    
-    // Rastreamento
     tagUsage: {}, 
-    
-    // Edição
     editingEntryId: null,
-
     searchQuery: '',
     viewMode: 'visual', 
     calendarMonth: new Date(),
-    
-    // Inputs
     inputText: '',
+    // FIX: inputDate agora armazena a string 'YYYY-MM-DD' para evitar problemas de fuso horário
     inputDate: null, 
     selectedType: 'task', 
-    
-    // Menus Flutuantes
     showSlashMenu: false, 
     showLinkMenu: false,
-
-    // PREFERÊNCIAS
     prefs: {
         showAlertOnUnload: true,
         theme: 'light',
@@ -284,21 +243,13 @@ function init() {
     setupUnloadAlert();
 }
 
-// --- FUNÇÃO DE NAVEGAÇÃO (CORREÇÃO APLICADA) ---
 function setActiveTab(tabId) {
     state.activeTab = tabId;
-    
-    // Limpa estados específicos ao sair de abas de contexto
     if (tabId !== 'hubs') state.activeHubId = null;
     if (tabId !== 'collections') state.activeTag = null;
-    
-    // Se sair de uma busca para outra aba que não seja Home (onde a busca é mostrada), limpa a busca
     if (state.searchQuery && tabId !== 'home') state.searchQuery = '';
-
-    // Scroll para o topo para melhorar UX no mobile
     const main = document.getElementById('main-container');
     if (main) main.scrollTop = 0;
-
     render();
 }
 
@@ -330,7 +281,6 @@ function updateHubCounts() {
 function applyTheme(theme) {
     const body = document.body;
     body.classList.remove('bg-white', 'text-stone-900', 'bg-stone-900', 'text-stone-100');
-    
     if (theme === 'dark') {
         body.classList.add('bg-stone-900', 'text-stone-100');
         body.classList.add('dark');
@@ -349,7 +299,6 @@ function toggleTheme() {
 }
 
 // --- LÓGICA DE EDIAÇÃO INLINE ---
-
 function startEditEntry(id) {
     state.editingEntryId = id;
     render();
@@ -365,13 +314,10 @@ function startEditEntry(id) {
 function saveEditEntry(id, newContent) {
     const entry = state.entries.find(e => e.id === id);
     if (entry) {
-        // Valida o conteúdo ao salvar a edição
         if (!validateEntryContent(newContent, entry.type)) {
-             // Se a validação falhar, não salva e re-renderiza para que a edição continue
              startEditEntry(id);
              return;
         }
-
         const oldContent = entry.content;
         entry.content = newContent.trim();
         state.editingEntryId = null; 
@@ -385,9 +331,7 @@ function saveEditEntry(id, newContent) {
     }
 }
 
-
 // --- LÓGICA DE LINKS ---
-
 function insertLink(text) {
     const input = document.getElementById('entry-input');
     if (!input) return;
@@ -412,7 +356,6 @@ function insertLink(text) {
 
 function handleLinkClick(linkText) {
     const hub = state.hubs.find(h => h.name === linkText || h.name.replace('✱ ', '').trim() === linkText.trim());
-
     if (hub) {
         openHub(hub.id); 
         return;
@@ -428,7 +371,6 @@ function clearSearch() {
 }
 
 // --- LÓGICA DE TAGS E COLEÇÕES ---
-
 function extractTags(content) {
     const regex = /#[\w\u00C0-\u00FF]+/g; 
     return content.match(regex) || [];
@@ -469,18 +411,11 @@ function closeCollection() {
 }
 
 // --- LÓGICA DE HUBS ---
-
 function showNewHubModal() {
     const content = `
         <input type="text" id="hub-name-input" placeholder="${T('placeholder_hub_name')}" class="modal-input w-full p-2 border border-stone-300 rounded focus:border-black outline-none dark:bg-stone-800 dark:border-stone-700 dark:text-white dark:focus:border-white">
     `;
-    showModal(
-        T('modal_title_new_hub'), 
-        content, 
-        T('button_create_hub'), 
-        handleCreateHub
-    );
-    // Adiciona foco ao input assim que o modal for renderizado
+    showModal(T('modal_title_new_hub'), content, T('button_create_hub'), handleCreateHub);
     setTimeout(() => {
         const input = document.getElementById('hub-name-input');
         if (input) input.focus();
@@ -531,42 +466,50 @@ function deleteHub(hubId) {
     });
 }
 
-// --- FUNÇÃO CONSOLIDADA DE VALIDAÇÃO DE CONTEÚDO ---
-
 function validateEntryContent(content, type) {
     const config = ENTRY_TYPES[type];
     if (config.limit && content.length > config.limit) {
-        showModal(
-            T('ui_item_long'), 
-            `${T('ui_item_long')} ${T(config.label)} ${T('pt-BR') === currentLang ? 'deve ter no máximo' : 'must have a maximum of'} ${config.limit} ${T('pt-BR') === currentLang ? 'caracteres. Para textos longos, use o tipo' : 'characters. For long texts, use the type'} "${T('type_note')}".`
-        );
+        showModal(T('ui_item_long'), `${T('ui_item_long')} ${T(config.label)} ${T('pt-BR') === currentLang ? 'deve ter no máximo' : 'must have a maximum of'} ${config.limit} ${T('pt-BR') === currentLang ? 'caracteres. Para textos longos, use o tipo' : 'characters. For long texts, use the type'} "${T('type_note')}".`);
         return false;
     }
     return true;
 }
 
-// --- NLP DATE HANDLER (Simulado / Simplificado) ---
-// Adicionando a função handleNaturalLanguageDate que estava implícita mas não definida no código anterior
 function handleNaturalLanguageDate(text) {
-    // Implementação básica para evitar erro de referência
-    // Futuramente pode ser expandida com regex para "amanhã", "segunda", etc.
-    return {
-        text: text,
-        date: null,
-        recurring: null
-    };
+    return { text: text, date: null, recurring: null };
+}
+
+// --- FIX: AJUDANTE DE DATA LOCAL ---
+// Converte string '2025-12-09' para timestamp local
+function parseLocalInputDate(dateStr) {
+    if (!dateStr) return null;
+    const parts = dateStr.split('-');
+    // new Date(ano, mes-1, dia) cria a data no horário local
+    const date = new Date(parts[0], parts[1] - 1, parts[2]);
+    return date.getTime();
+}
+
+// --- FIX: MANIPULAÇÃO DO INPUT DATE SEM RE-RENDER ---
+function handleDateInput(val) {
+    // Apenas atualiza o estado e a UI do botão, NÃO chama render()
+    state.inputDate = val; 
+    const btn = document.getElementById('date-btn-icon');
+    if (btn) {
+        if (val) {
+            btn.classList.add('text-black', 'font-bold', 'dark:text-white');
+        } else {
+            btn.classList.remove('text-black', 'font-bold', 'dark:text-white');
+        }
+    }
 }
 
 // --- GESTÃO DE DATAS E ENTRADAS ---
-
 function selectEntryType(typeId) {
     state.selectedType = typeId;
     state.showSlashMenu = false;
-    
     if (state.inputText.startsWith('/')) {
         state.inputText = state.inputText.substring(1).trim();
     }
-    
     render();
     setTimeout(() => {
         const input = document.getElementById('entry-input');
@@ -584,7 +527,9 @@ function addNewEntry() {
     const nlpResult = handleNaturalLanguageDate(state.inputText);
     let content = nlpResult.text;
     let type = state.selectedType;
-    let targetDate = nlpResult.date || state.inputDate; // Usa data do picker se NLP não achar
+    
+    // FIX: Usa a função de parse local para evitar o bug de D-1
+    let targetDate = nlpResult.date || (state.inputDate ? parseLocalInputDate(state.inputDate) : null);
     
     if (content.startsWith('/')) {
          content = content.replace(/^\/\w*\s?/, '');
@@ -660,8 +605,7 @@ function deleteEntry(id) {
     });
 }
 
-// --- LÓGICA DO GLOBAL SLASH COMMAND ---
-
+// --- GLOBAL SLASH COMMAND ---
 function handleGlobalKeydown(e) {
     if (e.key === '/') {
         if (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA') {
@@ -677,20 +621,14 @@ function openGlobalInput() {
     state.inputDate = null;
     state.selectedType = 'task';
     state.showSlashMenu = false; 
-    
     state.editingEntryId = null; 
 
     const modal = document.getElementById('global-input-modal');
-    if (!modal) {
-        console.error("Global input modal not found.");
-        return;
-    }
+    if (!modal) return;
     
     modal.classList.remove('hidden');
-    
     renderGlobalInput();
     setupGlobalInputHandler();
-    
     setTimeout(() => {
         modal.classList.remove('opacity-0');
         const container = document.getElementById('global-input-container');
@@ -703,11 +641,9 @@ function openGlobalInput() {
 function closeGlobalInput() {
     const modal = document.getElementById('global-input-modal');
     if(!modal) return;
-    
     modal.classList.add('opacity-0');
     const container = document.getElementById('global-input-container');
     if (container) container.classList.add('scale-95');
-
     setTimeout(() => {
         modal.classList.add('hidden');
     }, 200);
@@ -730,7 +666,6 @@ function renderGlobalInput() {
     const isOver = limit && charCount > limit;
 
     input.value = state.inputText;
-
     charCountEl.innerText = limit ? `${charCount}/${limit}` : charCount;
     charCountEl.classList.toggle('text-red-600', isOver);
     charCountEl.classList.toggle('font-bold', isOver);
@@ -744,9 +679,10 @@ function renderGlobalInput() {
     menu.classList.toggle('hidden', !state.showSlashMenu);
     
     if (dateBtn && datePicker) {
+        // FIX: Usa o valor string direto para evitar reset
         if (state.inputDate) {
             dateBtn.classList.add('text-black', 'font-bold', 'dark:text-white');
-            datePicker.value = new Date(state.inputDate).toISOString().split('T')[0];
+            datePicker.value = state.inputDate; 
         } else {
             dateBtn.classList.remove('text-black', 'font-bold', 'dark:text-white');
             datePicker.value = '';
@@ -757,20 +693,16 @@ function renderGlobalInput() {
         input.style.height = 'auto';
         input.style.height = (input.scrollHeight) + 'px';
     }
-    
     lucide.createIcons();
 }
 
 function selectGlobalEntryType(typeId) {
     state.selectedType = typeId;
     state.showSlashMenu = false;
-    
     if (state.inputText.startsWith('/')) {
         state.inputText = state.inputText.substring(1).trim();
     }
-    
     renderGlobalInput();
-    
     setTimeout(() => {
         const input = document.getElementById('global-entry-input');
         if(input) {
@@ -787,7 +719,8 @@ function addNewGlobalEntry() {
     const nlpResult = handleNaturalLanguageDate(state.inputText);
     let content = nlpResult.text;
     let type = state.selectedType;
-    let targetDate = nlpResult.date || state.inputDate;
+    // FIX: Parse local aqui também
+    let targetDate = nlpResult.date || (state.inputDate ? parseLocalInputDate(state.inputDate) : null);
     
     if (!validateEntryContent(content, type)) {
         return;
@@ -817,7 +750,6 @@ function addNewGlobalEntry() {
 function setupGlobalInputHandler() {
     const input = document.getElementById('global-entry-input');
     if(!input) return;
-    
     input.value = state.inputText;
     
     input.oninput = (e) => {
@@ -838,14 +770,12 @@ function setupGlobalInputHandler() {
                 }
             }
         }
-
         if (val.includes('**')) {
             const cursor = e.target.selectionStart;
             val = val.replace(/\*\*/g, '✱');
             input.value = val;
             if(cursor > 0) input.setSelectionRange(cursor - 1, cursor - 1);
         }
-        
         state.inputText = val;
         
         if (menuStateChanged) renderGlobalInput();
@@ -879,9 +809,7 @@ function setupGlobalInputHandler() {
     };
 }
 
-
 // --- RENDER SYSTEM ---
-
 function toggleViewMode() {
     state.viewMode = state.viewMode === 'visual' ? 'classic' : 'visual';
     saveData();
@@ -891,7 +819,6 @@ function toggleViewMode() {
 function render() {
     renderSidebar();
     
-    // Atualiza strings estáticas após i18n
     document.querySelector('title').textContent = T('app_title');
     document.getElementById('app-branding').textContent = T('app_title');
     document.getElementById('mobile-branding').textContent = T('app_title');
@@ -904,7 +831,6 @@ function render() {
     document.getElementById('feedback-text').placeholder = T('feedback_placeholder');
     document.getElementById('feedback-send-button-text').textContent = T('feedback_send');
     document.getElementById('feedback-cancel-button-text').textContent = T('ui_cancel');
-
 
     const main = document.getElementById('main-container');
     
@@ -920,7 +846,6 @@ function render() {
             case 'settings': main.innerHTML = getSettingsHTML(); break;
         }
     }
-    
     lucide.createIcons();
 }
 
@@ -947,9 +872,7 @@ function renderSidebar() {
     if (mobileMenu) mobileMenu.innerHTML = menuHTML;
 }
 
-// Funções auxiliares de renderização de inputs do Journal
 function setupJournalInput() {
-    // Garante que o input do journal tenha os eventos corretos anexados após ser renderizado no DOM
     const input = document.getElementById('entry-input');
     if (!input) return;
 
@@ -972,19 +895,16 @@ function setupJournalInput() {
                 state.showLinkMenu = false;
             }
         }
-
         if (val.includes('**')) {
             const cursor = e.target.selectionStart;
             val = val.replace(/\*\*/g, '✱');
             input.value = val;
             if(cursor > 0) input.setSelectionRange(cursor - 1, cursor - 1);
         }
-        
         state.inputText = val;
         
         if (menuStateChanged) render();
         
-        // Foco automático de volta no input após render (crucial)
         setTimeout(() => {
              const refocusedInput = document.getElementById('entry-input');
              if(refocusedInput) {
@@ -1003,9 +923,7 @@ function setupJournalInput() {
     };
 }
 
-
 // --- VIEWS ---
-
 function getHomeHTML() {
     const now = new Date();
     now.setHours(0,0,0,0);
@@ -1097,7 +1015,6 @@ function getSearchResultsHTML() {
 
 function getHubsHTML() {
     if (state.activeHubId) return getCommonSingleViewHTML(state.hubs.find(h => h.id == state.activeHubId).name, closeHub, `${currentLang === 'pt-BR' ? 'Adicionar nota em' : 'Add note to'} ${state.hubs.find(h => h.id == state.activeHubId).name}...`, state.activeHubId);
-    
     return `
         <div class="fade-in">
             <header class="flex justify-between items-center mb-8">
@@ -1121,16 +1038,13 @@ function getHubsHTML() {
 
 function getCollectionsHTML() {
     if (state.activeTag) return getCommonSingleViewHTML(state.activeTag, closeCollection, `${currentLang === 'pt-BR' ? 'Adicionar novo item em' : 'Add new item to'} ${state.activeTag}...`);
-
     const tags = getUniqueTags(); 
-    
     return `
         <div class="fade-in">
             <header class="mb-8">
                 <h1 class="text-3xl font-bold text-black dark:text-white">✱ ${T('collections_title')}</h1>
                 <p class="text-stone-500 dark:text-stone-400">${T('collections_subtitle')}</p>
             </header>
-
             <div class="flex flex-wrap gap-3">
                 ${tags.length > 0 
                     ? tags.map(t => `
@@ -1148,7 +1062,7 @@ function getCollectionsHTML() {
     `;
 }
 
-// Helper para visualizar lista filtrada (usado em Hubs e Collections)
+// FIX: HTML atualizado com o manipulador de data corrigido
 function getCommonSingleViewHTML(title, closeFunc, placeholder, hubId = null) {
     const list = getFilteredEntries();
     const config = ENTRY_TYPES[state.selectedType];
@@ -1176,7 +1090,11 @@ function getCommonSingleViewHTML(title, closeFunc, placeholder, hubId = null) {
                 </div>
                 ${state.showSlashMenu ? `<div class="absolute top-full left-0 mt-1 w-48 bg-white border-2 border-black shadow-xl z-50 fade-in py-1 dark:bg-stone-800 dark:border-stone-600">${typeOptions}</div>` : ''}
                 ${state.showLinkMenu ? `<div class="absolute top-full left-20 mt-1 w-48 bg-white border-2 border-black shadow-xl z-50 fade-in py-1 dark:bg-stone-800 dark:border-stone-600"><div class="px-2 py-1 text-[10px] font-bold text-stone-400 uppercase tracking-wider border-b border-stone-100 mb-1 dark:border-stone-700">${currentLang === 'pt-BR' ? 'Linkar para...' : 'Link to...'}</div>${linkOptions}</div>` : ''}
-                <div class="relative flex-shrink-0"><input type="date" id="date-picker-native" class="absolute inset-0 opacity-0 cursor-pointer" onchange="state.inputDate = this.valueAsDate ? this.valueAsDate.getTime() : null; render()"><button class="p-1.5 hover:bg-stone-200 rounded text-stone-400 hover:text-black dark:hover:bg-stone-700 dark:hover:text-white ${state.inputDate ? 'text-black font-bold dark:text-white' : ''}"><i data-lucide="calendar" class="w-4 h-4"></i></button></div>
+                
+                <div class="relative flex-shrink-0">
+                    <input type="date" id="date-picker-native" value="${state.inputDate || ''}" class="absolute inset-0 opacity-0 cursor-pointer" onchange="handleDateInput(this.value)">
+                    <button id="date-btn-icon" class="p-1.5 hover:bg-stone-200 rounded text-stone-400 hover:text-black dark:hover:bg-stone-700 dark:hover:text-white ${state.inputDate ? 'text-black font-bold dark:text-white' : ''}"><i data-lucide="calendar" class="w-4 h-4"></i></button>
+                </div>
             </div>
             <div class="flex-1 overflow-y-auto pb-20 scrollbar-hide space-y-1" onclick="if(state.showSlashMenu || state.showLinkMenu){state.showSlashMenu=false; state.showLinkMenu=false; render()}">
                 ${list.length > 0 ? list.map(entry => renderEntry(entry)).join('') : `<div class="text-center text-stone-400 mt-10 italic">${currentLang === 'pt-BR' ? 'Nenhum item ainda.' : 'No items yet.'}</div>`}
@@ -1185,7 +1103,6 @@ function getCommonSingleViewHTML(title, closeFunc, placeholder, hubId = null) {
     `;
 }
 
-// Filtra as entradas baseadas na aba ativa
 function getFilteredEntries() {
     let list = [];
     if (state.searchQuery) {
@@ -1213,7 +1130,6 @@ function getFilteredEntries() {
             const start = new Date(state.filterStartDate);
             const end = new Date(state.filterEndDate);
             end.setHours(23,59,59,999);
-            
             list = state.entries.filter(e => {
                 const target = e.targetDate ? new Date(e.targetDate) : new Date(e.id);
                 return target >= start && target <= end;
@@ -1224,12 +1140,10 @@ function getFilteredEntries() {
     } else if (state.activeTab === 'collections' && state.activeTag) {
         list = state.entries.filter(e => e.content.includes(state.activeTag));
     }
-    
-    // Ordenação padrão: mais recentes primeiro (por ID/Criação)
-    // Para 'Futuro', talvez seja melhor inverter? Manter padrão por enquanto.
     return list.sort((a,b) => b.id - a.id);
 }
 
+// FIX: HTML atualizado com o manipulador de data corrigido
 function getJournalHTML() {
     const list = getFilteredEntries();
     const config = ENTRY_TYPES[state.selectedType];
@@ -1265,12 +1179,10 @@ function getJournalHTML() {
                     <h2 class="text-2xl font-bold dark:text-white">✱ ${T('nav_journal')}</h2>
                     <button onclick="toggleViewMode()" class="p-2 rounded hover:bg-stone-100 transition-colors dark:hover:bg-stone-800"><i data-lucide="${state.viewMode === 'visual' ? 'layout-list' : 'layout-template'}" class="w-5 h-5 text-stone-500 hover:text-black dark:hover:text-white"></i></button>
                 </div>
-                
                 <div class="flex gap-1 bg-stone-100 p-1 rounded-sm self-start md:self-auto overflow-x-auto dark:bg-stone-800">
                     ${periodButtons}
                 </div>
             </div>
-            
             ${dateFilterHTML}
 
             <div class="relative mb-6 z-20 group bg-stone-50 p-3 border border-stone-200 focus-within:border-black focus-within:shadow-lg transition-all flex items-start gap-3 dark:bg-stone-800 dark:border-stone-700 dark:focus-within:border-white">
@@ -1278,7 +1190,11 @@ function getJournalHTML() {
                 <div class="flex-1 relative"><input type="text" id="entry-input" autocomplete="off" placeholder="${T('ui_add_note_placeholder')}/${T('ui_add_note_placeholder_end')}" class="w-full bg-transparent text-sm outline-none font-medium placeholder:font-normal placeholder:text-stone-400 py-1.5 dark:text-white dark:placeholder:text-stone-500">${limit ? `<div class="absolute right-0 top-1.5 text-[10px] font-mono text-stone-400">${charCount}/${limit}</div>` : ''}</div>
                 ${state.showSlashMenu ? `<div class="absolute top-full left-0 mt-1 w-48 bg-white border-2 border-black shadow-xl z-50 fade-in py-1 dark:bg-stone-800 dark:border-stone-600">${typeOptions}</div>` : ''}
                 ${state.showLinkMenu ? `<div class="absolute top-full left-20 mt-1 w-48 bg-white border-2 border-black shadow-xl z-50 fade-in py-1 dark:bg-stone-800 dark:border-stone-600"><div class="px-2 py-1 text-[10px] font-bold text-stone-400 uppercase tracking-wider border-b border-stone-100 mb-1 dark:border-stone-700">${currentLang === 'pt-BR' ? 'Linkar para...' : 'Link to...'}</div>${linkOptions}</div>` : ''}
-                <div class="relative flex-shrink-0"><input type="date" id="date-picker-native" class="absolute inset-0 opacity-0 cursor-pointer" onchange="state.inputDate = this.valueAsDate ? this.valueAsDate.getTime() : null; render()"><button class="p-1.5 hover:bg-stone-200 rounded text-stone-400 hover:text-black dark:hover:bg-stone-700 dark:hover:text-white"><i data-lucide="calendar" class="w-4 h-4"></i></button></div>
+                
+                <div class="relative flex-shrink-0">
+                    <input type="date" id="date-picker-native" value="${state.inputDate || ''}" class="absolute inset-0 opacity-0 cursor-pointer" onchange="handleDateInput(this.value)">
+                    <button id="date-btn-icon" class="p-1.5 hover:bg-stone-200 rounded text-stone-400 hover:text-black dark:hover:bg-stone-700 dark:hover:text-white ${state.inputDate ? 'text-black font-bold dark:text-white' : ''}"><i data-lucide="calendar" class="w-4 h-4"></i></button>
+                </div>
             </div>
             <div class="flex-1 overflow-y-auto pb-20 scrollbar-hide space-y-1" onclick="if(state.showSlashMenu || state.showLinkMenu){state.showSlashMenu=false; state.showLinkMenu=false; render()}">
                 ${list.map(entry => renderEntry(entry)).join('')}
@@ -1300,7 +1216,6 @@ function renderEntry(entry) {
 function getEditEntryHTML(entry) {
     const config = ENTRY_TYPES[entry.type];
     const isClassic = state.viewMode === 'classic';
-    
     return `
         <div class="p-3 bg-stone-50 border-2 border-black rounded shadow-md ${isClassic ? 'font-mono' : 'font-sans'} dark:bg-stone-800 dark:border-stone-600">
             <div class="text-[10px] font-bold uppercase text-stone-600 mb-1 flex items-center gap-2 dark:text-stone-400">
@@ -1323,21 +1238,13 @@ function getEditEntryHTML(entry) {
     `;
 }
 
-// --- SANITIZAÇÃO DE HTML (NOVO) ---
 function escapeHtml(text) {
     if (!text) return text;
-    return text
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
+    return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
 }
 
 function formatContent(text) {
-    // APLICA A SANITIZAÇÃO PRIMEIRO PARA EVITAR XSS
     let formatted = escapeHtml(text);
-    
     formatted = formatted.replace(/\n/g, '<br>');
     formatted = formatted.replace(/(#[\w\u00C0-\u00FF]+)/g, '<button onclick="openCollection(\'$1\'); event.stopPropagation();" class="text-blue-600 hover:underline font-bold bg-blue-50 px-1 rounded mx-0.5 dark:bg-blue-900/30 dark:text-blue-400">$1</button>');
     formatted = formatted.replace(/>>\s*([^\n#\r]+)/g, (match, p1) => {
@@ -1346,11 +1253,9 @@ function formatContent(text) {
     });
     formatted = formatted.replace(/\*\*(.+?)\*\*|__(.+?)__/g, '<strong>$1$2</strong>');
     formatted = formatted.replace(/\*(.+?)\*|_(.+?)_/g, '<em>$1$2</em>');
-    
     const listItemStyle = 'list-item list-disc ml-4 text-stone-900 dark:text-stone-200'; 
     formatted = formatted.replace(/<br>(\s*)[*-+]\s*(.+?)(?=<br>|$)/g, `<br><span class="${listItemStyle}">$2</span>`);
     formatted = formatted.replace(/^(\s*)[*-+]\s*(.+?)(?=<br>|$)/g, `<span class="${listItemStyle}">$2</span>`);
-    
     formatted = formatted.replace(/<br>(\s*)##\s*(.+?)(?=<br>|$)/g, '<br><h3 class="text-lg font-bold mt-3 mb-1 dark:text-white">$2</h3>');
     formatted = formatted.replace(/^(\s*)##\s*(.+?)(?=<br>|$)/g, '<h3 class="text-lg font-bold mb-1 dark:text-white">$2</h3>');
     return formatted;
@@ -1362,7 +1267,6 @@ function renderVisualEntry(entry) {
     const isCompleted = entry.completed;
     const isPriority = entry.content.includes('✱');
     const contentHtml = formatContent(entry.content);
-
     return `
         <div class="flex items-start gap-3 p-3 bg-white border ${isPriority && !isCompleted ? 'border-l-4 border-l-black border-y-stone-100 border-r-stone-100 dark:border-l-white dark:border-y-stone-800 dark:border-r-stone-800' : 'border-stone-100 dark:border-stone-800'} hover:border-stone-400 group transition-all dark:bg-stone-900 dark:hover:border-stone-600">
             <button onclick="toggleEntry(${entry.id})" class="${config.color} mt-0.5">
@@ -1392,7 +1296,6 @@ function renderClassicEntry(entry) {
     const isPriority = entry.content.includes('✱');
     const dateDisplay = entry.targetDate ? new Date(entry.targetDate).toLocaleDateString(currentLang, {day:'2-digit', month:'2-digit'}) : '';
     const contentHtml = formatContent(entry.content);
-
     return `
         <div class="group flex items-baseline gap-2 py-1 px-1 hover:bg-stone-50 rounded -ml-1 transition-colors cursor-default dark:hover:bg-stone-800">
             <button onclick="toggleEntry(${entry.id})" 
@@ -1467,7 +1370,6 @@ function getCalendarHTML() {
             </div>
         `;
     }
-
     html += `</div></div>`;
     return html;
 }
@@ -1481,7 +1383,6 @@ function toggleBackupAlert() {
 
 function getSettingsHTML() {
     const isDark = state.prefs.theme === 'dark'; 
-    
     return `
         <div class="fade-in max-w-xl">
             <h2 class="text-2xl font-bold mb-6 dark:text-white">${T('settings_title')}</h2>
@@ -1496,7 +1397,6 @@ function getSettingsHTML() {
                     <option value="en-US" ${currentLang === 'en-US' ? 'selected' : ''}>${T('settings_lang_en')}</option>
                 </select>
             </div>
-
             <div class="bg-white border-2 border-stone-200 p-6 mb-4 flex justify-between items-center dark:bg-stone-800 dark:border-stone-700">
                 <div>
                     <h3 class="font-bold mb-1 text-black dark:text-white">${T('settings_dark_mode')}</h3>
@@ -1507,7 +1407,6 @@ function getSettingsHTML() {
                     <div class="w-11 h-6 bg-stone-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-black/30 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-stone-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black dark:bg-stone-600"></div>
                 </label>
             </div>
-            
             <div class="bg-white border-2 border-stone-200 p-6 mb-4 flex justify-between items-center dark:bg-stone-800 dark:border-stone-700">
                 <div>
                     <h3 class="font-bold mb-1 text-black dark:text-white">${T('settings_backup_alert')}</h3>
@@ -1518,20 +1417,16 @@ function getSettingsHTML() {
                     <div class="w-11 h-6 bg-stone-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-black/30 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-stone-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black dark:bg-stone-600"></div>
                 </label>
             </div>
-            
             <div class="bg-white border-2 border-stone-200 p-6 mb-4 dark:bg-stone-800 dark:border-stone-700">
                 <h3 class="font-bold mb-2 text-black dark:text-white">${T('settings_backup_data')}</h3>
                 <p class="text-sm text-stone-500 mb-4 dark:text-stone-400">${T('settings_backup_data_desc')}</p>
-                
                 <div class="flex gap-2">
                     <button onclick="exportData()" class="flex items-center gap-2 bg-black text-white px-4 py-2 text-xs font-bold border-2 border-black hover:bg-stone-800 transition-colors dark:bg-white dark:text-black dark:hover:bg-stone-200">
                         <i data-lucide="download" class="w-4 h-4"></i> ${T('settings_backup_button')}
                     </button>
-
                     <button onclick="document.getElementById('import-file').click()" class="flex items-center gap-2 bg-white text-black px-4 py-2 text-xs font-bold border-2 border-stone-300 hover:border-black hover:bg-stone-50 transition-all dark:bg-stone-700 dark:text-white dark:border-stone-600 dark:hover:bg-stone-600">
                         <i data-lucide="upload" class="w-4 h-4"></i> ${T('settings_restore_button')}
                     </button>
-                    
                     <input type="file" id="import-file" class="hidden" accept=".json" onchange="importData(this)">
                 </div>
             </div>
@@ -1542,7 +1437,6 @@ function getSettingsHTML() {
 function exportData() {
     const dataStr = JSON.stringify(state);
     const blob = new Blob([dataStr], {type: "application/json"});
-    
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -1554,31 +1448,18 @@ function exportData() {
 }
 
 function mergeImportedData(currentData, importedData) {
-    // 1. Mesclar Entradas (Entries)
-    // Cria um Set com os IDs das entradas atuais para uma verificação rápida
     const existingEntryIds = new Set(currentData.entries.map(e => e.id));
-    // Filtra as entradas importadas para manter apenas as que não existem (baseado no ID)
     const uniqueImportedEntries = importedData.entries.filter(importedEntry => !existingEntryIds.has(importedEntry.id));
-    const newEntries = [...currentData.entries, ...uniqueImportedEntries]; // Junta as entradas atuais com as novas
-
-    // 2. Mesclar Hubs
+    const newEntries = [...currentData.entries, ...uniqueImportedEntries];
     const existingHubIds = new Set(currentData.hubs.map(h => h.id));
-    // Filtra os hubs importados para manter apenas os que não existem (baseado no ID)
     const uniqueImportedHubs = importedData.hubs.filter(importedHub => !existingHubIds.has(importedHub.id));
-    const newHubs = [...currentData.hubs, ...uniqueImportedHubs]; // Junta os hubs atuais com os novos
-
-    // 3. Mesclar Uso de Tags (somar a relevância)
+    const newHubs = [...currentData.hubs, ...uniqueImportedHubs];
     const newTagUsage = { ...currentData.tagUsage };
     const importedTagUsage = importedData.tagUsage || {};
-    
-    // Soma o uso de tags do backup ao uso de tags atual
     for (const tag in importedTagUsage) {
         newTagUsage[tag] = (newTagUsage[tag] || 0) + importedTagUsage[tag];
     }
-    
-    // 4. Mesclar Preferências (mantém as atuais, sobrescreve apenas as chaves presentes no importado)
     const newPrefs = {...currentData.prefs, ...importedData.prefs};
-
     return {
         entries: newEntries,
         hubs: newHubs,
@@ -1590,34 +1471,25 @@ function mergeImportedData(currentData, importedData) {
 function importData(inputElement) {
     const file = inputElement.files[0];
     if (!file) return;
-
     const reader = new FileReader();
     reader.onload = function(e) {
         try {
             const data = JSON.parse(e.target.result);
-            
             if (data.entries && Array.isArray(data.entries)) {
                 const mergeMessage = currentLang === 'pt-BR' 
                     ? 'Atenção: Isso combinará os dados atuais com os do backup. Entradas duplicadas (pelo ID) serão ignoradas.' 
                     : 'Warning: This will merge current data with the backup. Duplicate entries (by ID) will be ignored.';
-                
-                showModal(
-                    T('settings_restore_q'), 
-                    mergeMessage, 
-                    T('ui_delete_confirm'), 
-                    () => {
+                showModal(T('settings_restore_q'), mergeMessage, T('ui_delete_confirm'), () => {
                         const mergedData = mergeImportedData({
                             entries: state.entries,
                             hubs: state.hubs,
                             tagUsage: state.tagUsage,
                             prefs: state.prefs
                         }, data);
-                        
                         state.entries = mergedData.entries;
                         state.hubs = mergedData.hubs;
                         state.tagUsage = mergedData.tagUsage;
                         state.prefs = mergedData.prefs;
-                        
                         saveData(); 
                         applyTheme(state.prefs.theme); 
                         render(); 
@@ -1642,32 +1514,24 @@ function showModal(title, msg, actionBtnText, onAction) {
     const msgEl = document.getElementById('modal-message');
     const confirmBtn = document.getElementById('modal-confirm');
     const cancelBtn = document.getElementById('modal-cancel');
-
     if(!modal) return;
-
     titleEl.innerText = title;
     msgEl.innerHTML = msg; 
-
     if (onAction) {
         cancelBtn.classList.remove('hidden');
         confirmBtn.innerText = actionBtnText || T('ui_delete_confirm');
-        
-        // Ação de confirmação que executa a função e FECHA o modal.
         confirmBtn.onclick = () => {
             onAction();
             closeModal(); 
         };
-        // Para Hub Modal, garante que o input tenha foco
         if (document.getElementById('hub-name-input')) {
              setTimeout(() => document.getElementById('hub-name-input').focus(), 150);
         }
-
     } else {
         cancelBtn.classList.add('hidden'); 
         confirmBtn.innerText = actionBtnText || 'OK';
         confirmBtn.onclick = closeModal;
     }
-
     modal.classList.remove('hidden');
     setTimeout(() => {
         modal.classList.remove('opacity-0');
@@ -1678,10 +1542,8 @@ function showModal(title, msg, actionBtnText, onAction) {
 function closeModal() {
     const modal = document.getElementById('app-modal');
     if(!modal) return;
-    
     modal.classList.add('opacity-0');
     modal.querySelector('div[class*="transform"]').classList.remove('scale-100');
-    
     setTimeout(() => {
         modal.classList.add('hidden');
     }, 200);
@@ -1701,7 +1563,6 @@ function openFeedbackModal() {
     if (!modal) return;
     const textarea = document.getElementById('feedback-text');
     if (textarea) textarea.value = '';
-    
     modal.classList.remove('hidden');
     setTimeout(() => {
         modal.classList.remove('opacity-0');
@@ -1721,23 +1582,19 @@ function closeFeedbackModal() {
 function sendFeedback() {
     const textarea = document.getElementById('feedback-text');
     const text = textarea ? textarea.value.trim() : '';
-    
     if (!text) {
         showModal(T('ui_delete_confirm'), T('feedback_empty'));
         return;
     }
-    
     const email = "jonatas.rocha@outlook.es";
     const subject = T('app_title') + " Feedback";
     const body = encodeURIComponent(text);
-    
     window.location.href = `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${body}`;
     closeFeedbackModal();
 }
 
 function setupUnloadAlert() {
     window.removeEventListener('beforeunload', handleBeforeUnload);
-
     if (state.prefs.showAlertOnUnload) {
         window.addEventListener('beforeunload', handleBeforeUnload);
     }
