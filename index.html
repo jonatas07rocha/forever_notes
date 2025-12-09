@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     
     <title>Forever ✱ Notes [PoC]</title>
     
@@ -167,7 +167,7 @@
 
                     <div id="global-slash-menu" class="absolute top-full left-0 mt-1 w-48 bg-white border-2 border-black shadow-xl z-50 fade-in py-1 hidden dark:bg-stone-800 dark:border-stone-600"></div>
                     
-                    <div class="relative flex-shrink-0"><input type="date" id="global-date-picker-native" class="absolute inset-0 opacity-0 cursor-pointer" onchange="state.inputDate = this.valueAsDate ? this.valueAsDate.getTime() : null; renderGlobalInput()"><button id="global-date-button" class="p-1.5 hover:bg-stone-200 rounded text-stone-400 hover:text-black dark:hover:bg-stone-700 dark:hover:text-white"><i data-lucide="calendar" class="w-4 h-4"></i></button></div>
+                    <div class="relative flex-shrink-0"><input type="date" id="global-date-picker-native" class="absolute inset-0 opacity-0 cursor-pointer" onchange="handleDateInput(this.value)"><button id="global-date-button" class="p-1.5 hover:bg-stone-200 rounded text-stone-400 hover:text-black dark:hover:bg-stone-700 dark:hover:text-white"><i data-lucide="calendar" class="w-4 h-4"></i></button></div>
                 </div>
 
             </div>
