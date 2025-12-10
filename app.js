@@ -542,6 +542,21 @@ function addNewEntry() {
     }
 
     let targetHubId = state.activeTab === 'hubs' ? state.activeHubId : (state.activeHubId || null);
+
+    // 🔗 CORREÇÃO B: DETECÇÃO DE LINK PARA HUB NO TEXTO
+    const hubLinkMatch = content.match(/>>\s*([^\n#\r]+)/);
+    
+    if (hubLinkMatch) {
+        const linkedHubName = hubLinkMatch[1].trim();
+        const foundHub = state.hubs.find(h => 
+            h.name.toLowerCase() === linkedHubName.toLowerCase() || 
+            h.name.replace('✱', '').trim().toLowerCase() === linkedHubName.toLowerCase()
+        );
+
+        if (foundHub) {
+            targetHubId = foundHub.id;
+        }
+    }
     
     if (state.activeTab === 'collections' && state.activeTag) {
         if (!content.includes(state.activeTag)) {
@@ -955,6 +970,17 @@ function getHomeHTML() {
                 <h1 class="text-3xl font-bold text-black dark:text-white">✱ ${T('nav_home')}</h1>
                 <p class="text-stone-500 capitalize dark:text-stone-400">${new Date().toLocaleDateString(currentLang, langOptions)}</p>
             </header>
+
+            <div class="mb-6 relative group">
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <i data-lucide="search" class="w-5 h-5 text-stone-400 group-focus-within:text-black dark:group-focus-within:text-white transition-colors"></i>
+                </div>
+                <input type="text" 
+                    placeholder="${T('ui_search_placeholder')}" 
+                    class="w-full bg-stone-50 border-2 border-stone-200 rounded-lg py-3 pl-10 pr-4 text-sm focus:border-black focus:bg-white outline-none transition-all dark:bg-stone-800 dark:border-stone-700 dark:focus:border-white dark:text-white"
+                    onkeydown="if(event.key === 'Enter'){ state.searchQuery = this.value; render(); }"
+                >
+            </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div class="bg-stone-900 text-white p-5 border-2 border-black cursor-default relative overflow-hidden group dark:bg-stone-800 dark:border-stone-700">
