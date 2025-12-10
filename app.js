@@ -543,7 +543,7 @@ function addNewEntry() {
 
     let targetHubId = state.activeTab === 'hubs' ? state.activeHubId : (state.activeHubId || null);
 
-    // 🔗 CORREÇÃO B: DETECÇÃO DE LINK PARA HUB NO TEXTO
+    // 🔗 DETECÇÃO DE LINK PARA HUB NO TEXTO (CORREÇÃO ANTERIOR)
     const hubLinkMatch = content.match(/>>\s*([^\n#\r]+)/);
     
     if (hubLinkMatch) {
@@ -1291,18 +1291,25 @@ function escapeHtml(text) {
 function formatContent(text) {
     let formatted = escapeHtml(text);
     formatted = formatted.replace(/\n/g, '<br>');
+    
+    // TAGS
     formatted = formatted.replace(/(#[\w\u00C0-\u00FF]+)/g, '<button onclick="openCollection(\'$1\'); event.stopPropagation();" class="text-blue-600 hover:underline font-bold bg-blue-50 px-1 rounded mx-0.5 dark:bg-blue-900/30 dark:text-blue-400">$1</button>');
+    
+    // 🎨 CORREÇÃO VISUAL DE LINKS (sem setas >>, estilo pílula limpo)
     formatted = formatted.replace(/>>\s*([^\n#\r]+)/g, (match, p1) => {
         const linkText = p1.trim();
-        return `<button onclick="handleLinkClick('${linkText}'); event.stopPropagation();" class="text-purple-700 hover:underline font-bold bg-purple-50 px-1 rounded mx-0.5 border-b-2 border-purple-200 dark:bg-purple-900/30 dark:text-purple-400 dark:border-purple-800">${linkText}</button>`;
+        return `<button onclick="handleLinkClick('${linkText}'); event.stopPropagation();" class="text-purple-700 hover:underline font-bold bg-purple-50 px-1 rounded mx-0.5 transition-colors dark:bg-purple-900/30 dark:text-purple-400">${linkText}</button>`;
     });
+
     formatted = formatted.replace(/\*\*(.+?)\*\*|__(.+?)__/g, '<strong>$1$2</strong>');
     formatted = formatted.replace(/\*(.+?)\*|_(.+?)_/g, '<em>$1$2</em>');
+    
     const listItemStyle = 'list-item list-disc ml-4 text-stone-900 dark:text-stone-200'; 
     formatted = formatted.replace(/<br>(\s*)[*-+]\s*(.+?)(?=<br>|$)/g, `<br><span class="${listItemStyle}">$2</span>`);
     formatted = formatted.replace(/^(\s*)[*-+]\s*(.+?)(?=<br>|$)/g, `<span class="${listItemStyle}">$2</span>`);
     formatted = formatted.replace(/<br>(\s*)##\s*(.+?)(?=<br>|$)/g, '<br><h3 class="text-lg font-bold mt-3 mb-1 dark:text-white">$2</h3>');
     formatted = formatted.replace(/^(\s*)##\s*(.+?)(?=<br>|$)/g, '<h3 class="text-lg font-bold mb-1 dark:text-white">$2</h3>');
+    
     return formatted;
 }
 
