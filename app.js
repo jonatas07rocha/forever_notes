@@ -202,7 +202,7 @@ let state = {
     entries: [],
     hubs: [],
     activeTab: 'home',
-    activeJournalPeriod: 'Todos',
+    activeJournalPeriod: 'Hoje', // 🔄 CORREÇÃO B: "Hoje" como padrão ao abrir
     journalDate: new Date(),
     filterStartDate: new Date().toISOString().split('T')[0], 
     filterEndDate: new Date().toISOString().split('T')[0],   
@@ -543,7 +543,7 @@ function addNewEntry() {
 
     let targetHubId = state.activeTab === 'hubs' ? state.activeHubId : (state.activeHubId || null);
 
-    // 🔗 DETECÇÃO DE LINK PARA HUB NO TEXTO (CORREÇÃO ANTERIOR)
+    // 🔗 DETECÇÃO DE LINK PARA HUB NO TEXTO
     const hubLinkMatch = content.match(/>>\s*([^\n#\r]+)/);
     
     if (hubLinkMatch) {
@@ -1207,7 +1207,8 @@ function getJournalHTML() {
         `;
     }
     
-    const periodButtons = ['Todos', 'Hoje', 'Futuro', 'Período'].map(p => `
+    // 🔄 CORREÇÃO B: "Hoje" primeiro, "Todos" no final
+    const periodButtons = ['Hoje', 'Futuro', 'Período', 'Todos'].map(p => `
         <button onclick="state.activeJournalPeriod='${p}'; render()" 
             class="px-3 py-1 text-xs font-bold transition-all ${state.activeJournalPeriod === p ? 'bg-black text-white dark:bg-white dark:text-black' : 'text-stone-500 hover:text-black dark:text-stone-400 dark:hover:text-white'}">
             ${T(PERIOD_MAP[p])}
@@ -1295,8 +1296,9 @@ function formatContent(text) {
     // TAGS
     formatted = formatted.replace(/(#[\w\u00C0-\u00FF]+)/g, '<button onclick="openCollection(\'$1\'); event.stopPropagation();" class="text-blue-600 hover:underline font-bold bg-blue-50 px-1 rounded mx-0.5 dark:bg-blue-900/30 dark:text-blue-400">$1</button>');
     
-    // 🎨 CORREÇÃO VISUAL DE LINKS (sem setas >>, estilo pílula limpo)
-    formatted = formatted.replace(/>>\s*([^\n#\r]+)/g, (match, p1) => {
+    // 🎨 CORREÇÃO C: Regex que considera o HTML escape (&gt;&gt;)
+    // Isso conserta o problema visual onde os links não mudavam
+    formatted = formatted.replace(/(?:>>|&gt;&gt;)\s*([^\n#<]+)/g, (match, p1) => {
         const linkText = p1.trim();
         return `<button onclick="handleLinkClick('${linkText}'); event.stopPropagation();" class="text-purple-700 hover:underline font-bold bg-purple-50 px-1 rounded mx-0.5 transition-colors dark:bg-purple-900/30 dark:text-purple-400">${linkText}</button>`;
     });
