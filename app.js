@@ -85,6 +85,8 @@ const TRANSLATIONS = {
         settings_language: 'Idioma',
         settings_lang_pt: 'Português (Brasil)',
         settings_lang_en: 'Inglês',
+        settings_gdrive_beta_badge: 'EM TESTES (BETA)',
+        settings_gdrive_beta_msg: 'Esta funcionalidade está em fase experimental e pode apresentar instabilidade. Recomendamos fazer um backup local antes de usar.',
         feedback_send: 'Enviar Feedback',
         feedback_desc: 'Sua opinião é importante! Relate erros ou envie sugestões.',
         feedback_placeholder: 'Digite sua mensagem aqui...',
@@ -163,6 +165,8 @@ const TRANSLATIONS = {
         settings_language: 'Language',
         settings_lang_pt: 'Portuguese (Brazil)',
         settings_lang_en: 'English',
+        settings_gdrive_beta_badge: 'TESTING (BETA)',
+        settings_gdrive_beta_msg: 'This feature is experimental and may be unstable. We recommend creating a local backup before using.',
         feedback_send: 'Send Feedback',
         feedback_desc: 'Your opinion is important! Report bugs or send suggestions.',
         feedback_placeholder: 'Type your message here...',
@@ -1484,10 +1488,18 @@ function getSettingsHTML() {
         <div class="fade-in max-w-xl">
             <h2 class="text-2xl font-bold mb-6 dark:text-white">${T('settings_title')}</h2>
             
-            <div class="bg-blue-50 border-2 border-blue-200 p-6 mb-6 rounded dark:bg-blue-900/20 dark:border-blue-800">
+            <div class="bg-blue-50 border-2 border-blue-200 p-6 mb-6 rounded dark:bg-blue-900/20 dark:border-blue-800 relative overflow-hidden">
+                <div class="absolute top-0 right-0 bg-yellow-400 text-yellow-900 text-[10px] font-bold px-2 py-1 rounded-bl">${T('settings_gdrive_beta_badge')}</div>
+                
                 <h3 class="font-bold mb-2 text-blue-900 dark:text-blue-300 flex items-center gap-2">
                     <i data-lucide="cloud" class="w-5 h-5"></i> Sincronização Google Drive
                 </h3>
+                
+                <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-800 p-3 text-xs mb-4 dark:bg-yellow-900/30 dark:text-yellow-200 dark:border-yellow-600">
+                    <p class="font-bold flex items-center gap-2"><i data-lucide="alert-triangle" class="w-3 h-3"></i> Atenção</p>
+                    <p class="mt-1">${T('settings_gdrive_beta_msg')}</p>
+                </div>
+
                 <p class="text-sm text-blue-800/70 mb-4 dark:text-blue-200/70">
                     Mantenha seus dados seguros na nuvem e sincronize entre dispositivos.
                 </p>
