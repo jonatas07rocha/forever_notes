@@ -85,8 +85,8 @@ const TRANSLATIONS = {
         settings_language: 'Idioma',
         settings_lang_pt: 'Português (Brasil)',
         settings_lang_en: 'Inglês',
-        settings_gdrive_beta_badge: 'EM TESTES (BETA)',
-        settings_gdrive_beta_msg: 'Esta funcionalidade está em fase experimental e pode apresentar instabilidade. Recomendamos fazer um backup local antes de usar.',
+        settings_gdrive_beta_badge: 'BETA',
+        settings_gdrive_beta_msg: 'Funcionalidade experimental. Use com cautela e mantenha backups locais.',
         feedback_send: 'Enviar Feedback',
         feedback_desc: 'Sua opinião é importante! Relate erros ou envie sugestões.',
         feedback_placeholder: 'Digite sua mensagem aqui...',
@@ -165,8 +165,8 @@ const TRANSLATIONS = {
         settings_language: 'Language',
         settings_lang_pt: 'Portuguese (Brazil)',
         settings_lang_en: 'English',
-        settings_gdrive_beta_badge: 'TESTING (BETA)',
-        settings_gdrive_beta_msg: 'This feature is experimental and may be unstable. We recommend creating a local backup before using.',
+        settings_gdrive_beta_badge: 'BETA',
+        settings_gdrive_beta_msg: 'Experimental feature. Use with caution and keep local backups.',
         feedback_send: 'Send Feedback',
         feedback_desc: 'Your opinion is important! Report bugs or send suggestions.',
         feedback_placeholder: 'Type your message here...',
@@ -1488,26 +1488,26 @@ function getSettingsHTML() {
         <div class="fade-in max-w-xl">
             <h2 class="text-2xl font-bold mb-6 dark:text-white">${T('settings_title')}</h2>
             
-            <div class="bg-blue-50 border-2 border-blue-200 p-6 mb-6 rounded dark:bg-blue-900/20 dark:border-blue-800 relative overflow-hidden">
-                <div class="absolute top-0 right-0 bg-yellow-400 text-yellow-900 text-[10px] font-bold px-2 py-1 rounded-bl">${T('settings_gdrive_beta_badge')}</div>
+            <div class="bg-white border-2 border-stone-200 p-6 mb-6 relative overflow-hidden dark:bg-stone-800 dark:border-stone-700">
+                <div class="absolute top-0 right-0 bg-stone-100 text-stone-500 text-[10px] font-bold px-2 py-1 rounded-bl border-b border-l border-stone-200 dark:bg-stone-700 dark:text-stone-400 dark:border-stone-600">${T('settings_gdrive_beta_badge')}</div>
                 
-                <h3 class="font-bold mb-2 text-blue-900 dark:text-blue-300 flex items-center gap-2">
+                <h3 class="font-bold mb-2 text-black dark:text-white flex items-center gap-2">
                     <i data-lucide="cloud" class="w-5 h-5"></i> Sincronização Google Drive
                 </h3>
                 
-                <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-800 p-3 text-xs mb-4 dark:bg-yellow-900/30 dark:text-yellow-200 dark:border-yellow-600">
-                    <p class="font-bold flex items-center gap-2"><i data-lucide="alert-triangle" class="w-3 h-3"></i> Atenção</p>
-                    <p class="mt-1">${T('settings_gdrive_beta_msg')}</p>
+                <div class="text-red-600 text-xs mb-4 font-bold flex items-start gap-2 dark:text-red-400">
+                    <i data-lucide="alert-triangle" class="w-4 h-4 flex-shrink-0 mt-0.5"></i>
+                    <p>${T('settings_gdrive_beta_msg')}</p>
                 </div>
 
-                <p class="text-sm text-blue-800/70 mb-4 dark:text-blue-200/70">
+                <p class="text-sm text-stone-500 mb-4 dark:text-stone-400">
                     Mantenha seus dados seguros na nuvem e sincronize entre dispositivos.
                 </p>
                 <div class="flex gap-2">
-                    <button onclick="handleAuthClick('upload')" class="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 text-xs font-bold rounded hover:bg-blue-700 transition-colors shadow-sm">
+                    <button onclick="handleAuthClick('upload')" class="flex items-center gap-2 bg-black text-white px-4 py-2 text-xs font-bold border-2 border-black hover:bg-stone-800 transition-colors dark:bg-white dark:text-black dark:hover:bg-stone-200">
                         <i data-lucide="upload-cloud" class="w-4 h-4"></i> ENVIAR P/ NUVEM
                     </button>
-                    <button onclick="handleAuthClick('download')" class="flex items-center gap-2 bg-white text-blue-600 border-2 border-blue-600 px-4 py-2 text-xs font-bold rounded hover:bg-blue-50 transition-colors dark:bg-transparent dark:text-blue-400 dark:border-blue-400 dark:hover:bg-blue-900/30">
+                    <button onclick="handleAuthClick('download')" class="flex items-center gap-2 bg-white text-black px-4 py-2 text-xs font-bold border-2 border-stone-300 hover:border-black hover:bg-stone-50 transition-all dark:bg-stone-700 dark:text-white dark:border-stone-600 dark:hover:bg-stone-600">
                         <i data-lucide="download-cloud" class="w-4 h-4"></i> BAIXAR DA NUVEM
                     </button>
                 </div>
