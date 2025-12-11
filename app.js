@@ -5,10 +5,10 @@ const PREFS_KEY = 'forever_v3_prefs';
 let currentLang = 'pt-BR'; 
 
 const PERIOD_MAP = { 
-    'Todos': 'filter_all',
     'Hoje': 'filter_today',
     'Futuro': 'filter_future',
-    'Período': 'filter_period'
+    'Período': 'filter_period',
+    'Todos': 'filter_all'
 };
 
 const TRANSLATIONS = {
@@ -75,8 +75,8 @@ const TRANSLATIONS = {
         settings_backup_alert_desc: 'Perguntar se deseja fazer backup antes de fechar a aba ou recarregar.',
         settings_backup_data: 'Backup & Dados',
         settings_backup_data_desc: 'Gerencie seus dados. Exporte para segurança ou restaure um arquivo anterior.',
-        settings_backup_button: 'BACKUP',
-        settings_restore_button: 'RESTAURAR',
+        settings_backup_button: 'BACKUP LOCAL',
+        settings_restore_button: 'RESTAURAR LOCAL',
         settings_restore_q: 'Restaurar Backup?',
         settings_restore_msg: 'Atenção: Isso substituirá todos os dados atuais por este backup. Essa ação é irreversível.',
         settings_restore_success: 'Backup restaurado com sucesso.',
@@ -153,8 +153,8 @@ const TRANSLATIONS = {
         settings_backup_alert_desc: 'Ask if you want to backup before closing the tab or reloading.',
         settings_backup_data: 'Backup & Data',
         settings_backup_data_desc: 'Manage your data. Export for security or restore a previous file.',
-        settings_backup_button: 'BACKUP',
-        settings_restore_button: 'RESTORE',
+        settings_backup_button: 'BACKUP LOCAL',
+        settings_restore_button: 'RESTORE LOCAL',
         settings_restore_q: 'Restore Backup?',
         settings_restore_msg: 'Warning: This will overwrite all current data with this backup. This action is irreversible.',
         settings_restore_success: 'Backup restored successfully.',
@@ -202,7 +202,7 @@ let state = {
     entries: [],
     hubs: [],
     activeTab: 'home',
-    activeJournalPeriod: 'Hoje', // 🔄 CORREÇÃO B: "Hoje" como padrão ao abrir
+    activeJournalPeriod: 'Hoje', 
     journalDate: new Date(),
     filterStartDate: new Date().toISOString().split('T')[0], 
     filterEndDate: new Date().toISOString().split('T')[0],   
@@ -291,7 +291,7 @@ function applyTheme(theme) {
     const body = document.body;
     body.classList.remove('bg-white', 'text-stone-900', 'bg-stone-900', 'text-stone-100');
     if (theme === 'dark') {
-        body.classList.add('bg-stone-900', 'text-stone-100'); // Note: 'bg-stone-900' is kept as base class for Tailwind compatibility, but CSS var will override to #000000
+        body.classList.add('bg-stone-900', 'text-stone-100'); 
         body.classList.add('dark');
     } else {
         body.classList.add('bg-white', 'text-stone-900');
@@ -1207,7 +1207,7 @@ function getJournalHTML() {
         `;
     }
     
-    // 🔄 CORREÇÃO B: "Hoje" primeiro, "Todos" no final
+    // 🔄 ORDEM CORRIGIDA: Hoje, Futuro, Período, Todos
     const periodButtons = ['Hoje', 'Futuro', 'Período', 'Todos'].map(p => `
         <button onclick="state.activeJournalPeriod='${p}'; render()" 
             class="px-3 py-1 text-xs font-bold transition-all ${state.activeJournalPeriod === p ? 'bg-black text-white dark:bg-white dark:text-black' : 'text-stone-500 hover:text-black dark:text-stone-400 dark:hover:text-white'}">
@@ -1296,8 +1296,7 @@ function formatContent(text) {
     // TAGS
     formatted = formatted.replace(/(#[\w\u00C0-\u00FF]+)/g, '<button onclick="openCollection(\'$1\'); event.stopPropagation();" class="text-blue-600 hover:underline font-bold bg-blue-50 px-1 rounded mx-0.5 dark:bg-blue-900/30 dark:text-blue-400">$1</button>');
     
-    // 🎨 CORREÇÃO C: Regex que considera o HTML escape (&gt;&gt;)
-    // Isso conserta o problema visual onde os links não mudavam
+    // 🎨 CORREÇÃO: Regex ajustado para caracteres de escape (&gt;&gt;)
     formatted = formatted.replace(/(?:>>|&gt;&gt;)\s*([^\n#<]+)/g, (match, p1) => {
         const linkText = p1.trim();
         return `<button onclick="handleLinkClick('${linkText}'); event.stopPropagation();" class="text-purple-700 hover:underline font-bold bg-purple-50 px-1 rounded mx-0.5 transition-colors dark:bg-purple-900/30 dark:text-purple-400">${linkText}</button>`;
@@ -1446,6 +1445,23 @@ function getSettingsHTML() {
         <div class="fade-in max-w-xl">
             <h2 class="text-2xl font-bold mb-6 dark:text-white">${T('settings_title')}</h2>
             
+            <div class="bg-blue-50 border-2 border-blue-200 p-6 mb-6 rounded dark:bg-blue-900/20 dark:border-blue-800">
+                <h3 class="font-bold mb-2 text-blue-900 dark:text-blue-300 flex items-center gap-2">
+                    <i data-lucide="cloud" class="w-5 h-5"></i> Sincronização Google Drive
+                </h3>
+                <p class="text-sm text-blue-800/70 mb-4 dark:text-blue-200/70">
+                    Mantenha seus dados seguros na nuvem e sincronize entre dispositivos.
+                </p>
+                <div class="flex gap-2">
+                    <button onclick="handleAuthClick('upload')" class="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 text-xs font-bold rounded hover:bg-blue-700 transition-colors shadow-sm">
+                        <i data-lucide="upload-cloud" class="w-4 h-4"></i> ENVIAR P/ NUVEM
+                    </button>
+                    <button onclick="handleAuthClick('download')" class="flex items-center gap-2 bg-white text-blue-600 border-2 border-blue-600 px-4 py-2 text-xs font-bold rounded hover:bg-blue-50 transition-colors dark:bg-transparent dark:text-blue-400 dark:border-blue-400 dark:hover:bg-blue-900/30">
+                        <i data-lucide="download-cloud" class="w-4 h-4"></i> BAIXAR DA NUVEM
+                    </button>
+                </div>
+            </div>
+
             <div class="bg-white border-2 border-stone-200 p-6 mb-4 flex justify-between items-center dark:bg-stone-800 dark:border-stone-700">
                 <div>
                     <h3 class="font-bold mb-1 text-black dark:text-white">${T('settings_language')}</h3>
@@ -1456,6 +1472,7 @@ function getSettingsHTML() {
                     <option value="en-US" ${currentLang === 'en-US' ? 'selected' : ''}>${T('settings_lang_en')}</option>
                 </select>
             </div>
+
             <div class="bg-white border-2 border-stone-200 p-6 mb-4 flex justify-between items-center dark:bg-stone-800 dark:border-stone-700">
                 <div>
                     <h3 class="font-bold mb-1 text-black dark:text-white">${T('settings_dark_mode')}</h3>
@@ -1466,6 +1483,7 @@ function getSettingsHTML() {
                     <div class="w-11 h-6 bg-stone-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-black/30 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-stone-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black dark:bg-stone-600"></div>
                 </label>
             </div>
+
             <div class="bg-white border-2 border-stone-200 p-6 mb-4 flex justify-between items-center dark:bg-stone-800 dark:border-stone-700">
                 <div>
                     <h3 class="font-bold mb-1 text-black dark:text-white">${T('settings_backup_alert')}</h3>
@@ -1476,6 +1494,7 @@ function getSettingsHTML() {
                     <div class="w-11 h-6 bg-stone-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-black/30 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-stone-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black dark:bg-stone-600"></div>
                 </label>
             </div>
+
             <div class="bg-white border-2 border-stone-200 p-6 mb-4 dark:bg-stone-800 dark:border-stone-700">
                 <h3 class="font-bold mb-2 text-black dark:text-white">${T('settings_backup_data')}</h3>
                 <p class="text-sm text-stone-500 mb-4 dark:text-stone-400">${T('settings_backup_data_desc')}</p>
@@ -1663,6 +1682,147 @@ function handleBeforeUnload(e) {
     const confirmationMessage = currentLang === 'pt-BR' ? 'Deseja fazer o backup dos seus dados antes de sair?' : 'Do you want to backup your data before leaving?';
     e.returnValue = confirmationMessage; 
     return confirmationMessage;
+}
+
+// ==========================================
+// ☁️ INTEGRAÇÃO GOOGLE DRIVE
+// ==========================================
+
+const CLIENT_ID = '173913188559-olttmpg5j7i6c8dje4as4rldqfn85tnv.apps.googleusercontent.com'; // SEU ID
+const SCOPES = 'https://www.googleapis.com/auth/drive.file';
+const DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest';
+const DRIVE_FILE_NAME = 'forever_v3_data.json';
+
+let tokenClient;
+let gapiInited = false;
+let gisInited = false;
+
+function gapiLoaded() {
+    gapi.load('client', async () => {
+        await gapi.client.init({
+            discoveryDocs: [DISCOVERY_DOC],
+        });
+        gapiInited = true;
+    });
+}
+
+function gisLoaded() {
+    tokenClient = google.accounts.oauth2.initTokenClient({
+        client_id: CLIENT_ID,
+        scope: SCOPES,
+        callback: '', // Definido no clique
+    });
+    gisInited = true;
+}
+
+function handleAuthClick(action) {
+    if (!gapiInited || !gisInited) {
+        showModal('Aguarde', 'Conectando ao Google... (se demorar, recarregue a página)');
+        return;
+    }
+
+    tokenClient.callback = async (resp) => {
+        if (resp.error) throw resp;
+        if (action === 'upload') await uploadToDrive();
+        if (action === 'download') await downloadFromDrive();
+    };
+
+    const token = gapi.client.getToken();
+    if (token === null) {
+        tokenClient.requestAccessToken({prompt: 'consent'});
+    } else {
+        tokenClient.requestAccessToken({prompt: ''});
+    }
+}
+
+async function uploadToDrive() {
+    try {
+        showModal('Google Drive', 'Enviando dados para a nuvem...');
+        
+        // 1. Verifica se arquivo já existe
+        const res = await gapi.client.drive.files.list({
+            q: `name = '${DRIVE_FILE_NAME}' and trashed = false`,
+            fields: 'files(id, name)',
+            spaces: 'drive'
+        });
+
+        const files = res.result.files;
+        const content = JSON.stringify({
+            entries: state.entries,
+            hubs: state.hubs,
+            tagUsage: state.tagUsage,
+            prefs: state.prefs,
+            backupDate: new Date().toISOString()
+        });
+
+        if (files && files.length > 0) {
+            // Atualiza existente
+            await gapi.client.request({
+                path: '/upload/drive/v3/files/' + files[0].id,
+                method: 'PATCH',
+                params: {uploadType: 'media'},
+                body: content
+            });
+            showModal('Sucesso', 'Backup atualizado no Google Drive!');
+        } else {
+            // Cria novo (requer multipart)
+            const metadata = { name: DRIVE_FILE_NAME, mimeType: 'application/json' };
+            const form = new FormData();
+            form.append('metadata', new Blob([JSON.stringify(metadata)], {type: 'application/json'}));
+            form.append('file', new Blob([content], {type: 'application/json'}));
+
+            await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
+                method: 'POST',
+                headers: {'Authorization': 'Bearer ' + gapi.client.getToken().access_token},
+                body: form
+            });
+            showModal('Sucesso', 'Novo backup criado no Google Drive!');
+        }
+    } catch (err) {
+        console.error(err);
+        showModal('Erro', 'Falha ao salvar no Drive. Verifique se você autorizou o acesso.');
+    }
+}
+
+async function downloadFromDrive() {
+    try {
+        showModal('Google Drive', 'Buscando dados na nuvem...');
+        
+        const res = await gapi.client.drive.files.list({
+            q: `name = '${DRIVE_FILE_NAME}' and trashed = false`,
+            fields: 'files(id, name)',
+            spaces: 'drive'
+        });
+
+        const files = res.result.files;
+        if (files && files.length > 0) {
+            const fileId = files[0].id;
+            const result = await gapi.client.drive.files.get({ fileId: fileId, alt: 'media' });
+            
+            const importedData = result.result;
+            // Usa a função de merge existente
+            const mergedData = mergeImportedData({
+                entries: state.entries, 
+                hubs: state.hubs, 
+                tagUsage: state.tagUsage, 
+                prefs: state.prefs
+            }, importedData);
+
+            state.entries = mergedData.entries;
+            state.hubs = mergedData.hubs;
+            state.tagUsage = mergedData.tagUsage;
+            state.prefs = mergedData.prefs;
+            
+            saveData();
+            render();
+            showModal('Sucesso', 'Dados sincronizados do Google Drive!');
+        } else {
+            showModal('Aviso', 'Nenhum backup encontrado no Drive.');
+        }
+    } catch (err) {
+        console.error(err);
+        showModal('Erro', 'Falha ao baixar do Drive.');
+    }
 }
 
 init();
