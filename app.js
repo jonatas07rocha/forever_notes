@@ -223,7 +223,6 @@ let state = {
     tagUsage: {}, 
     editingEntryId: null,
     searchQuery: '',
-    viewMode: 'visual', 
     calendarMonth: new Date(),
     inputText: '',
     inputDate: null, 
@@ -231,6 +230,7 @@ let state = {
     showSlashMenu: false, 
     showLinkMenu: false,
     prefs: {
+        viewMode: 'visual', // Valor padrão inicial
         showAlertOnUnload: true,
         theme: 'light',
         lang: null
@@ -242,6 +242,7 @@ function init() {
     loadData();
     const prefs = JSON.parse(localStorage.getItem(PREFS_KEY) || '{}');
     
+    // Garante que usamos a preferência salva ou o padrão
     state.prefs.viewMode = prefs.viewMode || 'visual';
     state.prefs.showAlertOnUnload = prefs.showAlertOnUnload !== undefined ? prefs.showAlertOnUnload : true;
     state.prefs.theme = prefs.theme || 'light'; 
@@ -289,6 +290,7 @@ function saveData() {
         hubs: state.hubs,
         tagUsage: state.tagUsage 
     }));
+    // Salva o objeto prefs completo, que agora contém viewMode atualizado
     localStorage.setItem(PREFS_KEY, JSON.stringify(state.prefs));
 }
 
@@ -869,7 +871,8 @@ function setupGlobalInputHandler() {
 
 // --- RENDER SYSTEM ---
 function toggleViewMode() {
-    state.viewMode = state.viewMode === 'visual' ? 'classic' : 'visual';
+    // CORRIGIDO: Usa state.prefs.viewMode para persistir
+    state.prefs.viewMode = state.prefs.viewMode === 'visual' ? 'classic' : 'visual';
     saveData();
     render();
 }
@@ -1168,7 +1171,7 @@ function getCommonSingleViewHTML(title, closeFunc, placeholder, hubId = null) {
                     <button onclick="${closeFunc.name}()" class="p-2 hover:bg-stone-100 rounded-full transition-colors dark:hover:bg-stone-800"><i data-lucide="arrow-left" class="w-6 h-6 dark:text-white"></i></button>
                     <h2 class="text-2xl font-bold dark:text-white">${title}</h2>
                 </div>
-                ${hubId ? `<div class="flex items-center gap-2"><button onclick="deleteHub(${hubId})" class="p-2 text-stone-400 hover:text-red-600 transition-colors dark:hover:text-red-400"><i data-lucide="trash-2" class="w-5 h-5"></i></button><button onclick="toggleViewMode()" class="p-2 rounded hover:bg-stone-100 transition-colors dark:hover:bg-stone-800"><i data-lucide="${state.viewMode === 'visual' ? 'layout-list' : 'layout-template'}" class="w-5 h-5 text-stone-500 hover:text-black dark:hover:text-white"></i></button></div>` : `<button onclick="toggleViewMode()" class="p-2 rounded hover:bg-stone-100 transition-colors dark:hover:bg-stone-800"><i data-lucide="${state.viewMode === 'visual' ? 'layout-list' : 'layout-template'}" class="w-5 h-5 text-stone-500 hover:text-black dark:hover:text-white"></i></button>`}
+                ${hubId ? `<div class="flex items-center gap-2"><button onclick="deleteHub(${hubId})" class="p-2 text-stone-400 hover:text-red-600 transition-colors dark:hover:text-red-400"><i data-lucide="trash-2" class="w-5 h-5"></i></button><button onclick="toggleViewMode()" class="p-2 rounded hover:bg-stone-100 transition-colors dark:hover:bg-stone-800"><i data-lucide="${state.prefs.viewMode === 'visual' ? 'layout-list' : 'layout-template'}" class="w-5 h-5 text-stone-500 hover:text-black dark:hover:text-white"></i></button></div>` : `<button onclick="toggleViewMode()" class="p-2 rounded hover:bg-stone-100 transition-colors dark:hover:bg-stone-800"><i data-lucide="${state.prefs.viewMode === 'visual' ? 'layout-list' : 'layout-template'}" class="w-5 h-5 text-stone-500 hover:text-black dark:hover:text-white"></i></button>`}
             </div>
             
             <div class="relative mb-6 z-20 group bg-stone-50 p-3 border border-stone-200 focus-within:border-black focus-within:shadow-lg transition-all flex items-start gap-3 dark:bg-stone-800 dark:border-stone-700 dark:focus-within:border-white">
@@ -1266,7 +1269,7 @@ function getJournalHTML() {
             <div class="flex flex-col md:flex-row md:items-center justify-between border-b-2 border-stone-800 pb-4 mb-4 gap-3 dark:border-stone-700">
                 <div class="flex items-center gap-4">
                     <h2 class="text-2xl font-bold dark:text-white">✱ ${T('nav_journal')}</h2>
-                    <button onclick="toggleViewMode()" class="p-2 rounded hover:bg-stone-100 transition-colors dark:hover:bg-stone-800"><i data-lucide="${state.viewMode === 'visual' ? 'layout-list' : 'layout-template'}" class="w-5 h-5 text-stone-500 hover:text-black dark:hover:text-white"></i></button>
+                    <button onclick="toggleViewMode()" class="p-2 rounded hover:bg-stone-100 transition-colors dark:hover:bg-stone-800"><i data-lucide="${state.prefs.viewMode === 'visual' ? 'layout-list' : 'layout-template'}" class="w-5 h-5 text-stone-500 hover:text-black dark:hover:text-white"></i></button>
                 </div>
                 <div class="flex gap-1 bg-stone-100 p-1 rounded-sm self-start md:self-auto overflow-x-auto dark:bg-stone-800">
                     ${periodButtons}
@@ -1296,7 +1299,8 @@ function renderEntry(entry) {
     if (state.editingEntryId === entry.id) {
         return getEditEntryHTML(entry);
     }
-    if (state.viewMode === 'classic') {
+    // CORRIGIDO: Verifica no prefs o modo
+    if (state.prefs.viewMode === 'classic') {
         return renderClassicEntry(entry);
     }
     return renderVisualEntry(entry);
@@ -1304,7 +1308,8 @@ function renderEntry(entry) {
 
 function getEditEntryHTML(entry) {
     const config = ENTRY_TYPES[entry.type];
-    const isClassic = state.viewMode === 'classic';
+    // CORRIGIDO: Verifica no prefs o modo
+    const isClassic = state.prefs.viewMode === 'classic';
     return `
         <div class="p-3 bg-stone-50 border-2 border-black rounded shadow-md ${isClassic ? 'font-mono' : 'font-sans'} dark:bg-stone-800 dark:border-stone-600">
             <div class="text-[10px] font-bold uppercase text-stone-600 mb-1 flex items-center gap-2 dark:text-stone-400">
