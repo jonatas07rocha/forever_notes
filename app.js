@@ -622,6 +622,37 @@ function deleteEntry(id) {
     });
 }
 
+// 📤 NOVA FUNÇÃO DE COMPARTILHAMENTO
+async function shareEntry(id) {
+    const entry = state.entries.find(e => e.id === id);
+    if (!entry) return;
+
+    // Limpa HTML básico para compartilhar texto puro
+    const textContent = entry.content
+        .replace(/<br>/g, '\n')
+        .replace(/<[^>]*>/g, '');
+
+    if (navigator.share) {
+        try {
+            await navigator.share({
+                title: 'Forever Note',
+                text: textContent,
+            });
+        } catch (err) {
+            console.log('Compartilhamento cancelado ou falhou', err);
+        }
+    } else {
+        // Fallback para área de transferência se o navegador não suportar share
+        try {
+            await navigator.clipboard.writeText(textContent);
+            showModal(T('ui_item_saved'), 'Texto copiado para a área de transferência!');
+        } catch (err) {
+            console.error('Falha ao copiar', err);
+            showModal('Erro', 'Não foi possível compartilhar ou copiar.');
+        }
+    }
+}
+
 // --- GLOBAL SLASH COMMAND ---
 function handleGlobalKeydown(e) {
     if (e.key === '/') {
@@ -1314,12 +1345,14 @@ function formatContent(text) {
     return formatted;
 }
 
+// ♻️ ATUALIZADO: RENDERIZAÇÃO COM BOTÃO DE COMPARTILHAR
 function renderVisualEntry(entry) {
     const config = ENTRY_TYPES[entry.type];
     const dateDisplay = entry.targetDate ? new Date(entry.targetDate).toLocaleDateString(currentLang, {day:'2-digit', month:'2-digit'}) : '';
     const isCompleted = entry.completed;
     const isPriority = entry.content.includes('✱');
     const contentHtml = formatContent(entry.content);
+    
     return `
         <div class="flex items-start gap-3 p-3 bg-white border ${isPriority && !isCompleted ? 'border-l-4 border-l-black border-y-stone-100 border-r-stone-100 dark:border-l-white dark:border-y-stone-800 dark:border-r-stone-800' : 'border-stone-100 dark:border-stone-800'} hover:border-stone-400 group transition-all dark:bg-stone-900 dark:hover:border-stone-600">
             <button onclick="toggleEntry(${entry.id})" class="${config.color} mt-0.5">
@@ -1336,9 +1369,15 @@ function renderVisualEntry(entry) {
                     ${isPriority && !isCompleted ? `<span class="text-[10px] bg-black text-white px-1 font-bold dark:bg-white dark:text-black">${T('ui_important')}</span>` : ''}
                 </div>
             </div>
-            <button onclick="deleteEntry(${entry.id})" class="text-stone-300 hover:text-black opacity-0 group-hover:opacity-100 transition-opacity dark:hover:text-white">
-                <i data-lucide="trash-2" class="w-4 h-4"></i>
-            </button>
+            
+            <div class="flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <button onclick="shareEntry(${entry.id})" class="text-stone-300 hover:text-blue-600 dark:hover:text-blue-400" title="Compartilhar">
+                    <i data-lucide="share-2" class="w-4 h-4"></i>
+                </button>
+                <button onclick="deleteEntry(${entry.id})" class="text-stone-300 hover:text-red-600 dark:hover:text-red-400" title="Excluir">
+                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                </button>
+            </div>
         </div>
     `;
 }
