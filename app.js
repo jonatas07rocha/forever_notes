@@ -87,6 +87,10 @@ const TRANSLATIONS = {
         settings_lang_en: 'Inglês',
         settings_gdrive_beta_badge: 'BETA',
         settings_gdrive_beta_msg: 'Funcionalidade experimental. Use com cautela e mantenha backups locais.',
+        settings_gdrive_title: 'Sincronização Google Drive',
+        settings_gdrive_desc: 'Mantenha seus dados seguros na nuvem e sincronize entre dispositivos.',
+        settings_gdrive_btn_upload: 'ENVIAR P/ NUVEM',
+        settings_gdrive_btn_download: 'BAIXAR DA NUVEM',
         feedback_send: 'Enviar Feedback',
         feedback_desc: 'Sua opinião é importante! Relate erros ou envie sugestões.',
         feedback_placeholder: 'Digite sua mensagem aqui...',
@@ -167,6 +171,10 @@ const TRANSLATIONS = {
         settings_lang_en: 'English',
         settings_gdrive_beta_badge: 'BETA',
         settings_gdrive_beta_msg: 'Experimental feature. Use with caution and keep local backups.',
+        settings_gdrive_title: 'Google Drive Sync',
+        settings_gdrive_desc: 'Keep your data safe in the cloud and sync across devices.',
+        settings_gdrive_btn_upload: 'UPLOAD TO CLOUD',
+        settings_gdrive_btn_download: 'DOWNLOAD FROM CLOUD',
         feedback_send: 'Send Feedback',
         feedback_desc: 'Your opinion is important! Report bugs or send suggestions.',
         feedback_placeholder: 'Type your message here...',
@@ -1492,7 +1500,7 @@ function getSettingsHTML() {
                 <div class="absolute top-0 right-0 bg-stone-100 text-stone-500 text-[10px] font-bold px-2 py-1 rounded-bl border-b border-l border-stone-200 dark:bg-stone-700 dark:text-stone-400 dark:border-stone-600">${T('settings_gdrive_beta_badge')}</div>
                 
                 <h3 class="font-bold mb-2 text-black dark:text-white flex items-center gap-2">
-                    <i data-lucide="cloud" class="w-5 h-5"></i> Sincronização Google Drive
+                    <i data-lucide="cloud" class="w-5 h-5"></i> ${T('settings_gdrive_title')}
                 </h3>
                 
                 <div class="text-red-600 text-xs mb-4 font-bold flex items-start gap-2 dark:text-red-400">
@@ -1501,14 +1509,14 @@ function getSettingsHTML() {
                 </div>
 
                 <p class="text-sm text-stone-500 mb-4 dark:text-stone-400">
-                    Mantenha seus dados seguros na nuvem e sincronize entre dispositivos.
+                    ${T('settings_gdrive_desc')}
                 </p>
                 <div class="flex gap-2">
                     <button onclick="handleAuthClick('upload')" class="flex items-center gap-2 bg-black text-white px-4 py-2 text-xs font-bold border-2 border-black hover:bg-stone-800 transition-colors dark:bg-white dark:text-black dark:hover:bg-stone-200">
-                        <i data-lucide="upload-cloud" class="w-4 h-4"></i> ENVIAR P/ NUVEM
+                        <i data-lucide="upload-cloud" class="w-4 h-4"></i> ${T('settings_gdrive_btn_upload')}
                     </button>
                     <button onclick="handleAuthClick('download')" class="flex items-center gap-2 bg-white text-black px-4 py-2 text-xs font-bold border-2 border-stone-300 hover:border-black hover:bg-stone-50 transition-all dark:bg-stone-700 dark:text-white dark:border-stone-600 dark:hover:bg-stone-600">
-                        <i data-lucide="download-cloud" class="w-4 h-4"></i> BAIXAR DA NUVEM
+                        <i data-lucide="download-cloud" class="w-4 h-4"></i> ${T('settings_gdrive_btn_download')}
                     </button>
                 </div>
             </div>
