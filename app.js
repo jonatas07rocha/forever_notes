@@ -1502,17 +1502,11 @@ function getSettingsHTML() {
             <h2 class="text-2xl font-bold mb-6 dark:text-white">${T('settings_title')}</h2>
             
             <div class="bg-white border-2 border-stone-200 p-6 mb-6 relative overflow-hidden dark:bg-stone-800 dark:border-stone-700">
-                <div class="absolute top-0 right-0 bg-stone-100 text-stone-500 text-[10px] font-bold px-2 py-1 rounded-bl border-b border-l border-stone-200 dark:bg-stone-700 dark:text-stone-400 dark:border-stone-600">${T('settings_gdrive_beta_badge')}</div>
-                
+                                
                 <h3 class="font-bold mb-2 text-black dark:text-white flex items-center gap-2">
                     <i data-lucide="cloud" class="w-5 h-5"></i> ${T('settings_gdrive_title')}
                 </h3>
-                
-                <div class="text-red-600 text-xs mb-4 font-bold flex items-start gap-2 dark:text-red-400">
-                    <i data-lucide="alert-triangle" class="w-4 h-4 flex-shrink-0 mt-0.5"></i>
-                    <p>${T('settings_gdrive_beta_msg')}</p>
-                </div>
-
+                                
                 <p class="text-sm text-stone-500 mb-4 dark:text-stone-400">
                     ${T('settings_gdrive_desc')}
                 </p>
