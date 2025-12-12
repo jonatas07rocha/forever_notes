@@ -1,6 +1,6 @@
 {
-  "name": "Forever Notes | Diário & Hubs",
-  "short_name": "Forever Notes",
+  "name": "Synta Notes | Diário & Hubs",
+  "short_name": "Synta Notes",
   "description": "Seu diário pessoal, organizador e mapa de contexto. Capture notas, tarefas, eventos e ideias rapidamente.",
   "start_url": "./index.html",
   "display": "standalone",
@@ -13,7 +13,7 @@
       "src": "/icons/icon-512x512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable" // O 'any' é crucial para o iOS
+      "purpose": "any maskable"
     }
   ],
   "shortcuts": [
@@ -22,7 +22,6 @@
       "short_name": "Tarefa",
       "description": "Cria uma nova entrada de tarefa rapidamente.",
       "url": "/index.html?type=task",
-      // Usa o único ícone disponível:
       "icons": [{ "src": "/icons/icon-512x512.png", "sizes": "512x512" }] 
     },
     {
@@ -30,7 +29,6 @@
       "short_name": "Diário",
       "description": "Abre a visualização do Diário (Journal).",
       "url": "/index.html?tab=journal",
-      // Usa o único ícone disponível:
       "icons": [{ "src": "/icons/icon-512x512.png", "sizes": "512x512" }]
     }
   ]
