@@ -1,6 +1,8 @@
 // --- CONSTANTES ---
-const STORAGE_KEY = 'forever_v3_data';
-const PREFS_KEY = 'forever_v3_prefs';
+// ⚠️ ATENÇÃO: As chaves foram alteradas para o novo branding. 
+// Dados antigos salvos como 'forever_v3_data' não serão carregados automaticamente.
+const STORAGE_KEY = 'synta_v3_data';
+const PREFS_KEY = 'synta_v3_prefs';
 
 let currentLang = 'pt-BR'; 
 
@@ -13,7 +15,7 @@ const PERIOD_MAP = {
 
 const TRANSLATIONS = {
     'pt-BR': {
-        app_title: 'Forever ✱ Notes',
+        app_title: 'Synta Notes',
         type_note: 'Nota',
         type_task: 'Tarefa',
         type_event: 'Evento',
@@ -97,7 +99,7 @@ const TRANSLATIONS = {
         feedback_empty: 'Por favor, digite alguma mensagem antes de enviar.',
     },
     'en-US': {
-        app_title: 'Forever ✱ Notes',
+        app_title: 'Synta Notes',
         type_note: 'Note',
         type_task: 'Task',
         type_event: 'Event',
@@ -649,7 +651,7 @@ async function shareEntry(id) {
     if (navigator.share) {
         try {
             await navigator.share({
-                title: 'Forever Note',
+                title: 'Synta Note',
                 text: textContent,
             });
         } catch (err) {
@@ -1576,7 +1578,7 @@ function exportData() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `forever_backup_${new Date().toISOString().slice(0,10)}.json`;
+    a.download = `synta_backup_${new Date().toISOString().slice(0,10)}.json`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -1749,7 +1751,8 @@ function handleBeforeUnload(e) {
 const CLIENT_ID = '173913188559-olttmpg5j7i6c8dje4as4rldqfn85tnv.apps.googleusercontent.com'; // SEU ID
 const SCOPES = 'https://www.googleapis.com/auth/drive.file';
 const DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest';
-const DRIVE_FILE_NAME = 'forever_v3_data.json';
+// ⚠️ ATUALIZADO: Nome do arquivo no Google Drive
+const DRIVE_FILE_NAME = 'synta_notes_v3_data.json';
 
 let tokenClient;
 let gapiInited = false;
@@ -1884,3 +1887,4 @@ async function downloadFromDrive() {
 }
 
 init();
+
