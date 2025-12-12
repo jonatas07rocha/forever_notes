@@ -882,7 +882,13 @@ function toggleViewMode() {
 function render() {
     renderSidebar();
     
-    document.querySelector('title').textContent = T('app_title');
+    document.querySelector('title').textContent = 'Synta Notes';
+    const brandingHTML = `Synta <span class="text-stone-500">Notes</span>`;
+    const brandingEl = document.getElementById('app-branding');
+    if (brandingEl) brandingEl.innerHTML = brandingHTML;
+    const mobileBrandingEl = document.getElementById('mobile-branding');
+    if (mobileBrandingEl) mobileBrandingEl.innerHTML = brandingHTML;
+    
     document.getElementById('app-branding').textContent = T('app_title');
     document.getElementById('mobile-branding').textContent = T('app_title');
     document.getElementById('mobile-settings-text').textContent = T('nav_settings');
