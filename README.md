@@ -1,4 +1,4 @@
-# Forever Notes
+# Synta Notes
 
 > Um aplicativo web de produtividade moderno que combina Bullet Journal, Task Manager e Sistema de Notas em uma única plataforma intuitiva.
 
@@ -8,41 +8,42 @@
 - **Notas**: Texto ilimitado com suporte a formatação
 - **Tarefas**: Com limite de 140 caracteres (BuJo style)
 - **Eventos**: Agendamento com datas e alertas
-- **Reflexões**: Anotações reflexivas de ate 280 caracteres
+- **Reflexões**: Anotações reflexivas de até 280 caracteres
 - **Ideias**: Captura rápida de conceitos (140 caracteres)
 
 ### Funcionalidades Avançadas
 - **Hubs**: Organize por contextos (Pessoal, Trabalho, etc)
-- **Coleções por Tags**: #hashtags para categorização automatica
-- **Sistema de Prioridades**: Marque com para priorização
+- **Coleções por Tags**: #hashtags para categorização automática
+- **Sistema de Prioridades**: Marque com ✱ para priorização
 - **Linking**: Use >> para vincular a Hubs ou executar buscas rápidas
-- **Diario com Períodos**: Visualize Hoje, Todos os Itens ou Futuros
+- **Diário com Períodos**: Visualize Hoje, Todos os Itens ou Futuros
 - **Calendário Interativo**: Visualize eventos por data
 - **Busca Global**: Encontre qualquer item instantaneamente
-- **Modo Visual e Classico**: Escolha sua preferencia de visualizacao
+- **Modo Visual e Clássico**: Escolha sua preferência de visualização
 - **Dark Mode**: Tema claro/escuro
-- **Backup & Restauracao**: Exporte e importe dados em JSON
+- **Backup & Restauração**: Exporte e importe dados em JSON
+- **Google Drive Sync**: Backup na nuvem (Em Breve)
 
 ## Como Usar
 
 ### Iniciando
-1. Acesse [Forever Notes](https://forevernotes.vercel.app/)
-2. Dados sao salvos localmente no seu navegador (localStorage)
-3. Faça backup regularmente na seção Configuracoes
+1. Acesse [Synta Notes](https://synta-notes.vercel.app/)
+2. Dados são salvos localmente no seu navegador (localStorage)
+3. Faça backup regularmente na seção Configurações
 
 ### Atalhos Principais
 - **/** : Abre a entrada global de itens (funciona em qualquer lugar)
 - **#tag** : Cria Coleções automaticamente
 - **>>** : Cria links para Hubs ou executa buscas
 - **✱** : Marca item como prioridade
-- **Amanha/Hoje/@dia/mes** : Interpreta datas naturais
+- **Amanhã/Hoje/@dia/mês** : Interpreta datas naturais
 - **Shift+Enter** : Quebra de linha em modo global
 - **Esc** : Fecha menus e modais
 
 ## Estrutura do Projeto
 
 ```
-forever_notes/
+synta_notes/
 ├── index.html      # HTML principal (interface)
 ├── app.js          # Logica completa da aplicacao
 ├── styles.css      # Estilos com Tailwind CSS
@@ -53,18 +54,18 @@ forever_notes/
 
 #### Estado Global
 - `state.entries`: Array de todas as notas/tarefas/eventos
-- `state.hubs`: Contextos de organizacao
+- `state.hubs`: Contextos de organização
 - `state.activeTab`: Aba atual (home, journal, hubs, collections, calendar)
-- `state.prefs`: Preferencias do usuario (tema, alertas, etc)
+- `state.prefs`: Preferências do usuário (tema, alertas, etc)
 
-#### Funcoes Principais
+#### Funções Principais
 
 **Gerenciamento de Entradas:**
 - `addNewEntry()` : Adiciona nova entrada
 - `toggleEntry(id)` : Marca como completo/incompleto
 - `deleteEntry(id)` : Remove uma entrada
-- `startEditEntry(id)` : Ativa edicao inline
-- `saveEditEntry(id, content)` : Salva edicao
+- `startEditEntry(id)` : Ativa edição inline
+- `saveEditEntry(id, content)` : Salva edição
 
 **Hubs e Contextos:**
 - `createNewHub()` : Cria novo hub
@@ -74,15 +75,15 @@ forever_notes/
 **Tags e Coleções:**
 - `extractTags(content)` : Extrai #tags do texto
 - `getUniqueTags()` : Retorna lista de tags únicas
-- `openCollection(tagName)` : Abre colecao por tag
+- `openCollection(tagName)` : Abre coleção por tag
 - `boostTagRelevance(tag)` : Incrementa relevância da tag
 
-**Renderizacao:**
-- `render()` : Funcao principal que renderiza a UI
+**Renderização:**
+- `render()` : Função principal que renderiza a UI
 - `renderEntry(entry)` : Renderiza item individual
 - `getHomeHTML()` : Dashboard principal
-- `getJournalHTML()` : View de diario
-- `getCalendarHTML()` : Visualizacao em Calendário
+- `getJournalHTML()` : View de diário
+- `getCalendarHTML()` : Visualização em Calendário
 
 **Dados:**
 - `saveData()` : Persiste em localStorage
@@ -94,38 +95,38 @@ forever_notes/
 - `handleGlobalKeydown(e)` : Listener global (/) 
 - `openGlobalInput()` : Abre modal de entrada global
 - `toggleTheme()` : Alterna tema claro/escuro
-- `toggleViewMode()` : Alterna visual/classico
+- `toggleViewMode()` : Alterna visual/clássico
 
 ## Tipos de Entradas (ENTRY_TYPES)
 
-| Tipo | Label | Icone | Limite | Simbolo |
+| Tipo | Label | Ícone | Limite | Símbolo |
 |------|-------|-------|--------|----------|
 | note | Nota | align-left | Ilimitado | — |
 | task | Tarefa | check-square | 140 | • |
 | event | Evento | calendar | 140 | ○ |
-| reflection | Reflexao | moon | 280 | > |
+| reflection | Reflexão | moon | 280 | > |
 | idea | Ideia | lightbulb | 140 | ! |
 
 ## Tecnologias
 
 - **HTML5** : Estrutura
 - **CSS3 + Tailwind CSS** : Estilos
-- **JavaScript (Vanilla)** : Logica
+- **JavaScript (Vanilla)** : Lógica
 - **Lucide Icons** : Iconografia
-- **LocalStorage** : Persistencia
+- **LocalStorage** : Persistência
 - **Vercel** : Deploy
 
 ## Roadmap
 
-- [ ] Sincronizacao na nuvem
-- [ ] Modo offline com service workers
+- [x] Modo offline com service workers (PWA)
+- [ ] Sincronização Google Drive (Beta)
 - [ ] Compartilhamento de hubs
 - [ ] API REST
 - [ ] Mobile app nativa
-- [ ] Integracao com Calendários
+- [ ] Integração com Calendários
 - [ ] Modo colaborativo
 
-## Licenca
+## Licença
 
 MIT License - Veja LICENSE para detalhes
 
@@ -133,10 +134,10 @@ MIT License - Veja LICENSE para detalhes
 
 **Jonatas Rocha** (@jonatas07rocha)
 - GitHub: [github.com/jonatas07rocha](https://github.com/jonatas07rocha)
-- Deployed: [forevernotes.vercel.app](https://forevernotes.vercel.app/)
+- Deployed: [synta-notes.vercel.app](https://synta-notes.vercel.app/)
 
 ---
 
-**Versao**: 3.0.0  
-**Ultima Atualizacao**: Dezembro 2025  
+**Versão**: 3.0.0  
+**Última Atualização**: Dezembro 2025  
 **Status**: Ativo e em desenvolvimento
