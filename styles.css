@@ -43,10 +43,10 @@ body {
     font-family: 'JetBrains Mono', monospace; 
 }
 
-.text-heavy-asterisk { 
-    color: var(--color-text-primary); 
-    font-weight: 800; 
-}
+/* REMOVIDO: .text-heavy-asterisk 
+   Motivo: O branding mudou de "Forever ✱" para "Synta Notes" (Logo S), 
+   tornando esta classe obsoleta.
+*/
 
 /* --- 3. OTIMIZAÇÕES MOBILE (CRÍTICO) --- */
 
