@@ -882,15 +882,21 @@ function toggleViewMode() {
 function render() {
     renderSidebar();
     
+    // --- CORREÇÃO AQUI ---
+    // Definimos o título da aba do navegador (Texto puro)
     document.querySelector('title').textContent = 'Synta Notes';
+    
+    // Definimos a Logo Visual com o HTML para a cor cinza (innerHTML)
     const brandingHTML = `Synta <span class="text-stone-500">Notes</span>`;
+    
+    // Aplicamos nos dois lugares onde a logo aparece (Desktop e Mobile)
     const brandingEl = document.getElementById('app-branding');
     if (brandingEl) brandingEl.innerHTML = brandingHTML;
+    
     const mobileBrandingEl = document.getElementById('mobile-branding');
     if (mobileBrandingEl) mobileBrandingEl.innerHTML = brandingHTML;
-    
-    document.getElementById('app-branding').textContent = T('app_title');
-    document.getElementById('mobile-branding').textContent = T('app_title');
+    // ---------------------
+
     document.getElementById('mobile-settings-text').textContent = T('nav_settings');
     document.getElementById('mobile-feedback-text').textContent = T('nav_feedback');
     document.getElementById('nav-settings-text').textContent = T('nav_settings');
@@ -1893,4 +1899,3 @@ async function downloadFromDrive() {
 }
 
 init();
-
