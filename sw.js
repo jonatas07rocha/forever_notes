@@ -1,17 +1,15 @@
-// Nome do Cache estático (Versão 2)
+// Nome do Cache estático (Versão 3 - Atualizado para Synta Notes)
 // ⚠️ ALTERADO PARA FORÇAR A ATUALIZAÇÃO DO CACHE EM TODOS OS CLIENTES
-const CACHE_NAME = 'forever-notes-cache-v2';
+const CACHE_NAME = 'synta-notes-cache-v3';
 
 // Lista de arquivos essenciais para o funcionamento offline
 const urlsToCache = [
     './', // Raiz (index.html)
     './index.html',
     './manifest.json',
-    './css/main.css', 
-    './js/lucide.js', 
-    // ✅ CORREÇÃO: Usando apenas o caminho do ícone existente (512x512)
-    '/icons/icon-512x512.png'
-    // ... adicione todos os outros assets necessários
+    './styles.css', // ⚠️ Atenção: Verifique se o seu arquivo é 'styles.css' (usado no HTML) ou 'css/main.css'
+    'https://unpkg.com/lucide@latest', // É bom cachear bibliotecas externas se possível, ou usar versão local
+    // '/icons/icon-512x512.png' // Certifique-se que este arquivo existe no servidor
 ];
 
 // --- Etapa de Instalação (Install) ---
