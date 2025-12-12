@@ -13,7 +13,7 @@ const PERIOD_MAP = {
 
 const TRANSLATIONS = {
     'pt-BR': {
-        app_title: 'Forever ✱ Notes [PoC]',
+        app_title: 'Forever ✱ Notes',
         type_note: 'Nota',
         type_task: 'Tarefa',
         type_event: 'Evento',
@@ -97,7 +97,7 @@ const TRANSLATIONS = {
         feedback_empty: 'Por favor, digite alguma mensagem antes de enviar.',
     },
     'en-US': {
-        app_title: 'Forever ✱ Notes [PoC]',
+        app_title: 'Forever ✱ Notes',
         type_note: 'Note',
         type_task: 'Task',
         type_event: 'Event',
