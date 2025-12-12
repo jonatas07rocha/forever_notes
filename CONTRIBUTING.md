@@ -1,17 +1,17 @@
-# Contribuindo para Forever Notes
+# Contribuindo para Synta Notes
 
-Obrigado por seu interesse em contribuir para o Forever Notes! Este documento oferece diretrizes e informacoes para fazer contribuicoes efetivas.
+Obrigado por seu interesse em contribuir para o Synta Notes! Este documento oferece diretrizes e informações para fazer contribuições efetivas.
 
 ## Como Contribuir
 
 ### Reportar Bugs
 
-1. **Verifique se o bug ja foi reportado**: Procure nos Issues antes de criar um novo
-2. **Descreva o problema com clareza**: Inclua titulo descritivo
-3. **Forneça passos para reproduzir**: Seja o mais especifico possivel
+1. **Verifique se o bug já foi reportado**: Procure nos Issues antes de criar um novo
+2. **Descreva o problema com clareza**: Inclua título descritivo
+3. **Forneça passos para reproduzir**: Seja o mais específico possível
 4. **Descreva o comportamento observado vs esperado**
-5. **Inclua screenshots se possivel**
-6. **Mencione sua versao do navegador e SO**
+5. **Inclua screenshots se possível**
+6. **Mencione sua versão do navegador e SO**
 
 Exemplo:
 ```
@@ -26,42 +26,36 @@ Navegador: Chrome 120.0
 
 ### Sugerir Melhorias (Features)
 
-1. Use um titulo claro e descritivo
-2. Forneça uma descricao detalhada do comportamento desejado
-3. Explique por que essa melhoria seria util
-4. Liste exemplos de outras aplicacoes que implementam esse recurso (opcional)
+1. Use um título claro e descritivo
+2. Forneça uma descrição detalhada do comportamento desejado
+3. Explique por que essa melhoria seria útil
+4. Liste exemplos de outras aplicações que implementam esse recurso (opcional)
 
 ## Guia de Desenvolvimento
 
-### Configuracao Local
+### Configuração Local
 
-1. Faça um fork do repositorio
+1. Faça um fork do repositório
 2. Clone seu fork:
    ```bash
-   git clone https://github.com/[seu-usuario]/forever_notes.git
-   cd forever_notes
-   ```
-3. Crie uma branch para sua feature:
-   ```bash
-   git checkout -b feature/sua-feature
-   ```
+   git clone [https://github.com/](https://github.com/)[seu-usuario]/synta_notes.git
+   cd synta_notes
 
 ### Estrutura de Arquivos
 
-```
-forever_notes/
-├─ index.html   # Estrutura HTML (contem o DOM)
-├─ app.js       # Toda a logica JavaScript
+synta_notes/
+├─ index.html   # Estrutura HTML (contém o DOM)
+├─ app.js       # Toda a lógica JavaScript
 ├─ styles.css   # Estilos com Tailwind CSS
-├─ README.md    # Documentacao do projeto
+├─ sw.js        # Service Worker (PWA/Offline)
+├─ README.md    # Documentação do projeto
 └─ CONTRIBUTING.md
-```
 
-### Padroes de Codigo
+### Padroes de Código
 
 #### JavaScript
-- Use funcoes nomeadas para melhor legibilidade
-- Adicione comentarios para logica complexa
+- Use funções nomeadas para melhor legibilidade
+- Adicione comentários para lógica complexa
 - Use nomes descritivos para variaveis
 - Exemplo:
   ```javascript
