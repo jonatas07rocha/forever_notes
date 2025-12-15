@@ -378,16 +378,23 @@ function toggleInputSignifier(type) {
     state.inputSignifiers[type] = !state.inputSignifiers[type];
     
     const btn = document.getElementById(`btn-toggle-${type}`);
-    const icon = btn.querySelector('i');
+    // O problema A estava aqui: a função toggleInputSignifier não estava
+    // garantindo a atualização visual se fosse chamada pelo menu de tipos.
+    // Isso é corrigido em renderGlobalInput, que chama esta função
+    // para sincronizar o estado visual.
     
-    if (state.inputSignifiers[type]) {
-        btn.classList.add('bg-stone-100', 'text-black', 'dark:bg-stone-700', 'dark:text-white');
-        btn.classList.remove('text-stone-400');
-        if (type === 'priority') icon.setAttribute('fill', 'currentColor'); 
-    } else {
-        btn.classList.remove('bg-stone-100', 'text-black', 'dark:bg-stone-700', 'dark:text-white');
-        btn.classList.add('text-stone-400');
-        if (type === 'priority') icon.setAttribute('fill', 'none');
+    // Atualização visual (Ajuste de estilos):
+    if (btn) {
+        const icon = btn.querySelector('i');
+        if (state.inputSignifiers[type]) {
+            btn.classList.add('bg-stone-100', 'text-black', 'dark:bg-stone-700', 'dark:text-white');
+            btn.classList.remove('text-stone-400');
+            if (type === 'priority') icon.setAttribute('fill', 'currentColor'); 
+        } else {
+            btn.classList.remove('bg-stone-100', 'text-black', 'dark:bg-stone-700', 'dark:text-white');
+            btn.classList.add('text-stone-400');
+            if (type === 'priority') icon.setAttribute('fill', 'none');
+        }
     }
 }
 
@@ -834,7 +841,48 @@ function closeGlobalInput() {
 }
 
 function renderGlobalInput() {
-    // Atualização visual do dropdown de tipos (se necessário)
+    // --------------------------------------------------------
+    // CORREÇÃO B (Semântica): Desabilita/habilita significadores
+    // --------------------------------------------------------
+    const isTask = state.selectedType === 'task';
+    const isNote = state.selectedType === 'note';
+    
+    const btnPriority = document.getElementById('btn-toggle-priority');
+    const btnInspiration = document.getElementById('btn-toggle-inspiration');
+    
+    // 1. Aplica Regras Semânticas (B)
+    if (btnPriority) {
+        btnPriority.disabled = !isTask;
+        btnPriority.classList.toggle('opacity-50', !isTask);
+        btnPriority.classList.toggle('cursor-not-allowed', !isTask);
+        
+        // Se mudou para NOTA/EVENTO, desativa Prioridade
+        if (!isTask && state.inputSignifiers.priority) {
+            toggleInputSignifier('priority');
+        }
+    }
+    
+    if (btnInspiration) {
+        btnInspiration.disabled = !isNote;
+        btnInspiration.classList.toggle('opacity-50', !isNote);
+        btnInspiration.classList.toggle('cursor-not-allowed', !isNote);
+        
+        // Se mudou para TAREFA/EVENTO, desativa Inspiração
+        if (!isNote && state.inputSignifiers.inspiration) {
+            toggleInputSignifier('inspiration');
+        }
+    }
+    
+    // 2. Sincroniza o estado visual dos botões (Correção A)
+    // Isso garante que os estilos aplicados em toggleInputSignifier sejam aplicados
+    // quando o modal é reaberto ou quando o tipo de input é alterado.
+    if (state.inputSignifiers.priority) toggleInputSignifier('priority');
+    if (state.inputSignifiers.inspiration) toggleInputSignifier('inspiration');
+    
+    // Atualiza o tipo selecionado no botão principal
+    const selectedTypeConfig = ENTRY_TYPES[state.selectedType];
+    document.getElementById('global-type-icon').setAttribute('data-lucide', selectedTypeConfig.icon);
+    document.getElementById('global-type-label').textContent = T(selectedTypeConfig.label);
 }
 
 function addNewEntry() {
@@ -856,6 +904,11 @@ function addNewEntry() {
         isInspiration = true;
         content = content.substring(2);
     }
+    
+    // Garante a semântica final (última chance de limpar estados inválidos)
+    if (type !== 'task') isPriority = false;
+    if (type !== 'note') isInspiration = false;
+
 
     state.entries.unshift({
         id: Date.now(),
@@ -873,8 +926,12 @@ function addNewEntry() {
     state.inputText = '';
     state.inputDate = null;
     
+    // Reseta o estado dos toggles (importante!)
     if (state.inputSignifiers.priority) toggleInputSignifier('priority');
     if (state.inputSignifiers.inspiration) toggleInputSignifier('inspiration');
+    
+    // Reset do selectedType para Task (padrão Bullet Journal)
+    state.selectedType = 'task';
 
     document.getElementById('global-entry-input').value = '';
     closeGlobalInput();
@@ -985,10 +1042,51 @@ function setupUnloadAlert() {
     };
 }
 
+// Funções de Modal simples
 function openFeedbackModal() { document.getElementById('feedback-modal').classList.remove('hidden'); setTimeout(() => document.getElementById('feedback-modal').classList.remove('opacity-0'), 10); }
 function closeFeedbackModal() { document.getElementById('feedback-modal').classList.add('opacity-0'); setTimeout(() => document.getElementById('feedback-modal').classList.add('hidden'), 200); }
 function sendFeedback() { alert("Feedback enviado!"); closeFeedbackModal(); }
 function closeModal() { document.getElementById('app-modal').classList.add('opacity-0'); setTimeout(() => document.getElementById('app-modal').classList.add('hidden'), 200); }
+
+// Funções de Backup/Restore (dummy, sem implementação real aqui)
+function backupData() {
+    const data = JSON.stringify({ entries: state.entries, prefs: state.prefs }, null, 2);
+    const blob = new Blob([data], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `synta_notes_backup_${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    alert("Backup concluído!");
+}
+
+function restoreData(input) {
+    if (input.files.length === 0) return;
+    const file = input.files[0];
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        try {
+            const loadedState = JSON.parse(e.target.result);
+            if (loadedState.entries && loadedState.prefs) {
+                if (confirm("Isto substituirá todos os seus dados atuais. Continuar?")) {
+                    state.entries = loadedState.entries;
+                    state.prefs = { ...state.prefs, ...loadedState.prefs };
+                    saveData();
+                    init(); // Re-inicializa o app
+                    alert("Dados restaurados com sucesso! O aplicativo será recarregado.");
+                    location.reload();
+                }
+            } else {
+                alert("Formato de arquivo de backup inválido.");
+            }
+        } catch (error) {
+            alert("Erro ao ler o arquivo: " + error.message);
+        }
+    };
+    reader.readAsText(file);
+}
 
 // --- BOOTSTRAP ---
 document.addEventListener('DOMContentLoaded', init);
