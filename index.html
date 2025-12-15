@@ -177,6 +177,51 @@
             </div>
         </div>
     </div>
+
+    <div id="friction-modal" class="fixed inset-0 z-[60] hidden opacity-0 transition-opacity duration-200" aria-hidden="true">
+        <div class="absolute inset-0 bg-stone-900/60 backdrop-blur-sm transition-opacity" onclick="closeFrictionModal()"></div>
+        <div class="flex min-h-full items-center justify-center p-4 text-center">
+            <div class="relative transform overflow-hidden bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg border-2 border-black p-6 fade-in dark:bg-stone-900 dark:border-stone-600">
+                <div class="mb-4">
+                    <h3 class="text-lg font-bold leading-6 text-black dark:text-white">✋ Pausa para Reflexão</h3>
+                    <p class="text-sm text-stone-600 mt-2 dark:text-stone-400">
+                        Você já migrou esta tarefa <strong>3 vezes</strong>. <br>
+                        Se ela é realmente importante, explique o porquê. Caso contrário, ela será excluída para liberar sua mente.
+                    </p>
+                </div>
+                <input type="text" id="friction-input" class="w-full border-2 border-stone-300 p-2 mb-4 text-sm focus:border-black outline-none dark:bg-stone-800 dark:border-stone-700 dark:text-white" placeholder="Por que isso é importante?">
+                <div class="flex flex-row-reverse gap-2">
+                    <button id="friction-btn-confirm" class="w-full bg-black text-white px-3 py-2 text-sm font-bold border-2 border-black hover:bg-stone-800 transition-colors dark:bg-white dark:text-black">
+                        Confirmar Migração
+                    </button>
+                    <button onclick="closeFrictionModal()" class="w-full bg-white text-black px-3 py-2 text-sm font-bold border-2 border-stone-300 hover:bg-stone-50 transition-colors dark:bg-stone-800 dark:text-stone-300 dark:border-stone-700">
+                        Cancelar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="review-modal" class="fixed inset-0 z-[60] hidden opacity-0 transition-opacity duration-200" aria-hidden="true">
+        <div class="absolute inset-0 bg-stone-900/80 backdrop-blur-md transition-opacity"></div>
+        <div class="flex min-h-full items-center justify-center p-4">
+            <div class="relative w-full max-w-2xl bg-white shadow-2xl border-2 border-black flex flex-col max-h-[80vh] fade-in dark:bg-stone-900 dark:border-stone-600">
+                <div class="p-6 border-b border-stone-200 bg-stone-50 dark:bg-stone-800 dark:border-stone-700">
+                    <h2 class="text-2xl font-bold text-black dark:text-white">☕ Revisão Matinal</h2>
+                    <p class="text-stone-500 text-sm mt-1 dark:text-stone-400">Resolva as pendências de ontem para começar o dia com clareza.</p>
+                </div>
+                
+                <div id="review-list-container" class="flex-1 overflow-y-auto p-6 scrollbar-hide">
+                    </div>
+
+                <div class="p-4 border-t border-stone-200 bg-stone-50 flex justify-end dark:bg-stone-800 dark:border-stone-700">
+                    <button onclick="closeReviewModal()" class="text-xs font-bold text-stone-500 hover:text-black underline dark:text-stone-400 dark:hover:text-white">
+                        Adiar Revisão
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
     
     <script src="https://accounts.google.com/gsi/client" onload="gisLoaded()" async defer></script>
     <script src="https://apis.google.com/js/api.js" onload="gapiLoaded()" async defer></script>
