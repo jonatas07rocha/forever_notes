@@ -173,7 +173,7 @@ const TRANSLATIONS = {
         settings_gdrive_beta_badge: 'BETA',
         settings_gdrive_beta_msg: 'Experimental feature. Use with caution and keep local backups.',
         settings_gdrive_title: 'Google Drive Sync',
-        settings_gdrive_desc: 'Keep your data safe in the cloud and sync across devices.',
+        settings_gdrive_desc: 'Mantenha seus dados seguros na nuvem e sincronize entre dispositivos.',
         settings_gdrive_btn_upload: 'UPLOAD TO CLOUD',
         settings_gdrive_btn_download: 'DOWNLOAD FROM CLOUD',
         feedback_send: 'Send Feedback',
@@ -1004,13 +1004,14 @@ function handleGlobalKeydown(e) {
 }
 
 function openGlobalInput() {
+    // CORREÇÃO: Reseta os estados de input antes de abrir o modal global
     state.inputText = '';
     state.inputDate = null;
     state.selectedType = 'task';
     state.showSlashMenu = false; 
     state.editingEntryId = null; 
-    state.isPriorityInput = false;
-    state.isInspirationInput = false;
+    state.isPriorityInput = false; // Reset essencial para a UX
+    state.isInspirationInput = false; // Reset essencial para a UX
 
     const modal = document.getElementById('global-input-modal');
     if (!modal) return;
@@ -1046,7 +1047,8 @@ function renderGlobalInput() {
     const charCountEl = document.getElementById('global-char-count');
     const dateBtn = document.getElementById('global-date-button');
     const datePicker = document.getElementById('global-date-picker-native');
-    const globalActionButtons = document.getElementById('global-input-action-buttons'); // Novo ID para os botões contextuais
+    // CORREÇÃO: Pega o contêiner de botões contextuais
+    const globalActionButtons = document.getElementById('global-input-action-buttons'); 
 
     if (!input || !menu) return;
     
@@ -1064,6 +1066,7 @@ function renderGlobalInput() {
     if (typeIcon) typeIcon.setAttribute('data-lucide', config.icon);
     if (typeLabel) typeLabel.innerText = T(config.label);
     
+    // As opções de tipo na lista suspensa global precisam chamar selectGlobalEntryType()
     const typeOptions = Object.values(ENTRY_TYPES).map(t => `<button onclick="selectGlobalEntryType('${t.id}')" class="w-full text-left flex items-center gap-3 p-2 hover:bg-stone-100 transition-colors dark:hover:bg-stone-700 ${state.selectedType === t.id ? 'bg-stone-50 font-bold dark:bg-stone-600' : ''}"><i data-lucide="${t.icon}" class="w-4 h-4 text-black dark:text-white"></i><span class="text-sm text-black dark:text-white">${T(t.label)}</span></button>`).join('');
     menu.innerHTML = typeOptions;
     menu.classList.toggle('hidden', !state.showSlashMenu);
@@ -1076,6 +1079,11 @@ function renderGlobalInput() {
             dateBtn.classList.remove('text-black', 'font-bold', 'dark:text-white');
             datePicker.value = '';
         }
+        // Listener para o date picker (necessário para atualizar o estado e re-renderizar)
+        datePicker.onchange = (e) => {
+             state.inputDate = e.target.value;
+             renderGlobalInput();
+        };
     }
     
     // CORREÇÃO: Injetando os botões contextuais
@@ -1083,14 +1091,14 @@ function renderGlobalInput() {
         let conditionalButtonsHTML = '';
         if (config.id === 'task') {
             conditionalButtonsHTML = `
-                <button onclick="togglePriorityInput(); renderGlobalInput();" title="${T('pt-BR') === currentLang ? 'Marcar como Prioridade (✱) - BuJo' : 'Mark as Priority (✱) - BuJo'}" 
+                <button onclick="state.isPriorityInput = !state.isPriorityInput; state.isInspirationInput = false; renderGlobalInput();" title="${T('pt-BR') === currentLang ? 'Marcar como Prioridade (✱) - BuJo' : 'Mark as Priority (✱) - BuJo'}" 
                         class="p-1.5 rounded transition-colors ${state.isPriorityInput ? 'bg-black text-white dark:bg-white dark:text-black' : 'text-stone-400 hover:text-black dark:hover:text-white'}">
                     <i data-lucide="star" class="w-4 h-4 fill-current"></i>
                 </button>
             `;
         } else if (config.id === 'note') {
              conditionalButtonsHTML = `
-                <button onclick="toggleInspirationInput(); renderGlobalInput();" title="${T('pt-BR') === currentLang ? 'Marcar como Inspiração (!) - BuJo' : 'Mark as Inspiration (!) - BuJo'}"
+                <button onclick="state.isInspirationInput = !state.isInspirationInput; state.isPriorityInput = false; renderGlobalInput();" title="${T('pt-BR') === currentLang ? 'Marcar como Inspiração (!) - BuJo' : 'Mark as Inspiration (!) - BuJo'}"
                         class="p-1.5 rounded transition-colors ${state.isInspirationInput ? 'bg-blue-600 text-white dark:bg-blue-400 dark:text-black' : 'text-stone-400 hover:text-black dark:hover:text-white'}">
                     <i data-lucide="zap" class="w-4 h-4 fill-current"></i> 
                 </button>
@@ -1109,11 +1117,15 @@ function renderGlobalInput() {
 function selectGlobalEntryType(typeId) {
     state.selectedType = typeId;
     state.showSlashMenu = false;
+    // CORREÇÃO: Reseta o estado dos significadores ao mudar de tipo
+    state.isPriorityInput = false;
+    state.isInspirationInput = false;
+    
     if (state.inputText.startsWith('/')) {
         state.inputText = state.inputText.substring(1).trim();
     }
     
-    // Garante que o input global se atualize após a mudança de tipo
+    // Renderiza o input global para atualizar os botões contextuais
     renderGlobalInput();
     
     setTimeout(() => {
@@ -1273,7 +1285,7 @@ function render() {
     
     // Aplicamos nos dois lugares onde a logo aparece (Desktop e Mobile)
     const brandingEl = document.getElementById('app-branding');
-    if (brandingEl) brandingEl.innerHTML = brandingHTML;
+    if (brandingEl) brandingHTML;
     
     const mobileBrandingEl = document.getElementById('mobile-branding');
     if (mobileBrandingEl) mobileBrandingEl.innerHTML = brandingHTML;
@@ -1557,7 +1569,10 @@ function renderInputBlock(placeholder, isGlobal = false) {
     const charCount = state.inputText.length;
     const limit = config.limit;
     
-    const typeOptions = Object.values(ENTRY_TYPES).map(t => `<button onclick="selectEntryType('${t.id}')" class="w-full text-left flex items-center gap-3 p-2 hover:bg-stone-100 transition-colors dark:hover:bg-stone-700 ${state.selectedType === t.id ? 'bg-stone-50 font-bold dark:bg-stone-600' : ''}"><i data-lucide="${t.icon}" class="w-4 h-4 text-black dark:text-white"></i><span class="text-sm text-black dark:text-white">${T(t.label)}</span></button>`).join('');
+    // CORREÇÃO: Usando selectEntryType aqui (e não selectGlobalEntryType) para entradas não-globais
+    const selectTypeFunction = isGlobal ? 'selectGlobalEntryType' : 'selectEntryType';
+    
+    const typeOptions = Object.values(ENTRY_TYPES).map(t => `<button onclick="${selectTypeFunction}('${t.id}')" class="w-full text-left flex items-center gap-3 p-2 hover:bg-stone-100 transition-colors dark:hover:bg-stone-700 ${state.selectedType === t.id ? 'bg-stone-50 font-bold dark:bg-stone-600' : ''}"><i data-lucide="${t.icon}" class="w-4 h-4 text-black dark:text-white"></i><span class="text-sm text-black dark:text-white">${T(t.label)}</span></button>`).join('');
     const linkOptions = state.hubs.map(h => `<button onclick="insertLink('${h.name}')" class="w-full text-left p-2 hover:bg-stone-100 transition-colors text-sm font-bold flex items-center gap-2 dark:text-stone-300 dark:hover:bg-stone-700"><i data-lucide="hash" class="w-3 h-3 text-stone-400"></i> ${h.name}</button>`).join('');
 
     const inputId = isGlobal ? 'global-entry-input' : 'entry-input';
@@ -1566,22 +1581,40 @@ function renderInputBlock(placeholder, isGlobal = false) {
     
     // Ponto 2: Contexto Inteligente - Botões Condicionais (Fiel ao BuJo: Prioridade para Tarefa, Inspiração para Nota)
     let conditionalButtons = '';
+    
+    // Função de toggle precisa forçar renderização da tela principal para atualizar
+    const toggleFunc = isGlobal ? 
+        'state.isPriorityInput = !state.isPriorityInput; state.isInspirationInput = false; renderGlobalInput();' :
+        'togglePriorityInput();';
+        
+    const inspToggleFunc = isGlobal ?
+        'state.isInspirationInput = !state.isInspirationInput; state.isPriorityInput = false; renderGlobalInput();' :
+        'toggleInspirationInput();';
+
     if (config.id === 'task') {
         conditionalButtons = `
-            <button onclick="togglePriorityInput();" title="${T('pt-BR') === currentLang ? 'Marcar como Prioridade (✱) - BuJo' : 'Mark as Priority (✱) - BuJo'}" 
+            <button onclick="${toggleFunc}" title="${T('pt-BR') === currentLang ? 'Marcar como Prioridade (✱) - BuJo' : 'Mark as Priority (✱) - BuJo'}" 
                     class="p-1.5 rounded transition-colors ${state.isPriorityInput ? 'bg-black text-white dark:bg-white dark:text-black' : 'text-stone-400 hover:text-black dark:hover:text-white'}">
                 <i data-lucide="star" class="w-4 h-4 fill-current"></i>
             </button>
         `;
     } else if (config.id === 'note') {
          conditionalButtons = `
-            <button onclick="toggleInspirationInput();" title="${T('pt-BR') === currentLang ? 'Marcar como Inspiração (!) - BuJo' : 'Mark as Inspiration (!) - BuJo'}"
+            <button onclick="${inspToggleFunc}" title="${T('pt-BR') === currentLang ? 'Marcar como Inspiração (!) - BuJo' : 'Mark as Inspiration (!) - BuJo'}"
                     class="p-1.5 rounded transition-colors ${state.isInspirationInput ? 'bg-blue-600 text-white dark:bg-blue-400 dark:text-black' : 'text-stone-400 hover:text-black dark:hover:text-white'}">
                 <i data-lucide="zap" class="w-4 h-4 fill-current"></i> 
             </button>
          `;
     }
     
+    // Se for global, os botões contextuais e de data precisam estar fora do bloco principal 
+    // mas o conditionalButtons precisa ser injetado. Se não for global, renderizamos o bloco completo aqui.
+    if (isGlobal) {
+        // CORREÇÃO: O HTML do input global é renderizado via JS no renderGlobalInput()
+        // Este bloco HTML abaixo é para a entrada NÃO GLOBAL (Diário/Hubs/Collections)
+    }
+    
+    // HTML para entrada NÃO GLOBAL (Diário/Hubs/Collections)
     return `
         <div class="relative mb-6 z-20 group bg-stone-50 p-3 border border-stone-200 focus-within:border-black focus-within:shadow-lg transition-all flex items-start gap-3 dark:bg-stone-800 dark:border-stone-700 dark:focus-within:border-white">
             <button onclick="state.showSlashMenu = !state.showSlashMenu; state.showLinkMenu = false; render()" class="flex-shrink-0 flex items-center gap-2 bg-white border border-stone-300 px-2 py-1.5 rounded-sm hover:border-black transition-colors dark:bg-stone-900 dark:border-stone-600 dark:hover:border-white"><i data-lucide="${config.icon}" class="w-4 h-4 text-black dark:text-white"></i><span class="text-xs font-bold text-black hidden sm:inline-block dark:text-white">${T(config.label)}</span><i data-lucide="chevron-down" class="w-3 h-3 text-stone-400"></i></button>
@@ -1843,7 +1876,7 @@ function renderVisualEntry(entry) {
     
     // Verifica Significadores (BuJo Original)
     const isPriority = (entry.content.includes('✱') || entry.content.includes('*')) && entry.type === 'task';
-    const isInspiration = entry.content.includes('!') && entry.type === 'note'; 
+    const isInspiration = entry.content.includes('!') && entry.content.includes('!') && entry.type === 'note'; // Garantir que só notas tenham Inspiração
     const isMigrated = entry.targetDate && entry.targetDate > new Date().setHours(23,59,59,999);
 
     // Conteúdo limpo para exibição, removendo os símbolos BuJo.
