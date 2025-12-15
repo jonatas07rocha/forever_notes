@@ -20,8 +20,6 @@ const TRANSLATIONS = {
         type_task: 'Tarefa',
         type_event: 'Evento',
         type_inspiration: 'Inspiração', // NOVO: Significador
-        // type_reflection: 'Reflexão', // REMOVIDO
-        // type_idea: 'Ideia', // REMOVIDO
         nav_home: 'Home',
         nav_journal: 'Diário',
         nav_hubs: 'Hubs',
@@ -106,8 +104,6 @@ const TRANSLATIONS = {
         type_task: 'Task',
         type_event: 'Event',
         type_inspiration: 'Inspiration', // NEW
-        // type_reflection: 'Reflection', // REMOVIDO
-        // type_idea: 'Idea', // REMOVIDO
         nav_home: 'Home',
         nav_journal: 'Journal',
         nav_hubs: 'Hubs',
@@ -714,7 +710,9 @@ function addNewEntry() {
         targetDate: targetDate, 
         recurring: nlpResult.recurring,
         // NOVO: Contador de migrações (Ponto 3)
-        migrationCount: 0 
+        migrationCount: 0,
+        // NOVO: Marcador de Progresso (BuJo <)
+        inProgress: false
     });
 
     state.inputText = '';
@@ -739,9 +737,10 @@ function toggleEntry(id) {
     const entry = state.entries.find(e => e.id === id);
     if (entry) {
         entry.completed = !entry.completed;
-        // Reseta o contador de migrações ao completar uma tarefa
+        // Reseta o contador de migrações e progresso ao completar uma tarefa
         if (entry.completed && entry.type === 'task') {
              entry.migrationCount = 0;
+             entry.inProgress = false;
         }
         
         if (entry.completed && entry.recurring === 'daily') {
@@ -752,7 +751,8 @@ function toggleEntry(id) {
                 id: Date.now(),
                 completed: false,
                 targetDate: tomorrow.getTime(),
-                migrationCount: 0 
+                migrationCount: 0,
+                inProgress: false
             });
         }
         saveData();
@@ -766,6 +766,16 @@ function deleteEntry(id) {
         saveData();
         render();
     });
+}
+
+// Novo: Toggle para o marcador de progresso (<)
+function toggleProgress(id) {
+    const entry = state.entries.find(e => e.id === id);
+    if (entry && entry.type === 'task' && !entry.completed) {
+        entry.inProgress = !entry.inProgress;
+        saveData();
+        render();
+    }
 }
 
 // NOVO: Lógica de Migração de Tarefa (Ponto 3)
@@ -783,6 +793,7 @@ function migrateTask(id, requiresJustification = false, newDate) {
     
     entry.migrationCount = (entry.migrationCount || 0) + 1;
     entry.targetDate = newDate; 
+    entry.inProgress = false; // Reseta o progresso ao migrar
 
     saveData();
     return true;
@@ -1092,7 +1103,9 @@ function addNewGlobalEntry() {
         targetDate: targetDate, 
         recurring: nlpResult.recurring,
         // NOVO: Contador de migrações
-        migrationCount: 0 
+        migrationCount: 0,
+        // NOVO: Marcador de Progresso (BuJo <)
+        inProgress: false
     });
 
     closeGlobalInput();
@@ -1309,7 +1322,7 @@ function getHomeHTML() {
     const nextEvent = upcomingEvents[0];
     const priorities = state.entries
         .filter(e => !e.completed && (e.content.includes('✱') || e.content.includes('*')))
-        .sort((a,b) => (b.targetDate || b.id) - (a.targetDate || a.id));
+        .sort((a,b) => (b.targetDate || b.id) - (a.targetDate || b.id));
 
     // NOVO: Recentes
     const recentItems = [...state.entries]
@@ -1500,7 +1513,7 @@ function renderInputBlock(placeholder, isGlobal = false) {
             
             <div class="flex-1 relative">
                 <input type="text" id="${inputId}" autocomplete="off" placeholder="${placeholder}" class="w-full bg-transparent text-sm outline-none font-medium placeholder:font-normal placeholder:text-stone-400 py-1.5 dark:text-white dark:placeholder:text-stone-500">
-                ${limit ? `<div class="absolute right-0 top-1.5 text-[10px] font-mono text-stone-400">${charCount}/${limit}</div>` : ''}
+                ${limit ? `<div id="${isGlobal ? 'global-char-count' : 'char-count'}" class="absolute right-0 top-1.5 text-[10px] font-mono text-stone-400">${charCount}/${limit}</div>` : ''}
             </div>
             
             ${state.showSlashMenu ? `<div class="absolute top-full left-0 mt-1 w-48 bg-white border-2 border-black shadow-xl z-50 fade-in py-1 dark:bg-stone-800 dark:border-stone-600">${typeOptions}</div>` : ''}
@@ -1698,7 +1711,7 @@ function formatContent(text) {
     return formatted;
 }
 
-// ♻️ ATUALIZADO: RENDERIZAÇÃO COM SIGNIFICADORES ORIGINAIS BUJO
+// ♻️ ATUALIZADO: RENDERIZAÇÃO COM SIGNIFICADORES ORIGINAIS BUJO E PROGRESSO (<)
 function renderVisualEntry(entry) {
     const config = ENTRY_TYPES[entry.type];
     const dateDisplay = entry.targetDate ? new Date(entry.targetDate).toLocaleDateString(currentLang, {day:'2-digit', month:'2-digit'}) : '';
@@ -1707,6 +1720,7 @@ function renderVisualEntry(entry) {
     // Verifica Significadores (BuJo Original)
     const isPriority = (entry.content.includes('✱') || entry.content.includes('*')) && entry.type === 'task';
     const isInspiration = entry.content.includes('!') && entry.type === 'note'; 
+    const isMigrated = entry.targetDate && entry.targetDate > new Date().setHours(23,59,59,999);
 
     // Conteúdo limpo para exibição, removendo os símbolos BuJo.
     const rawContentCleaned = entry.content.replace(/✱/g, '').replace(/\*/g, '').replace(/!/g, '').trim();
@@ -1722,6 +1736,8 @@ function renderVisualEntry(entry) {
             borderColor = 'border-l-4 border-l-black border-y-stone-100 border-r-stone-100 dark:border-l-white dark:border-y-stone-800 dark:border-r-stone-800';
         } else if (isInspiration) {
             borderColor = 'border-l-4 border-l-blue-600 border-y-stone-100 border-r-stone-100 dark:border-l-blue-400 dark:border-y-stone-800 dark:border-r-stone-800';
+        } else if (entry.inProgress) { // NOVO: Progresso
+             borderColor = 'border-l-4 border-l-green-600 border-y-stone-100 border-r-stone-100 dark:border-l-green-400 dark:border-y-stone-800 dark:border-r-stone-800';
         }
     }
     
@@ -1741,10 +1757,16 @@ function renderVisualEntry(entry) {
                     
                     ${isInspiration && !isCompleted ? `<span class="text-[10px] bg-blue-600 text-white px-1 font-bold dark:bg-blue-400 dark:text-black">${T('type_inspiration').toUpperCase()}</span>` : ''}
                     ${isPriority && !isCompleted ? `<span class="text-[10px] bg-black text-white px-1 font-bold dark:bg-white dark:text-black">${T('ui_important')}</span>` : ''}
+                    ${entry.inProgress && !isCompleted ? `<span class="text-[10px] bg-green-600 text-white px-1 font-bold dark:bg-green-400 dark:text-black">${T('pt-BR') === currentLang ? 'EM PROG.' : 'IN PROG.'}</span>` : ''}
                 </div>
             </div>
             
             <div class="flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                ${entry.type === 'task' && !isCompleted ? `
+                    <button onclick="toggleProgress(${entry.id})" class="text-stone-300 hover:text-green-600 dark:hover:text-green-400" title="${entry.inProgress ? 'Pausar Progresso' : 'Marcar como Em Progresso (<)'}">
+                        <i data-lucide="${entry.inProgress ? 'pause' : 'chevrons-right'}" class="w-4 h-4"></i>
+                    </button>
+                ` : ''}
                 <button onclick="shareEntry(${entry.id})" class="text-stone-300 hover:text-blue-600 dark:hover:text-blue-400" title="Compartilhar">
                     <i data-lucide="share-2" class="w-4 h-4"></i>
                 </button>
@@ -1767,12 +1789,23 @@ function renderClassicEntry(entry) {
     // Conteúdo limpo para exibição, removendo os símbolos BuJo.
     const rawContentCleaned = entry.content.replace(/✱/g, '').replace(/\*/g, '').replace(/!/g, '').trim();
     const contentHtml = formatContent(rawContentCleaned);
+    
+    // Verificação de Migração (TargetDate no Futuro/Hoje)
+    const todayStart = getTodayStart();
+    const targetDateStart = entry.targetDate ? new Date(entry.targetDate).setHours(0,0,0,0) : new Date(entry.id).setHours(0,0,0,0);
+    const isMigrated = targetDateStart > todayStart && entry.type === 'task'; // Considera migrado se for no futuro
 
     // No modo Clássico, o símbolo do item muda para o Significador se for o caso
     let bujoSymbol = config.symbol;
-    if (isCompleted && entry.type === 'task') bujoSymbol = 'x'; // Concluído
-    else if (isPriority) bujoSymbol = '✱'; // Prioridade
-    else if (isInspiration) bujoSymbol = '!'; // Inspiração
+    if (entry.type === 'task') {
+        if (isCompleted) bujoSymbol = 'x'; // Concluído
+        else if (isPriority) bujoSymbol = '✱'; // Prioridade
+        else if (entry.inProgress) bujoSymbol = '<'; // Iniciado (Novo!)
+        else if (isMigrated) bujoSymbol = '>'; // Migrado/Agendado
+        else bujoSymbol = '•'; // Padrão
+    } else if (entry.type === 'note' && isInspiration) {
+        bujoSymbol = '!'; // Inspiração
+    }
 
     return `
         <div class="group flex items-baseline gap-2 py-1 px-1 hover:bg-stone-50 rounded -ml-1 transition-colors cursor-default dark:hover:bg-stone-800">
@@ -2121,7 +2154,7 @@ function handleBeforeUnload(e) {
 // ☁️ INTEGRAÇÃO GOOGLE DRIVE
 // ==========================================
 
-const CLIENT_ID = '173913188559-olttmpg5j7i6c8dje4as4rldqfn85tnv.apps.googleusercontent.com'; // SEU ID
+const CLIENT_ID = '173913188559-olttmpg5f7i6c8dje4as4rldqfn85tnv.apps.googleusercontent.com'; // SEU ID
 const SCOPES = 'https://www.googleapis.com/auth/drive.file';
 const DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest';
 // ⚠️ ATUALIZADO: Nome do arquivo no Google Drive
