@@ -19,8 +19,6 @@ const TRANSLATIONS = {
         type_note: 'Nota',
         type_task: 'Tarefa',
         type_event: 'Evento',
-        type_reflection: 'Reflexão',
-        type_idea: 'Ideia',
         nav_home: 'Home',
         nav_journal: 'Diário',
         nav_hubs: 'Hubs',
@@ -51,11 +49,11 @@ const TRANSLATIONS = {
         ui_delete_confirm: 'Confirmar',
         ui_cancel: 'Cancelar',
         ui_save: 'Salvar',
-        ui_add_note_placeholder: 'O que está acontecendo agora? (',
-        ui_add_note_placeholder_end: ' para opções, >> para links)',
+        ui_add_note_placeholder: 'O que está acontecendo? (/ para opções)',
+        ui_add_note_placeholder_end: '',
         ui_search_placeholder: 'Buscar itens',
         ui_date: 'DATA',
-        ui_important: 'IMPORTANTE',
+        ui_important: 'PRIORIDADE',
         ui_edit: 'EDITANDO',
         ui_view_mode_toggle: 'Alternar Visualização',
         ui_item_scheduled: 'Item Agendado',
@@ -97,14 +95,21 @@ const TRANSLATIONS = {
         feedback_desc: 'Sua opinião é importante! Relate erros ou envie sugestões.',
         feedback_placeholder: 'Digite sua mensagem aqui...',
         feedback_empty: 'Por favor, digite alguma mensagem antes de enviar.',
+        modal_friction_title: 'Pausa para Reflexão',
+        modal_friction_msg: 'Você adiou esta tarefa 3 vezes. Ela ainda é importante? Se sim, por quê?',
+        modal_friction_placeholder: 'Explique a importância ou deixe vazio para excluir.',
+        modal_review_title: 'Revisão Matinal',
+        modal_review_msg: 'Tarefas pendentes de ontem. O que fazer com elas?',
+        btn_keep: 'Manter (Hoje)',
+        btn_migrate: 'Migrar (Mover p/ frente)',
+        btn_schedule: 'Agendar (Futuro)',
+        btn_delete: 'Excluir',
     },
     'en-US': {
         app_title: 'Synta Notes',
         type_note: 'Note',
         type_task: 'Task',
         type_event: 'Event',
-        type_reflection: 'Reflection',
-        type_idea: 'Idea',
         nav_home: 'Home',
         nav_journal: 'Journal',
         nav_hubs: 'Hubs',
@@ -135,11 +140,11 @@ const TRANSLATIONS = {
         ui_delete_confirm: 'Confirm',
         ui_cancel: 'Cancel',
         ui_save: 'Save',
-        ui_add_note_placeholder: "What's happening now? (",
-        ui_add_note_placeholder_end: ' for options, >> for links)',
+        ui_add_note_placeholder: "What's happening? (/ for options)",
+        ui_add_note_placeholder_end: '',
         ui_search_placeholder: 'Search items',
         ui_date: 'DATE',
-        ui_important: 'IMPORTANT',
+        ui_important: 'PRIORITY',
         ui_edit: 'EDITING',
         ui_view_mode_toggle: 'Toggle View',
         ui_item_scheduled: 'Item Scheduled',
@@ -181,6 +186,15 @@ const TRANSLATIONS = {
         feedback_desc: 'Your opinion is important! Report bugs or send suggestions.',
         feedback_placeholder: 'Type your message here...',
         feedback_empty: 'Please type a message before sending.',
+        modal_friction_title: 'Reflection Pause',
+        modal_friction_msg: 'You migrated this task 3 times. Is it still important? If so, why?',
+        modal_friction_placeholder: 'Explain importance or leave empty to delete.',
+        modal_review_title: 'Morning Review',
+        modal_review_msg: 'Pending tasks from yesterday. What to do?',
+        btn_keep: 'Keep (Today)',
+        btn_migrate: 'Migrate (Push forward)',
+        btn_schedule: 'Schedule (Future)',
+        btn_delete: 'Delete',
     }
 };
 
@@ -203,12 +217,19 @@ function setLanguage(lang) {
     render();
 }
 
+// --- DEFINIÇÕES DO MÉTODO BULLET JOURNAL ---
 const ENTRY_TYPES = {
-    note: { id: 'note', label: 'type_note', icon: 'align-left', symbol: '—', color: 'text-stone-600 dark:text-stone-400', limit: null }, 
-    task: { id: 'task', label: 'type_task', icon: 'check-square', symbol: '•', color: 'text-black dark:text-white', limit: 140 }, 
-    event: { id: 'event', label: 'type_event', icon: 'calendar', symbol: '○', color: 'text-black dark:text-white', limit: 140 },
-    reflection: { id: 'reflection', label: 'type_reflection', icon: 'moon', symbol: '>', color: 'text-black dark:text-white', limit: 280 }, 
-    idea: { id: 'idea', label: 'type_idea', icon: 'lightbulb', symbol: '!', color: 'text-black dark:text-white', limit: 140 }, 
+    task: { id: 'task', label: 'type_task', icon: 'square', symbol: '•', limit: 140 }, 
+    event: { id: 'event', label: 'type_event', icon: 'circle', symbol: '○', limit: 140 },
+    note: { id: 'note', label: 'type_note', icon: 'minus', symbol: '—', limit: null }
+};
+
+// Estados da Tarefa
+const TASK_STATUS = {
+    INCOMPLETE: 'incomplete',
+    COMPLETED: 'completed',  // X
+    MIGRATED: 'migrated',    // >
+    SCHEDULED: 'scheduled'   // <
 };
 
 // --- ESTADO ---
@@ -231,24 +252,26 @@ let state = {
     selectedType: 'task', 
     showSlashMenu: false, 
     showLinkMenu: false,
+    pendingReviewEntries: [], // Para o modal de revisão
     prefs: {
-        viewMode: 'visual', // Valor padrão inicial
+        viewMode: 'visual', 
         showAlertOnUnload: true,
         theme: 'light',
-        lang: null
+        lang: null,
+        lastReviewDate: null
     }
 };
 
 // --- INICIALIZAÇÃO ---
 function init() {
     loadData();
+    migrateOldData(); // Garante compatibilidade e conversão
+
     const prefs = JSON.parse(localStorage.getItem(PREFS_KEY) || '{}');
     
-    // Garante que usamos a preferência salva ou o padrão
-    state.prefs.viewMode = prefs.viewMode || 'visual';
-    state.prefs.showAlertOnUnload = prefs.showAlertOnUnload !== undefined ? prefs.showAlertOnUnload : true;
-    state.prefs.theme = prefs.theme || 'light'; 
-    state.prefs.lang = prefs.lang || getPreferredLanguage();
+    // Merge de preferências
+    state.prefs = { ...state.prefs, ...prefs };
+    state.prefs.lang = state.prefs.lang || getPreferredLanguage();
     currentLang = state.prefs.lang;
     
     applyTheme(state.prefs.theme); 
@@ -265,6 +288,46 @@ function init() {
     
     window.addEventListener('keydown', handleGlobalKeydown);
     setupUnloadAlert();
+
+    // Inicia Ritual Matinal
+    setTimeout(checkMorningReview, 1000);
+}
+
+// Adapta dados antigos para a nova estrutura estrita
+function migrateOldData() {
+    let changed = false;
+    state.entries = state.entries.map(e => {
+        let newEntry = { ...e };
+        
+        // 1. Converte tipos antigos
+        if (e.type === 'reflection') {
+            newEntry.type = 'note';
+            if (!newEntry.content.includes('#reflexao')) newEntry.content += ' #reflexao';
+            changed = true;
+        } else if (e.type === 'idea') {
+            newEntry.type = 'note';
+            // Converte para significador de inspiração (!)
+            if (!newEntry.content.startsWith('!')) newEntry.content = '! ' + newEntry.content;
+            changed = true;
+        }
+
+        // 2. Converte booleano completed para status
+        if (!newEntry.status) {
+            if (newEntry.completed) newEntry.status = TASK_STATUS.COMPLETED;
+            else newEntry.status = TASK_STATUS.INCOMPLETE;
+            delete newEntry.completed; // Limpeza
+            changed = true;
+        }
+        
+        // 3. Garante contador de migração
+        if (typeof newEntry.migrationCount === 'undefined') {
+            newEntry.migrationCount = 0;
+        }
+
+        return newEntry;
+    });
+
+    if (changed) saveData();
 }
 
 function setActiveTab(tabId) {
@@ -292,14 +355,177 @@ function saveData() {
         hubs: state.hubs,
         tagUsage: state.tagUsage 
     }));
-    // Salva o objeto prefs completo, que agora contém viewMode atualizado
     localStorage.setItem(PREFS_KEY, JSON.stringify(state.prefs));
 }
 
 function updateHubCounts() {
     state.hubs.forEach(h => {
-        h.count = state.entries.filter(e => e.hubId == h.id && !e.completed).length;
+        h.count = state.entries.filter(e => e.hubId == h.id && e.status === TASK_STATUS.INCOMPLETE).length;
     });
+}
+
+// --- RITUAIS & FRICÇÃO ---
+
+function checkMorningReview() {
+    const todayStr = new Date().toISOString().split('T')[0];
+    
+    // Se já revisou hoje, ignora
+    if (state.prefs.lastReviewDate === todayStr) return;
+
+    // Busca tarefas INCOMPLETAS de DIAS ANTERIORES
+    const pending = state.entries.filter(e => {
+        if (e.type !== 'task') return false;
+        if (e.status !== TASK_STATUS.INCOMPLETE) return false;
+        
+        const entryDate = e.targetDate ? new Date(e.targetDate) : new Date(e.id);
+        entryDate.setHours(0,0,0,0);
+        const today = new Date();
+        today.setHours(0,0,0,0);
+        
+        return entryDate < today;
+    });
+
+    if (pending.length > 0) {
+        state.pendingReviewEntries = pending;
+        openReviewModal();
+    }
+}
+
+function openReviewModal() {
+    const modal = document.getElementById('review-modal');
+    if (!modal) return;
+    renderReviewList();
+    modal.classList.remove('hidden');
+    setTimeout(() => modal.classList.remove('opacity-0'), 10);
+}
+
+function closeReviewModal() {
+    const modal = document.getElementById('review-modal');
+    if (!modal) return;
+    modal.classList.add('opacity-0');
+    setTimeout(() => {
+        modal.classList.add('hidden');
+        // Marca como revisado hoje
+        state.prefs.lastReviewDate = new Date().toISOString().split('T')[0];
+        saveData();
+    }, 200);
+}
+
+function renderReviewList() {
+    const container = document.getElementById('review-list-container');
+    if (!container) return;
+    
+    if (state.pendingReviewEntries.length === 0) {
+        closeReviewModal();
+        return;
+    }
+
+    container.innerHTML = state.pendingReviewEntries.map(e => `
+        <div class="bg-stone-50 p-4 rounded border border-stone-200 mb-3 dark:bg-stone-800 dark:border-stone-700">
+            <p class="font-bold text-sm mb-3 text-stone-800 dark:text-stone-200">${e.content}</p>
+            <div class="flex flex-wrap gap-2">
+                <button onclick="reviewAction(${e.id}, 'keep')" class="flex-1 bg-white border border-stone-300 text-xs py-2 rounded hover:bg-stone-100 dark:bg-stone-700 dark:border-stone-600 dark:text-white">${T('btn_keep')}</button>
+                <button onclick="reviewAction(${e.id}, 'migrate')" class="flex-1 bg-stone-200 border border-stone-300 text-xs py-2 rounded hover:bg-stone-300 dark:bg-stone-600 dark:border-stone-500 dark:text-white">${T('btn_migrate')} (>)</button>
+                <button onclick="reviewAction(${e.id}, 'schedule')" class="flex-1 bg-stone-200 border border-stone-300 text-xs py-2 rounded hover:bg-stone-300 dark:bg-stone-600 dark:border-stone-500 dark:text-white">${T('btn_schedule')} (<)</button>
+                <button onclick="reviewAction(${e.id}, 'delete')" class="px-3 bg-red-100 text-red-700 border border-red-200 text-xs py-2 rounded hover:bg-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+            </div>
+        </div>
+    `).join('');
+    lucide.createIcons();
+}
+
+function reviewAction(id, action) {
+    const entry = state.entries.find(e => e.id === id);
+    if (!entry) return;
+
+    if (action === 'keep') {
+        entry.targetDate = new Date().getTime(); 
+    } else if (action === 'migrate') {
+        handleMigration(entry);
+    } else if (action === 'schedule') {
+        handleScheduling(entry);
+    } else if (action === 'delete') {
+        state.entries = state.entries.filter(e => e.id !== id);
+    }
+
+    state.pendingReviewEntries = state.pendingReviewEntries.filter(e => e.id !== id);
+    saveData();
+    renderReviewList();
+    render(); 
+}
+
+function handleMigration(entry) {
+    if (entry.migrationCount >= 3) {
+        showFrictionModal(entry, 'migrate');
+    } else {
+        performMigration(entry);
+    }
+}
+
+function performMigration(entry) {
+    entry.status = TASK_STATUS.MIGRATED;
+    const newEntry = {
+        ...entry,
+        id: Date.now(), 
+        status: TASK_STATUS.INCOMPLETE,
+        migrationCount: (entry.migrationCount || 0) + 1,
+        targetDate: new Date().getTime() 
+    };
+    state.entries.unshift(newEntry);
+    saveData();
+    render();
+}
+
+function handleScheduling(entry) {
+    const dateInput = document.createElement('input');
+    dateInput.type = 'date';
+    dateInput.onchange = (e) => {
+        if (e.target.value) {
+            const parts = e.target.value.split('-');
+            const date = new Date(parts[0], parts[1] - 1, parts[2]);
+            entry.status = TASK_STATUS.SCHEDULED;
+            const newEntry = {
+                ...entry,
+                id: Date.now(),
+                status: TASK_STATUS.INCOMPLETE,
+                targetDate: date.getTime(),
+                migrationCount: (entry.migrationCount || 0) + 1
+            };
+            state.entries.unshift(newEntry);
+            saveData();
+            render();
+        }
+    };
+    dateInput.click(); 
+}
+
+function showFrictionModal(entry, intent) {
+    const modal = document.getElementById('friction-modal');
+    if(!modal) return;
+    
+    document.getElementById('friction-btn-confirm').onclick = () => {
+        const reason = document.getElementById('friction-input').value.trim();
+        if (reason) {
+            entry.content += ` [Justificativa: ${reason}]`; 
+            if (intent === 'migrate') performMigration(entry);
+            closeFrictionModal();
+        } else {
+            deleteEntry(entry.id);
+            closeFrictionModal();
+        }
+    };
+    
+    modal.classList.remove('hidden');
+    setTimeout(() => modal.classList.remove('opacity-0'), 10);
+    document.getElementById('friction-input').focus();
+}
+
+function closeFrictionModal() {
+    const modal = document.getElementById('friction-modal');
+    if(!modal) return;
+    document.getElementById('friction-input').value = '';
+    modal.classList.add('opacity-0');
+    setTimeout(() => modal.classList.add('hidden'), 200);
 }
 
 // --- LÓGICA DE TEMA ---
@@ -343,11 +569,9 @@ function saveEditEntry(id, newContent) {
              startEditEntry(id);
              return;
         }
-        const oldContent = entry.content;
         entry.content = newContent.trim();
         state.editingEntryId = null; 
         
-        const oldTags = extractTags(oldContent);
         const newTags = extractTags(entry.content);
         newTags.forEach(t => boostTagRelevance(t));
 
@@ -413,7 +637,7 @@ function getUniqueTags() {
         const found = extractTags(e.content);
         found.forEach(tag => {
             if (!tags[tag]) tags[tag] = 0;
-            if (!e.completed) tags[tag]++; 
+            if (e.status !== TASK_STATUS.COMPLETED) tags[tag]++; 
         });
     });
     return Object.entries(tags)
@@ -559,7 +783,6 @@ function addNewEntry() {
 
     let targetHubId = state.activeTab === 'hubs' ? state.activeHubId : (state.activeHubId || null);
 
-    // 🔗 DETECÇÃO DE LINK PARA HUB NO TEXTO
     const hubLinkMatch = content.match(/>>\s*([^\n#\r]+)/);
     
     if (hubLinkMatch) {
@@ -568,7 +791,6 @@ function addNewEntry() {
             h.name.toLowerCase() === linkedHubName.toLowerCase() || 
             h.name.replace('✱', '').trim().toLowerCase() === linkedHubName.toLowerCase()
         );
-
         if (foundHub) {
             targetHubId = foundHub.id;
         }
@@ -587,10 +809,11 @@ function addNewEntry() {
         id: Date.now(),
         type,
         content,
-        completed: false,
+        status: TASK_STATUS.INCOMPLETE,
         hubId: targetHubId,
         targetDate: targetDate, 
-        recurring: nlpResult.recurring
+        recurring: nlpResult.recurring,
+        migrationCount: 0
     });
 
     state.inputText = '';
@@ -599,35 +822,22 @@ function addNewEntry() {
     state.showLinkMenu = false;
     saveData();
     
-    const viewedDate = new Date();
-    viewedDate.setHours(0,0,0,0);
-    const addedDate = targetDate ? new Date(targetDate) : null;
-    if (addedDate) addedDate.setHours(0,0,0,0);
-    
-    if (targetDate && addedDate.getTime() !== viewedDate.getTime() && state.activeTab !== 'home') {
-        showModal(T('ui_item_scheduled'), `${T('ui_item_scheduled')} em ${addedDate.toLocaleDateString(currentLang)}.`);
-    }
-
     render();
 }
 
 function toggleEntry(id) {
     const entry = state.entries.find(e => e.id === id);
-    if (entry) {
-        entry.completed = !entry.completed;
-        if (entry.completed && entry.recurring === 'daily') {
-            const tomorrow = new Date();
-            tomorrow.setDate(tomorrow.getDate() + 1);
-            state.entries.unshift({
-                ...entry,
-                id: Date.now(),
-                completed: false,
-                targetDate: tomorrow.getTime()
-            });
-        }
-        saveData();
-        render();
+    if (!entry || entry.type !== 'task') return;
+    
+    if (entry.status === TASK_STATUS.MIGRATED || entry.status === TASK_STATUS.SCHEDULED) return;
+
+    if (entry.status === TASK_STATUS.INCOMPLETE) {
+        entry.status = TASK_STATUS.COMPLETED;
+    } else {
+        entry.status = TASK_STATUS.INCOMPLETE;
     }
+    saveData();
+    render();
 }
 
 function deleteEntry(id) {
@@ -658,7 +868,6 @@ async function shareEntry(id) {
             console.log('Compartilhamento cancelado ou falhou', err);
         }
     } else {
-        // Fallback para área de transferência se o navegador não suportar share
         try {
             await navigator.clipboard.writeText(textContent);
             showModal(T('ui_item_saved'), 'Texto copiado para a área de transferência!');
@@ -795,10 +1004,11 @@ function addNewGlobalEntry() {
         id: Date.now(),
         type,
         content,
-        completed: false,
+        status: TASK_STATUS.INCOMPLETE,
         hubId: null, 
         targetDate: targetDate, 
-        recurring: nlpResult.recurring
+        recurring: nlpResult.recurring,
+        migrationCount: 0
     });
 
     closeGlobalInput();
@@ -873,7 +1083,6 @@ function setupGlobalInputHandler() {
 
 // --- RENDER SYSTEM ---
 function toggleViewMode() {
-    // CORRIGIDO: Usa state.prefs.viewMode para persistir
     state.prefs.viewMode = state.prefs.viewMode === 'visual' ? 'classic' : 'visual';
     saveData();
     render();
@@ -882,20 +1091,15 @@ function toggleViewMode() {
 function render() {
     renderSidebar();
     
-    // --- CORREÇÃO AQUI ---
-    // Definimos o título da aba do navegador (Texto puro)
     document.querySelector('title').textContent = 'Synta Notes';
     
-    // Definimos a Logo Visual com o HTML para a cor cinza (innerHTML)
     const brandingHTML = `Synta <span class="text-stone-500">Notes</span>`;
     
-    // Aplicamos nos dois lugares onde a logo aparece (Desktop e Mobile)
     const brandingEl = document.getElementById('app-branding');
     if (brandingEl) brandingEl.innerHTML = brandingHTML;
     
     const mobileBrandingEl = document.getElementById('mobile-branding');
     if (mobileBrandingEl) mobileBrandingEl.innerHTML = brandingHTML;
-    // ---------------------
 
     document.getElementById('mobile-settings-text').textContent = T('nav_settings');
     document.getElementById('mobile-feedback-text').textContent = T('nav_feedback');
@@ -998,13 +1202,12 @@ function setupJournalInput() {
     };
 }
 
-// --- VIEWS ---
 function getHomeHTML() {
     const now = new Date();
     now.setHours(0,0,0,0);
     
     const upcomingEvents = state.entries
-        .filter(e => e.type === 'event' && !e.completed)
+        .filter(e => e.type === 'event' && e.status !== TASK_STATUS.COMPLETED)
         .filter(e => {
             const tDate = e.targetDate ? new Date(e.targetDate) : new Date(e.id);
             tDate.setHours(0,0,0,0);
@@ -1014,10 +1217,9 @@ function getHomeHTML() {
 
     const nextEvent = upcomingEvents[0];
     const priorities = state.entries
-        .filter(e => !e.completed && e.content.includes('✱'))
+        .filter(e => e.status !== TASK_STATUS.COMPLETED && (e.content.startsWith('*') || e.content.includes('✱')))
         .sort((a,b) => (b.targetDate || b.id) - (a.targetDate || a.id));
 
-    // NOVO: Recentes
     const recentItems = [...state.entries]
         .sort((a, b) => b.id - a.id)
         .slice(0, 3);
@@ -1058,7 +1260,7 @@ function getHomeHTML() {
                         ? `<div class="space-y-2">
                              ${priorities.slice(0, 3).map(e => `
                                 <div class="text-sm font-medium truncate flex items-center gap-2 dark:text-stone-200">
-                                    <span class="text-stone-400 text-[10px]">•</span> ${e.content.replace('✱', '').trim()}
+                                    <span class="text-stone-400 text-[10px]">•</span> ${e.content.replace(/^[\*!]\s*/, '').replace('✱', '').trim()}
                                 </div>
                              `).join('')}
                            </div>`
@@ -1267,7 +1469,6 @@ function getJournalHTML() {
         `;
     }
     
-    // 🔄 ORDEM CORRIGIDA: Hoje, Futuro, Período, Todos
     const periodButtons = ['Hoje', 'Futuro', 'Período', 'Todos'].map(p => `
         <button onclick="state.activeJournalPeriod='${p}'; render()" 
             class="px-3 py-1 text-xs font-bold transition-all ${state.activeJournalPeriod === p ? 'bg-black text-white dark:bg-white dark:text-black' : 'text-stone-500 hover:text-black dark:text-stone-400 dark:hover:text-white'}">
@@ -1293,7 +1494,7 @@ function getJournalHTML() {
 
             <div class="relative mb-6 z-20 group bg-stone-50 p-3 border border-stone-200 focus-within:border-black focus-within:shadow-lg transition-all flex items-start gap-3 dark:bg-stone-800 dark:border-stone-700 dark:focus-within:border-white">
                 <button onclick="state.showSlashMenu = !state.showSlashMenu; state.showLinkMenu = false; render()" class="flex-shrink-0 flex items-center gap-2 bg-white border border-stone-300 px-2 py-1.5 rounded-sm hover:border-black transition-colors dark:bg-stone-900 dark:border-stone-600 dark:hover:border-white"><i data-lucide="${config.icon}" class="w-4 h-4 text-black dark:text-white"></i><span class="text-xs font-bold text-black hidden sm:inline-block dark:text-white">${T(config.label)}</span><i data-lucide="chevron-down" class="w-3 h-3 text-stone-400"></i></button>
-                <div class="flex-1 relative"><input type="text" id="entry-input" autocomplete="off" placeholder="${T('ui_add_note_placeholder')}/${T('ui_add_note_placeholder_end')}" class="w-full bg-transparent text-sm outline-none font-medium placeholder:font-normal placeholder:text-stone-400 py-1.5 dark:text-white dark:placeholder:text-stone-500">${limit ? `<div class="absolute right-0 top-1.5 text-[10px] font-mono text-stone-400">${charCount}/${limit}</div>` : ''}</div>
+                <div class="flex-1 relative"><input type="text" id="entry-input" autocomplete="off" placeholder="${T('ui_add_note_placeholder')}${T('ui_add_note_placeholder_end')}" class="w-full bg-transparent text-sm outline-none font-medium placeholder:font-normal placeholder:text-stone-400 py-1.5 dark:text-white dark:placeholder:text-stone-500">${limit ? `<div class="absolute right-0 top-1.5 text-[10px] font-mono text-stone-400">${charCount}/${limit}</div>` : ''}</div>
                 ${state.showSlashMenu ? `<div class="absolute top-full left-0 mt-1 w-48 bg-white border-2 border-black shadow-xl z-50 fade-in py-1 dark:bg-stone-800 dark:border-stone-600">${typeOptions}</div>` : ''}
                 ${state.showLinkMenu ? `<div class="absolute top-full left-20 mt-1 w-48 bg-white border-2 border-black shadow-xl z-50 fade-in py-1 dark:bg-stone-800 dark:border-stone-600"><div class="px-2 py-1 text-[10px] font-bold text-stone-400 uppercase tracking-wider border-b border-stone-100 mb-1 dark:border-stone-700">${currentLang === 'pt-BR' ? 'Linkar para...' : 'Link to...'}</div>${linkOptions}</div>` : ''}
                 
@@ -1313,7 +1514,6 @@ function renderEntry(entry) {
     if (state.editingEntryId === entry.id) {
         return getEditEntryHTML(entry);
     }
-    // CORRIGIDO: Verifica no prefs o modo
     if (state.prefs.viewMode === 'classic') {
         return renderClassicEntry(entry);
     }
@@ -1322,7 +1522,6 @@ function renderEntry(entry) {
 
 function getEditEntryHTML(entry) {
     const config = ENTRY_TYPES[entry.type];
-    // CORRIGIDO: Verifica no prefs o modo
     const isClassic = state.prefs.viewMode === 'classic';
     return `
         <div class="p-3 bg-stone-50 border-2 border-black rounded shadow-md ${isClassic ? 'font-mono' : 'font-sans'} dark:bg-stone-800 dark:border-stone-600">
@@ -1355,10 +1554,13 @@ function formatContent(text) {
     let formatted = escapeHtml(text);
     formatted = formatted.replace(/\n/g, '<br>');
     
+    // Remove marcadores de status/tipo do início para a exibição limpa (opcional, mas recomendado)
+    formatted = formatted.replace(/^[\*!]\s*/, ''); 
+
     // TAGS
     formatted = formatted.replace(/(#[\w\u00C0-\u00FF]+)/g, '<button onclick="openCollection(\'$1\'); event.stopPropagation();" class="text-blue-600 hover:underline font-bold bg-blue-50 px-1 rounded mx-0.5 dark:bg-blue-900/30 dark:text-blue-400">$1</button>');
     
-    // 🎨 CORREÇÃO: Regex ajustado para caracteres de escape (&gt;&gt;)
+    // LINKS
     formatted = formatted.replace(/(?:>>|&gt;&gt;)\s*([^\n#<]+)/g, (match, p1) => {
         const linkText = p1.trim();
         return `<button onclick="handleLinkClick('${linkText}'); event.stopPropagation();" class="text-purple-700 hover:underline font-bold bg-purple-50 px-1 rounded mx-0.5 transition-colors dark:bg-purple-900/30 dark:text-purple-400">${linkText}</button>`;
@@ -1376,21 +1578,47 @@ function formatContent(text) {
     return formatted;
 }
 
-// ♻️ ATUALIZADO: RENDERIZAÇÃO COM BOTÃO DE COMPARTILHAR
 function renderVisualEntry(entry) {
     const config = ENTRY_TYPES[entry.type];
     const dateDisplay = entry.targetDate ? new Date(entry.targetDate).toLocaleDateString(currentLang, {day:'2-digit', month:'2-digit'}) : '';
-    const isCompleted = entry.completed;
-    const isPriority = entry.content.includes('✱');
+    
+    const isCompleted = entry.status === TASK_STATUS.COMPLETED;
+    const isMigrated = entry.status === TASK_STATUS.MIGRATED;
+    const isScheduled = entry.status === TASK_STATUS.SCHEDULED;
+    
+    const isPriority = entry.content.startsWith('*') || entry.content.includes('✱');
+    const isInspiration = entry.content.startsWith('!');
+    
     const contentHtml = formatContent(entry.content);
     
+    let iconName = config.icon;
+    let iconClass = "text-black dark:text-white";
+    let textClass = "text-stone-900 dark:text-stone-200";
+
+    if (entry.type === 'task') {
+        if (isCompleted) {
+            iconName = 'check-square';
+            iconClass = "text-stone-400";
+            textClass = "line-through text-stone-400";
+        } else if (isMigrated) {
+            iconName = 'arrow-right-circle';
+            iconClass = "text-stone-400";
+            textClass = "italic text-stone-400";
+        } else if (isScheduled) {
+            iconName = 'calendar-clock';
+            iconClass = "text-stone-400";
+            textClass = "italic text-stone-400";
+        }
+    }
+
     return `
-        <div class="flex items-start gap-3 p-3 bg-white border ${isPriority && !isCompleted ? 'border-l-4 border-l-black border-y-stone-100 border-r-stone-100 dark:border-l-white dark:border-y-stone-800 dark:border-r-stone-800' : 'border-stone-100 dark:border-stone-800'} hover:border-stone-400 group transition-all dark:bg-stone-900 dark:hover:border-stone-600">
-            <button onclick="toggleEntry(${entry.id})" class="${config.color} mt-0.5">
-                <i data-lucide="${isCompleted && entry.type === 'task' ? 'check-square' : config.icon}" class="w-4 h-4 ${isCompleted ? 'opacity-30' : ''}"></i>
+        <div class="flex items-start gap-3 p-3 bg-white border ${isPriority && !isCompleted ? 'border-l-4 border-l-black border-y-stone-100 border-r-stone-100 dark:border-l-white dark:border-y-stone-800 dark:border-r-stone-800' : 'border-stone-100 dark:border-stone-800'} hover:border-stone-400 group transition-all dark:bg-stone-900 dark:hover:border-stone-600 relative">
+            <button onclick="toggleEntry(${entry.id})" class="mt-0.5 ${iconClass}">
+                <i data-lucide="${iconName}" class="w-4 h-4"></i>
             </button>
             <div class="flex-1 min-w-0" onclick="startEditEntry(${entry.id})" id="entry-content-view-${entry.id}">
-                <p class="text-sm ${isCompleted ? 'line-through text-stone-400' : 'text-stone-900 dark:text-stone-200'} leading-relaxed font-medium cursor-pointer">
+                <p class="text-sm ${textClass} leading-relaxed font-medium cursor-pointer">
+                    ${isInspiration ? '<i data-lucide="zap" class="w-3 h-3 inline text-yellow-500 fill-yellow-500 mr-1"></i>' : ''}
                     ${contentHtml}
                     ${entry.recurring ? '<i data-lucide="repeat" class="w-3 h-3 inline text-stone-400 ml-1"></i>' : ''}
                 </p>
@@ -1401,12 +1629,16 @@ function renderVisualEntry(entry) {
                 </div>
             </div>
             
-            <div class="flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                <button onclick="shareEntry(${entry.id})" class="text-stone-300 hover:text-blue-600 dark:hover:text-blue-400" title="Compartilhar">
-                    <i data-lucide="share-2" class="w-4 h-4"></i>
+            <div class="flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity absolute right-2 top-2 bg-white dark:bg-stone-900 p-1 border border-stone-100 dark:border-stone-700 rounded shadow-sm">
+                ${entry.type === 'task' && entry.status === TASK_STATUS.INCOMPLETE ? `
+                    <button onclick="handleMigration(state.entries.find(e=>e.id===${entry.id}))" class="text-stone-400 hover:text-black dark:hover:text-white" title="Migrar (>)"><i data-lucide="arrow-right" class="w-3 h-3"></i></button>
+                    <button onclick="handleScheduling(state.entries.find(e=>e.id===${entry.id}))" class="text-stone-400 hover:text-black dark:hover:text-white" title="Agendar (<)"><i data-lucide="calendar" class="w-3 h-3"></i></button>
+                ` : ''}
+                <button onclick="shareEntry(${entry.id})" class="text-stone-400 hover:text-blue-600 dark:hover:text-blue-400" title="Compartilhar">
+                    <i data-lucide="share-2" class="w-3 h-3"></i>
                 </button>
-                <button onclick="deleteEntry(${entry.id})" class="text-stone-300 hover:text-red-600 dark:hover:text-red-400" title="Excluir">
-                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                <button onclick="deleteEntry(${entry.id})" class="text-stone-400 hover:text-red-600 dark:hover:text-red-400" title="Excluir">
+                    <i data-lucide="trash-2" class="w-3 h-3"></i>
                 </button>
             </div>
         </div>
@@ -1415,23 +1647,43 @@ function renderVisualEntry(entry) {
 
 function renderClassicEntry(entry) {
     const config = ENTRY_TYPES[entry.type];
-    const isCompleted = entry.completed;
-    const isPriority = entry.content.includes('✱');
+    const isPriority = entry.content.startsWith('*') || entry.content.includes('✱');
+    const isInspiration = entry.content.startsWith('!');
     const dateDisplay = entry.targetDate ? new Date(entry.targetDate).toLocaleDateString(currentLang, {day:'2-digit', month:'2-digit'}) : '';
     const contentHtml = formatContent(entry.content);
+    
+    let symbol = config.symbol;
+    if (entry.type === 'task') {
+        if (entry.status === TASK_STATUS.COMPLETED) symbol = 'X';
+        else if (entry.status === TASK_STATUS.MIGRATED) symbol = '>';
+        else if (entry.status === TASK_STATUS.SCHEDULED) symbol = '<';
+    }
+
+    // Significador visual à esquerda
+    let prefix = '';
+    if (isPriority) prefix += '* ';
+    if (isInspiration) prefix += '! ';
+
     return `
-        <div class="group flex items-baseline gap-2 py-1 px-1 hover:bg-stone-50 rounded -ml-1 transition-colors cursor-default dark:hover:bg-stone-800">
-            <button onclick="toggleEntry(${entry.id})" 
-                class="font-mono font-bold w-5 text-center select-none ${isCompleted ? 'text-stone-300' : 'text-black hover:text-stone-600 dark:text-white dark:hover:text-stone-300'}">
-                ${isCompleted && entry.type === 'task' ? 'x' : config.symbol}
-            </button>
-            <div class="flex-1 min-w-0 font-mono text-sm leading-relaxed ${isCompleted ? 'line-through text-stone-400' : (isPriority ? 'text-black font-bold dark:text-white' : 'text-stone-800 dark:text-stone-300')} cursor-pointer" onclick="startEditEntry(${entry.id})" id="entry-content-view-${entry.id}">
+        <div class="group flex items-baseline gap-2 py-1 px-1 hover:bg-stone-50 rounded -ml-1 transition-colors cursor-default dark:hover:bg-stone-800 font-mono text-sm">
+            <div class="w-8 text-right font-bold text-black dark:text-white select-none">
+                <span class="text-stone-500 text-[10px] mr-1">${prefix}</span>
+                <button onclick="toggleEntry(${entry.id})" class="hover:text-stone-500">${symbol}</button>
+            </div>
+            
+            <div class="flex-1 min-w-0 ${entry.status === TASK_STATUS.COMPLETED ? 'line-through text-stone-400' : 'text-stone-800 dark:text-stone-300'}" 
+                 onclick="startEditEntry(${entry.id})">
                 ${contentHtml}
                 ${dateDisplay ? `<span class="text-[10px] text-stone-400 ml-2 select-none font-sans">(${dateDisplay})</span>` : ''}
             </div>
-            <button onclick="deleteEntry(${entry.id})" class="text-stone-300 hover:text-black opacity-0 group-hover:opacity-100 transition-opacity dark:hover:text-white">
-                <i data-lucide="trash-2" class="w-3 h-3"></i>
-            </button>
+
+            <div class="opacity-0 group-hover:opacity-100 flex gap-2 pl-2">
+                 ${entry.type === 'task' && entry.status === TASK_STATUS.INCOMPLETE ? `
+                    <button onclick="handleMigration(state.entries.find(e=>e.id===${entry.id}))" class="text-stone-300 hover:text-black dark:hover:text-white">></button>
+                    <button onclick="handleScheduling(state.entries.find(e=>e.id===${entry.id}))" class="text-stone-300 hover:text-black dark:hover:text-white"><</button>
+                ` : ''}
+                <button onclick="deleteEntry(${entry.id})" class="text-stone-300 hover:text-red-500">x</button>
+            </div>
         </div>
     `;
 }
@@ -1484,7 +1736,7 @@ function getCalendarHTML() {
                 </div>
                 <div class="mt-2 space-y-1">
                     ${events.slice(0, 3).map(e => `
-                        <div class="text-[10px] truncate px-1 py-0.5 ${e.completed ? 'line-through text-stone-300 dark:text-stone-500' : 'bg-stone-100 text-black dark:bg-stone-700 dark:text-stone-200'} rounded-sm border border-stone-100 dark:border-stone-700">
+                        <div class="text-[10px] truncate px-1 py-0.5 ${e.status === TASK_STATUS.COMPLETED ? 'line-through text-stone-300 dark:text-stone-500' : 'bg-stone-100 text-black dark:bg-stone-700 dark:text-stone-200'} rounded-sm border border-stone-100 dark:border-stone-700">
                            ${ENTRY_TYPES[e.type].symbol} ${e.content}
                         </div>
                     `).join('')}
@@ -1516,11 +1768,9 @@ function getSettingsHTML() {
             <h2 class="text-2xl font-bold mb-6 dark:text-white">${T('settings_title')}</h2>
             
             <div class="bg-white border-2 border-stone-200 p-6 mb-6 relative overflow-hidden dark:bg-stone-800 dark:border-stone-700">
-                                
                 <h3 class="font-bold mb-2 text-black dark:text-white flex items-center gap-2">
                     <i data-lucide="cloud" class="w-5 h-5"></i> ${T('settings_gdrive_title')}
                 </h3>
-                                
                 <p class="text-sm text-stone-500 mb-4 dark:text-stone-400">
                     ${T('settings_gdrive_desc')}
                 </p>
