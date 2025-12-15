@@ -230,7 +230,7 @@ let state = {
     selectedType: 'task', 
     showSlashMenu: false, 
     showLinkMenu: false,
-    // NOVO: Estados para a Entrada Híbrida e Contexto Inteligente
+    // REMOVIDO: isPriorityInput e isInspirationInput (mantendo apenas o estado visual do input)
     isPriorityInput: false, 
     isInspirationInput: false,
     prefs: {
@@ -238,7 +238,6 @@ let state = {
         showAlertOnUnload: true,
         theme: 'light',
         lang: null,
-        // NOVO: Data da última abertura para o Ritual Matinal
         lastOpenedDate: null 
     }
 };
@@ -255,13 +254,12 @@ function init() {
     loadData();
     const prefs = JSON.parse(localStorage.getItem(PREFS_KEY) || '{}');
     
-    // Garante que usamos a preferência salva ou o padrão
     state.prefs.viewMode = prefs.viewMode || 'visual';
     state.prefs.showAlertOnUnload = prefs.showAlertOnUnload !== undefined ? prefs.showAlertOnUnload : true;
     state.prefs.theme = prefs.theme || 'light'; 
     state.prefs.lang = prefs.lang || getPreferredLanguage();
     currentLang = state.prefs.lang;
-    state.prefs.lastOpenedDate = prefs.lastOpenedDate || 0; // Carrega data
+    state.prefs.lastOpenedDate = prefs.lastOpenedDate || 0;
 
     applyTheme(state.prefs.theme); 
     
@@ -274,7 +272,7 @@ function init() {
         ];
     }
 
-    // NOVO: Ritual de Revisão Matinal (Ponto 4)
+    // Ritual de Revisão Matinal
     const todayStart = getTodayStart();
     const lastOpened = state.prefs.lastOpenedDate || 0;
     
@@ -292,10 +290,8 @@ function init() {
         }).sort((a,b) => a.id - b.id);
 
         if (yesterdayTasks.length > 0) {
-            // Se houver tarefas, exibe o modal de revisão matinal
             setTimeout(() => showMorningReviewModal(yesterdayTasks), 500);
         } else {
-            // Se não houver, apenas renderiza normalmente
             render();
         }
     } else {
@@ -325,7 +321,16 @@ function loadData() {
     const data = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{"entries":[], "hubs":[], "tagUsage":{}}');
     state.entries = data.entries || [];
     state.hubs = data.hubs || [];
-    state.tagUsage = data.tagUsage || {}; 
+    state.tagUsage = data.tagUsage || {};
+    // Correção de migração: remove a propriedade inProgress de entradas antigas
+    state.entries = state.entries.map(e => {
+        const newEntry = { ...e };
+        if (newEntry.inProgress !== undefined) {
+            delete newEntry.inProgress; 
+        }
+        return newEntry;
+    });
+
     updateHubCounts();
 }
 
@@ -336,7 +341,6 @@ function saveData() {
         hubs: state.hubs,
         tagUsage: state.tagUsage 
     }));
-    // Salva o objeto prefs completo, que agora contém viewMode e lastOpenedDate
     localStorage.setItem(PREFS_KEY, JSON.stringify(state.prefs));
 }
 
@@ -370,7 +374,6 @@ function toggleTheme() {
 // --- LÓGICA DE EDIAÇÃO COMPLETA (ATUALIZADA) ---
 function startEditEntry(id) {
     state.editingEntryId = id;
-    // Reseta estados de input
     state.isPriorityInput = false;
     state.isInspirationInput = false;
     render();
@@ -378,7 +381,6 @@ function startEditEntry(id) {
         const textarea = document.getElementById(`edit-content-${id}`);
         if(textarea) {
             textarea.focus();
-            // A edição agora é assíncrona, o save é chamado por um botão ou Enter/Escape.
         }
     }, 50);
 }
@@ -395,18 +397,16 @@ function saveEditEntry(id) {
     // Ler estado dos botões (data-active='true')
     const btnPriority = document.getElementById(`btn-edit-priority-${id}`);
     const btnInspiration = document.getElementById(`btn-edit-inspiration-${id}`);
-    const btnProgress = document.getElementById(`btn-edit-progress-${id}`);
 
     const isPriorityChecked = btnPriority ? btnPriority.dataset.active === 'true' : false;
     const isInspirationChecked = btnInspiration ? btnInspiration.dataset.active === 'true' : false;
-    const isProgressChecked = btnProgress ? btnProgress.dataset.active === 'true' : false;
 
     if (!validateEntryContent(newContent, entry.type)) {
          startEditEntry(id);
          return;
     }
     
-    // 2. Process Content/Signifiers (BuJo Logic)
+    // 2. Process Content/Signifiers (BuJo Logic Canônica)
     let content = newContent;
     
     // Clean existing signifiers from the content
@@ -428,14 +428,14 @@ function saveEditEntry(id) {
     entry.targetDate = newDateStr ? parseLocalInputDate(newDateStr) : null;
     entry.hubId = newHubId ? parseInt(newHubId) : null;
     
-    // Update Progress State
-    if (entry.type === 'task') {
-        entry.inProgress = isProgressChecked;
-    }
+    // REMOVIDO: Update Progress State
+    // if (entry.type === 'task') {
+    //     delete entry.inProgress;
+    // }
 
     state.editingEntryId = null; 
     
-    // Update Tags (logic retained from original saveEditEntry)
+    // Update Tags
     const newTags = extractTags(entry.content);
     newTags.forEach(t => boostTagRelevance(t));
 
@@ -610,12 +610,11 @@ function handleDateInput(val) {
     }
 }
 
-// --- FUNÇÕES DE CONTEXTO INTELIGENTE (Ponto 2) ---
+// --- FUNÇÕES DE CONTEXTO INTELIGENTE (CANÔNICO) ---
 function togglePriorityInput() {
-    // Só permite em 'task' (Prioridade é um significador de Tarefa)
     if (state.selectedType === 'task') {
          state.isPriorityInput = !state.isPriorityInput;
-         state.isInspirationInput = false; // Garante exclusividade
+         state.isInspirationInput = false;
     }
     render(); 
     setTimeout(() => {
@@ -629,10 +628,9 @@ function togglePriorityInput() {
 }
 
 function toggleInspirationInput() {
-    // Só permite em 'note' (Inspiração é um significador de Nota)
     if (state.selectedType === 'note') {
          state.isInspirationInput = !state.isInspirationInput;
-         state.isPriorityInput = false; // Garante exclusividade
+         state.isPriorityInput = false;
     } else {
          state.isInspirationInput = false; 
     }
@@ -651,7 +649,6 @@ function toggleInspirationInput() {
 function selectEntryType(typeId) {
     state.selectedType = typeId;
     state.showSlashMenu = false;
-    // Reseta estados de input
     state.isPriorityInput = false;
     state.isInspirationInput = false;
     
@@ -659,11 +656,9 @@ function selectEntryType(typeId) {
         state.inputText = state.inputText.substring(1).trim();
     }
     
-    // Se estiver no input normal, renderiza a tela principal para atualizar os botões contextuais.
     if (state.activeTab === 'journal' || state.activeTab === 'hubs' || state.activeTab === 'collections') {
         render();
     } else {
-        // Se estiver no input global, renderiza o input global.
         renderGlobalInput();
     }
     
@@ -689,23 +684,20 @@ function addNewEntry() {
          content = content.replace(/^\/\w*\s?/, '');
     }
 
-    // NOVO: Lógica de Entrada Híbrida (Ponto 5) e Contexto Inteligente (Ponto 2)
-    // ✱ é o símbolo preferido, * é o atalho. ! é o atalho.
+    // Lógica de Entrada Híbrida e Significadores BuJo
     const isPriorityMarker = content.includes('*') || content.includes('✱') || state.isPriorityInput;
     const isInspirationMarker = content.includes('!') || state.isInspirationInput;
     
     // Prioridade (apenas para Tarefa)
     if (type === 'task' && isPriorityMarker) {
         if (!content.includes('✱')) {
-             // Limpa * e ! do input antes de adicionar ✱ no início para evitar ruído e duplicidade
              content = `✱ ${content.replace(/[\*!✱]/g, '').trim()}`; 
         }
     }
     
-    // Inspiração (apenas para Nota - NUNCA muda o tipo, apenas adiciona o significador)
+    // Inspiração (apenas para Nota)
     if (type === 'note' && isInspirationMarker) {
         if (!content.includes('!')) {
-             // Limpa * e ! do input antes de adicionar ! no início para evitar ruído e duplicidade
              content = `! ${content.replace(/[\*!✱]/g, '').trim()}`;
         }
     }
@@ -715,7 +707,6 @@ function addNewEntry() {
         content = content.replace(/[\*!✱]/g, '').trim();
     }
     
-    // Reset dos estados de botão após a adição
     state.isPriorityInput = false;
     state.isInspirationInput = false; 
 
@@ -725,7 +716,7 @@ function addNewEntry() {
 
     let targetHubId = state.activeTab === 'hubs' ? state.activeHubId : (state.activeHubId || null);
 
-    // 🔗 DETECÇÃO DE LINK PARA HUB NO TEXTO
+    // Detecção de Link
     const hubLinkMatch = content.match(/>>\s*([^\n#\r]+)/);
     
     if (hubLinkMatch) {
@@ -757,10 +748,8 @@ function addNewEntry() {
         hubId: targetHubId,
         targetDate: targetDate, 
         recurring: nlpResult.recurring,
-        // NOVO: Contador de migrações (Ponto 3)
         migrationCount: 0,
-        // NOVO: Marcador de Progresso (BuJo <)
-        inProgress: false
+        // REMOVIDO: inProgress
     });
 
     state.inputText = '';
@@ -785,10 +774,8 @@ function toggleEntry(id) {
     const entry = state.entries.find(e => e.id === id);
     if (entry) {
         entry.completed = !entry.completed;
-        // Reseta o contador de migrações e progresso ao completar uma tarefa
         if (entry.completed && entry.type === 'task') {
              entry.migrationCount = 0;
-             entry.inProgress = false;
         }
         
         if (entry.completed && entry.recurring === 'daily') {
@@ -800,7 +787,6 @@ function toggleEntry(id) {
                 completed: false,
                 targetDate: tomorrow.getTime(),
                 migrationCount: 0,
-                inProgress: false
             });
         }
         saveData();
@@ -816,17 +802,9 @@ function deleteEntry(id) {
     });
 }
 
-// Novo: Toggle para o marcador de progresso (<)
-function toggleProgress(id) {
-    const entry = state.entries.find(e => e.id === id);
-    if (entry && entry.type === 'task' && !entry.completed) {
-        entry.inProgress = !entry.inProgress;
-        saveData();
-        render();
-    }
-}
+// REMOVIDO: function toggleProgress(id) {}
 
-// NOVO: Lógica de Migração de Tarefa (Ponto 3)
+// NOVO: Lógica de Migração Canônica (usa ">")
 function migrateTask(id, requiresJustification = false, newDate) {
     const entry = state.entries.find(e => e.id === id);
     if (!entry || entry.type !== 'task' || entry.completed) return;
@@ -841,14 +819,27 @@ function migrateTask(id, requiresJustification = false, newDate) {
     
     entry.migrationCount = (entry.migrationCount || 0) + 1;
     entry.targetDate = newDate; 
-    entry.inProgress = false; // Reseta o progresso ao migrar
+
+    // NOVO: Adiciona o marcador de Migração (>) visualmente na frente do conteúdo (apenas se for agendado para o futuro)
+    const todayStart = getTodayStart();
+    const isMigratedToFuture = newDate && new Date(newDate).setHours(0,0,0,0) > todayStart;
+    
+    // Limpa > e < anteriores
+    entry.content = entry.content.replace(/[<>]/g, '').trim();
+
+    if (isMigratedToFuture) {
+        // Marcador canônico: > (Migrado para o futuro)
+        entry.content = `> ${entry.content}`;
+    } else {
+        // Se for migrado para hoje (padrão do ritual), não leva > (é apenas um bullet)
+    }
 
     saveData();
     return true;
 }
 
 
-// NOVO: Modal do Ritual de Revisão Matinal (Ponto 4)
+// NOVO: Modal do Ritual de Revisão Matinal (MIGRAÇÃO CANÔNICA)
 function showMorningReviewModal(tasks) {
     if (tasks.length === 0) {
         closeModal();
@@ -865,7 +856,6 @@ function showMorningReviewModal(tasks) {
             render(); 
             return;
         }
-        // Ponto 3: A Regra da "Fricção"
         const isFrictionTriggered = (task.migrationCount || 0) >= 2; 
 
         const title = T('pt-BR') === currentLang ? `Ritual de Revisão Matinal (${currentTaskIndex + 1}/${tasks.length})` : `Morning Review Ritual (${currentTaskIndex + 1}/${tasks.length})`;
@@ -874,7 +864,7 @@ function showMorningReviewModal(tasks) {
             <div class="space-y-4">
                 <p class="text-lg font-bold text-black dark:text-white">${T('pt-BR') === currentLang ? 'Pendência de Ontem:' : 'Pending from Yesterday:'}</p>
                 <div class="p-3 border border-stone-300 rounded bg-stone-50 dark:bg-stone-800 dark:border-stone-700">
-                    <p class="text-sm dark:text-stone-300">${task.content}</p>
+                    <p class="text-sm dark:text-stone-300">${task.content.replace(/[<>]/g, '').trim()}</p>
                     ${isFrictionTriggered ? `<p class="text-xs font-bold text-red-600 mt-2">${T('friction_migrated_3')}</p>` : ''}
                 </div>
                 ${isFrictionTriggered ? `<input type="text" id="justify-input" placeholder="${T('pt-BR') === currentLang ? 'Justificativa (obrigatório)' : 'Justification (required)'}" class="modal-input w-full p-2 border border-stone-300 rounded focus:border-black outline-none dark:bg-stone-700 dark:border-stone-600 dark:text-white">` : ''}
@@ -892,7 +882,6 @@ function showMorningReviewModal(tasks) {
         titleEl.innerText = title;
         msgEl.innerHTML = content;
         
-        // Remove botões padrão e insere os personalizados
         let buttonContainer = modalEl.querySelector('.flex-row-reverse');
         if (buttonContainer) buttonContainer.remove();
         
@@ -918,6 +907,7 @@ function showMorningReviewModal(tasks) {
                 alert(T('pt-BR') === currentLang ? "A justificativa é obrigatória para esta tarefa." : "Justification is required for this task.");
                 return;
             }
+            // Migra para HOJE (sem o marcador >)
             if (migrateTask(task.id, isFrictionTriggered, getTodayStart())) {
                 currentTaskIndex++;
                 updateModal();
@@ -939,6 +929,7 @@ function showMorningReviewModal(tasks) {
             }
 
             const newDate = parseLocalInputDate(newDateStr);
+            // Migra para o futuro (adiciona o marcador >)
             if (migrateTask(task.id, isFrictionTriggered, newDate)) { 
                 currentTaskIndex++;
                 updateModal();
@@ -960,7 +951,6 @@ function showMorningReviewModal(tasks) {
         }
     }
     
-    // Simplesmente abre o modal inicial e chama o loop de atualização
     document.getElementById('app-modal').classList.remove('hidden', 'opacity-0');
     updateModal();
 }
@@ -1007,14 +997,13 @@ function handleGlobalKeydown(e) {
 }
 
 function openGlobalInput() {
-    // CORREÇÃO: Reseta os estados de input antes de abrir o modal global
     state.inputText = '';
     state.inputDate = null;
     state.selectedType = 'task';
     state.showSlashMenu = false; 
     state.editingEntryId = null; 
-    state.isPriorityInput = false; // Reset essencial para a UX
-    state.isInspirationInput = false; // Reset essencial para a UX
+    state.isPriorityInput = false; 
+    state.isInspirationInput = false;
 
     const modal = document.getElementById('global-input-modal');
     if (!modal) return;
@@ -1061,7 +1050,6 @@ function renderGlobalInput() {
 
     input.value = state.inputText;
     
-    // Atualiza contagem de caracteres
     if (charCountEl) {
         charCountEl.innerText = limit ? `${charCount}/${limit}` : charCount;
         charCountEl.classList.toggle('text-red-600', isOver);
@@ -1072,12 +1060,10 @@ function renderGlobalInput() {
     if (typeIcon) typeIcon.setAttribute('data-lucide', config.icon);
     if (typeLabel) typeLabel.innerText = T(config.label);
     
-    // Renderiza menu de tipos
     const typeOptions = Object.values(ENTRY_TYPES).map(t => `<button onclick="selectGlobalEntryType('${t.id}')" class="w-full text-left flex items-center gap-3 p-2 hover:bg-stone-100 transition-colors dark:hover:bg-stone-700 ${state.selectedType === t.id ? 'bg-stone-50 font-bold dark:bg-stone-600' : ''}"><i data-lucide="${t.icon}" class="w-4 h-4 text-black dark:text-white"></i><span class="text-sm text-black dark:text-white">${T(t.label)}</span></button>`).join('');
     menu.innerHTML = typeOptions;
     menu.classList.toggle('hidden', !state.showSlashMenu);
     
-    // Sincroniza Date Picker
     if (dateBtn && datePicker) {
         if (state.inputDate) {
             dateBtn.classList.add('text-black', 'font-bold', 'dark:text-white');
@@ -1092,7 +1078,7 @@ function renderGlobalInput() {
         };
     }
     
-    // Renderiza Botões Contextuais (IDÊNTICO ao Input Principal)
+    // Renderiza Botões Contextuais (CANÔNICO)
     if (globalActionButtons) {
         let conditionalButtonsHTML = '';
         if (config.id === 'task') {
@@ -1110,7 +1096,6 @@ function renderGlobalInput() {
                 </button>
              `;
         }
-        // Adiciona o botão de Data aqui dentro para garantir a ordem visual
         globalActionButtons.innerHTML = conditionalButtonsHTML;
     }
 
@@ -1124,7 +1109,6 @@ function renderGlobalInput() {
 function selectGlobalEntryType(typeId) {
     state.selectedType = typeId;
     state.showSlashMenu = false;
-    // CORREÇÃO: Reseta o estado dos significadores ao mudar de tipo
     state.isPriorityInput = false;
     state.isInspirationInput = false;
     
@@ -1132,7 +1116,6 @@ function selectGlobalEntryType(typeId) {
         state.inputText = state.inputText.substring(1).trim();
     }
     
-    // Renderiza o input global para atualizar os botões contextuais
     renderGlobalInput();
     
     setTimeout(() => {
@@ -1153,33 +1136,28 @@ function addNewGlobalEntry() {
     let type = state.selectedType;
     let targetDate = nlpResult.date || (state.inputDate ? parseLocalInputDate(state.inputDate) : null);
     
-    // Global input processa o estado dos botões ou a digitação
+    // Lógica de Significadores BuJo
     const isPriorityMarker = content.includes('*') || content.includes('✱') || state.isPriorityInput;
     const isInspirationMarker = content.includes('!') || state.isInspirationInput;
 
-    // Prioridade (apenas para Tarefa)
     if (type === 'task' && isPriorityMarker) {
         if (!content.includes('✱')) {
              content = `✱ ${content.replace(/[\*!✱]/g, '').trim()}`; 
         }
     }
     
-    // Inspiração (apenas para Nota)
     if (type === 'note' && isInspirationMarker) {
         if (!content.includes('!')) {
              content = `! ${content.replace(/[\*!✱]/g, '').trim()}`;
         }
     }
     
-    // Certifica-se de que Eventos não podem ter significadores
     if (type === 'event') {
         content = content.replace(/[\*!✱]/g, '').trim();
     }
     
-    // Reset dos estados de botão após a adição
     state.isPriorityInput = false;
     state.isInspirationInput = false; 
-
 
     if (!validateEntryContent(content, type)) {
         return;
@@ -1196,10 +1174,7 @@ function addNewGlobalEntry() {
         hubId: null, 
         targetDate: targetDate, 
         recurring: nlpResult.recurring,
-        // NOVO: Contador de migrações
         migrationCount: 0,
-        // NOVO: Marcador de Progresso (BuJo <)
-        inProgress: false
     });
 
     closeGlobalInput();
@@ -1274,7 +1249,6 @@ function setupGlobalInputHandler() {
 
 // --- RENDER SYSTEM ---
 function toggleViewMode() {
-    // CORRIGIDO: Usa state.prefs.viewMode para persistir
     state.prefs.viewMode = state.prefs.viewMode === 'visual' ? 'classic' : 'visual';
     saveData();
     render();
@@ -1283,20 +1257,15 @@ function toggleViewMode() {
 function render() {
     renderSidebar();
     
-    // --- CORREÇÃO AQUI ---
-    // Definimos o título da aba do navegador (Texto puro)
     document.querySelector('title').textContent = 'Synta Notes';
     
-    // Definimos a Logo Visual com o HTML para a cor cinza (innerHTML)
     const brandingHTML = `Synta <span class="text-stone-500">Notes</span>`;
     
-    // Aplicamos nos dois lugares onde a logo aparece (Desktop e Mobile)
     const brandingEl = document.getElementById('app-branding');
     if (brandingEl) brandingHTML;
     
     const mobileBrandingEl = document.getElementById('mobile-branding');
     if (mobileBrandingEl) mobileBrandingEl.innerHTML = brandingHTML;
-    // ---------------------
 
     document.getElementById('mobile-settings-text').textContent = T('nav_settings');
     document.getElementById('mobile-feedback-text').textContent = T('nav_feedback');
@@ -1418,7 +1387,6 @@ function getHomeHTML() {
         .filter(e => !e.completed && (e.content.includes('✱') || e.content.includes('*')))
         .sort((a,b) => (b.targetDate || b.id) - (a.targetDate || b.id));
 
-    // NOVO: Recentes
     const recentItems = [...state.entries]
         .sort((a, b) => b.id - a.id)
         .slice(0, 3);
@@ -1570,13 +1538,12 @@ function getCollectionsHTML() {
     `;
 }
 
-// NOVO: Renderiza o bloco de input de forma centralizada (Ponto 2 & 5)
+// Renderiza o bloco de input
 function renderInputBlock(placeholder, isGlobal = false) {
     const config = ENTRY_TYPES[state.selectedType];
     const charCount = state.inputText.length;
     const limit = config.limit;
     
-    // CORREÇÃO: Usando selectEntryType aqui (e não selectGlobalEntryType) para entradas não-globais
     const selectTypeFunction = isGlobal ? 'selectGlobalEntryType' : 'selectEntryType';
     
     const typeOptions = Object.values(ENTRY_TYPES).map(t => `<button onclick="${selectTypeFunction}('${t.id}')" class="w-full text-left flex items-center gap-3 p-2 hover:bg-stone-100 transition-colors dark:hover:bg-stone-700 ${state.selectedType === t.id ? 'bg-stone-50 font-bold dark:bg-stone-600' : ''}"><i data-lucide="${t.icon}" class="w-4 h-4 text-black dark:text-white"></i><span class="text-sm text-black dark:text-white">${T(t.label)}</span></button>`).join('');
@@ -1586,10 +1553,9 @@ function renderInputBlock(placeholder, isGlobal = false) {
     const datePickerId = isGlobal ? 'global-date-picker-native' : 'date-picker-native';
     const dateBtnId = isGlobal ? 'global-date-button' : 'date-btn-icon';
     
-    // Ponto 2: Contexto Inteligente - Botões Condicionais (Fiel ao BuJo: Prioridade para Tarefa, Inspiração para Nota)
+    // Botões Condicionais (CANÔNICO)
     let conditionalButtons = '';
     
-    // Função de toggle precisa forçar renderização da tela principal para atualizar
     const toggleFunc = isGlobal ? 
         'state.isPriorityInput = !state.isPriorityInput; state.isInspirationInput = false; renderGlobalInput();' :
         'togglePriorityInput();';
@@ -1614,14 +1580,10 @@ function renderInputBlock(placeholder, isGlobal = false) {
          `;
     }
     
-    // Se for global, os botões contextuais e de data precisam estar fora do bloco principal 
-    // mas o conditionalButtons precisa ser injetado. Se não for global, renderizamos o bloco completo aqui.
     if (isGlobal) {
-        // CORREÇÃO: O HTML do input global é renderizado via JS no renderGlobalInput()
-        // Este bloco HTML abaixo é para a entrada NÃO GLOBAL (Diário/Hubs/Collections)
+        // O HTML do input global é renderizado via JS no renderGlobalInput()
     }
     
-    // HTML para entrada NÃO GLOBAL (Diário/Hubs/Collections)
     return `
         <div class="relative mb-6 z-20 group bg-stone-50 p-3 border border-stone-200 focus-within:border-black focus-within:shadow-lg transition-all flex items-start gap-3 dark:bg-stone-800 dark:border-stone-700 dark:focus-within:border-white">
             <button onclick="state.showSlashMenu = !state.showSlashMenu; state.showLinkMenu = false; render()" class="flex-shrink-0 flex items-center gap-2 bg-white border border-stone-300 px-2 py-1.5 rounded-sm hover:border-black transition-colors dark:bg-stone-900 dark:border-stone-600 dark:hover:border-white"><i data-lucide="${config.icon}" class="w-4 h-4 text-black dark:text-white"></i><span class="text-xs font-bold text-black hidden sm:inline-block dark:text-white">${T(config.label)}</span><i data-lucide="chevron-down" class="w-3 h-3 text-stone-400"></i></button>
@@ -1649,7 +1611,6 @@ function renderInputBlock(placeholder, isGlobal = false) {
 function getCommonSingleViewHTML(title, closeFunc, placeholder, hubId = null) {
     const list = getFilteredEntries();
     
-    // NOVO: Usando a função de renderização de input
     const inputBlock = renderInputBlock(placeholder);
 
     return `
@@ -1726,7 +1687,6 @@ function getJournalHTML() {
         `;
     }
     
-    // 🔄 ORDEM CORRIGIDA: Hoje, Futuro, Período, Todos
     const periodButtons = ['Hoje', 'Futuro', 'Período', 'Todos'].map(p => `
         <button onclick="state.activeJournalPeriod='${p}'; render()" 
             class="px-3 py-1 text-xs font-bold transition-all ${state.activeJournalPeriod === p ? 'bg-black text-white dark:bg-white dark:text-black' : 'text-stone-500 hover:text-black dark:text-stone-400 dark:hover:text-white'}">
@@ -1734,7 +1694,6 @@ function getJournalHTML() {
         </button>
     `).join('');
 
-    // NOVO: Usando a função de renderização de input
     const inputBlock = renderInputBlock(T('ui_add_note_placeholder') + '/' + T('ui_add_note_placeholder_end'));
 
     return `
@@ -1763,14 +1722,13 @@ function renderEntry(entry) {
     if (state.editingEntryId === entry.id) {
         return getEditEntryHTML(entry);
     }
-    // CORRIGIDO: Verifica no prefs o modo
     if (state.prefs.viewMode === 'classic') {
         return renderClassicEntry(entry);
     }
     return renderVisualEntry(entry);
 }
 
-// ⚠️ ATUALIZADO: Interface de Edição Unificada (Substitui Checkboxes por Botões)
+// ⚠️ ATUALIZADO: Interface de Edição (CANÔNICA)
 function getEditEntryHTML(entry) {
     const config = ENTRY_TYPES[entry.type];
     const isClassic = state.prefs.viewMode === 'classic';
@@ -1782,7 +1740,6 @@ function getEditEntryHTML(entry) {
         `<option value="${h.id}" ${entry.hubId == h.id ? 'selected' : ''}>${h.name}</option>`
     ).join('');
     
-    // BOTOES DE CONTEXTO (Padronizados com o Input Principal)
     let contextualButtons = '';
     
     if (entry.type === 'task') {
@@ -1796,14 +1753,7 @@ function getEditEntryHTML(entry) {
                 <i data-lucide="star" class="w-4 h-4 fill-current"></i>
             </button>
             
-            <button type="button" id="btn-edit-progress-${entry.id}"
-                onclick="this.dataset.active = this.dataset.active === 'true' ? 'false' : 'true'; this.className = this.dataset.active === 'true' ? 'p-1.5 rounded transition-colors bg-green-600 text-white dark:bg-green-400 dark:text-black' : 'p-1.5 rounded transition-colors text-stone-400 hover:text-black dark:hover:text-white'"
-                data-active="${entry.inProgress}"
-                class="p-1.5 rounded transition-colors ${entry.inProgress ? 'bg-green-600 text-white dark:bg-green-400 dark:text-black' : 'text-stone-400 hover:text-black dark:hover:text-white'}"
-                title="${T('pt-BR') === currentLang ? 'Em Progresso' : 'In Progress'}">
-                <i data-lucide="${entry.inProgress ? 'pause' : 'chevrons-right'}" class="w-4 h-4"></i>
-            </button>
-        `;
+            `;
     } else if (entry.type === 'note') {
         // Botão Inspiração (Note)
         contextualButtons += `
@@ -1880,7 +1830,7 @@ function formatContent(text) {
     // TAGS
     formatted = formatted.replace(/(#[\w\u00C0-\u00FF]+)/g, '<button onclick="openCollection(\'$1\'); event.stopPropagation();" class="text-blue-600 hover:underline font-bold bg-blue-50 px-1 rounded mx-0.5 dark:bg-blue-900/30 dark:text-blue-400">$1</button>');
     
-    // 🎨 CORREÇÃO: Regex ajustado para caracteres de escape (&gt;&gt;)
+    // LINKS
     formatted = formatted.replace(/(?:>>|&gt;&gt;)\s*([^\n#<]+)/g, (match, p1) => {
         const linkText = p1.trim();
         return `<button onclick="handleLinkClick('${linkText}'); event.stopPropagation();" class="text-purple-700 hover:underline font-bold bg-purple-50 px-1 rounded mx-0.5 transition-colors dark:bg-purple-900/30 dark:text-purple-400">${linkText}</button>`;
@@ -1898,33 +1848,26 @@ function formatContent(text) {
     return formatted;
 }
 
-// ♻️ ATUALIZADO: RENDERIZAÇÃO COM SIGNIFICADORES ORIGINAIS BUJO E PROGRESSO (<)
+// ♻️ ATUALIZADO: RENDERIZAÇÃO VISUAL (CANÔNICA)
 function renderVisualEntry(entry) {
     const config = ENTRY_TYPES[entry.type];
     const dateDisplay = entry.targetDate ? new Date(entry.targetDate).toLocaleDateString(currentLang, {day:'2-digit', month:'2-digit'}) : '';
     const isCompleted = entry.completed;
     
-    // Verifica Significadores (BuJo Original)
     const isPriority = (entry.content.includes('✱') || entry.content.includes('*')) && entry.type === 'task';
-    const isInspiration = entry.content.includes('!') && entry.content.includes('!') && entry.type === 'note'; // Garantir que só notas tenham Inspiração
-    const isMigrated = entry.targetDate && entry.targetDate > new Date().setHours(23,59,59,999);
-
-    // Conteúdo limpo para exibição, removendo os símbolos BuJo.
-    const rawContentCleaned = entry.content.replace(/✱/g, '').replace(/\*/g, '').replace(/!/g, '').trim();
+    const isInspiration = entry.content.includes('!') && entry.type === 'note'; 
+    
+    const rawContentCleaned = entry.content.replace(/✱/g, '').replace(/\*/g, '').replace(/!/g, '').replace(/[<>]/g, '').trim();
     const contentHtml = formatContent(rawContentCleaned);
     
-    // NOVO: Exibe a contagem de migração
     const migrationCount = entry.migrationCount > 0 ? ` [${entry.migrationCount}x]` : '';
     
-    // Determina a cor da borda baseado na prioridade/inspiração
     let borderColor = 'border-stone-100 dark:border-stone-800';
     if (!isCompleted) {
         if (isPriority) {
             borderColor = 'border-l-4 border-l-black border-y-stone-100 border-r-stone-100 dark:border-l-white dark:border-y-stone-800 dark:border-r-stone-800';
         } else if (isInspiration) {
             borderColor = 'border-l-4 border-l-blue-600 border-y-stone-100 border-r-stone-100 dark:border-l-blue-400 dark:border-y-stone-800 dark:border-r-stone-800';
-        } else if (entry.inProgress) { // NOVO: Progresso
-             borderColor = 'border-l-4 border-l-green-600 border-y-stone-100 border-r-stone-100 dark:border-l-green-400 dark:border-y-stone-800 dark:border-r-stone-800';
         }
     }
     
@@ -1944,16 +1887,10 @@ function renderVisualEntry(entry) {
                     
                     ${isInspiration && !isCompleted ? `<span class="text-[10px] bg-blue-600 text-white px-1 font-bold dark:bg-blue-400 dark:text-black">${T('type_inspiration').toUpperCase()}</span>` : ''}
                     ${isPriority && !isCompleted ? `<span class="text-[10px] bg-black text-white px-1 font-bold dark:bg-white dark:text-black">${T('ui_important')}</span>` : ''}
-                    ${entry.inProgress && !isCompleted ? `<span class="text-[10px] bg-green-600 text-white px-1 font-bold dark:bg-green-400 dark:text-black">${T('pt-BR') === currentLang ? 'EM PROG.' : 'IN PROG.'}</span>` : ''}
                 </div>
             </div>
             
             <div class="flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                ${entry.type === 'task' && !isCompleted ? `
-                    <button onclick="toggleProgress(${entry.id})" class="text-stone-300 hover:text-green-600 dark:hover:text-green-400" title="${entry.inProgress ? 'Pausar Progresso' : 'Marcar como Em Progresso (<)'}">
-                        <i data-lucide="${entry.inProgress ? 'pause' : 'chevrons-right'}" class="w-4 h-4"></i>
-                    </button>
-                ` : ''}
                 <button onclick="shareEntry(${entry.id})" class="text-stone-300 hover:text-blue-600 dark:hover:text-blue-400" title="Compartilhar">
                     <i data-lucide="share-2" class="w-4 h-4"></i>
                 </button>
@@ -1965,6 +1902,7 @@ function renderVisualEntry(entry) {
     `;
 }
 
+// ♻️ ATUALIZADO: RENDERIZAÇÃO CLÁSSICA (CANÔNICA: < e > para agendamento/migração)
 function renderClassicEntry(entry) {
     const config = ENTRY_TYPES[entry.type];
     const isCompleted = entry.completed;
@@ -1973,22 +1911,21 @@ function renderClassicEntry(entry) {
     const dateDisplay = entry.targetDate ? new Date(entry.targetDate).toLocaleDateString(currentLang, {day:'2-digit', month:'2-digit'}) : '';
     const migrationCount = entry.migrationCount > 0 ? ` [${entry.migrationCount}x]` : '';
     
-    // Conteúdo limpo para exibição, removendo os símbolos BuJo.
-    const rawContentCleaned = entry.content.replace(/✱/g, '').replace(/\*/g, '').replace(/!/g, '').trim();
+    const rawContentCleaned = entry.content.replace(/✱/g, '').replace(/\*/g, '').replace(/!/g, '').replace(/[<>]/g, '').trim();
     const contentHtml = formatContent(rawContentCleaned);
     
-    // Verificação de Migração (TargetDate no Futuro/Hoje)
     const todayStart = getTodayStart();
     const targetDateStart = entry.targetDate ? new Date(entry.targetDate).setHours(0,0,0,0) : new Date(entry.id).setHours(0,0,0,0);
-    const isMigrated = targetDateStart > todayStart && entry.type === 'task'; // Considera migrado se for no futuro
+    const isScheduledToFuture = targetDateStart > todayStart && entry.type === 'task'; // Tarefa agendada/migrada
+    const isScheduledToPast = targetDateStart < todayStart && !entry.completed && entry.type === 'task'; // Tarefa atrasada
 
-    // No modo Clássico, o símbolo do item muda para o Significador se for o caso
+    // Marcadores BuJo Canônicos para Tarefas
     let bujoSymbol = config.symbol;
     if (entry.type === 'task') {
         if (isCompleted) bujoSymbol = 'x'; // Concluído
-        else if (isPriority) bujoSymbol = '✱'; // Prioridade
-        else if (entry.inProgress) bujoSymbol = '<'; // Iniciado (Novo!)
-        else if (isMigrated) bujoSymbol = '>'; // Migrado/Agendado
+        else if (isScheduledToFuture) bujoSymbol = '>'; // Migrado/Agendado
+        else if (isScheduledToPast) bujoSymbol = '<'; // Agendado (Originalmente não é um símbolo BuJo para *atrasado*, mas o `<` é usado para *reagendado* no BuJo original (Future Log))
+        else if (isPriority) bujoSymbol = '✱'; // Prioridade (Significador)
         else bujoSymbol = '•'; // Padrão
     } else if (entry.type === 'note' && isInspiration) {
         bujoSymbol = '!'; // Inspiração
@@ -2243,7 +2180,6 @@ function showModal(title, msg, actionBtnText, onAction) {
     titleEl.innerText = title;
     msgEl.innerHTML = msg; 
     
-    // Remove qualquer listener anterior para evitar duplicação em modais complexos
     const newConfirmBtn = confirmBtn.cloneNode(true);
     confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
     const newCancelBtn = cancelBtn.cloneNode(true);
@@ -2344,7 +2280,6 @@ function handleBeforeUnload(e) {
 const CLIENT_ID = '173913188559-olttmpg5f7i6c8dje4as4rldqfn85tnv.apps.googleusercontent.com'; // SEU ID
 const SCOPES = 'https://www.googleapis.com/auth/drive.file';
 const DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest';
-// ⚠️ ATUALIZADO: Nome do arquivo no Google Drive
 const DRIVE_FILE_NAME = 'synta_notes_v3_data.json';
 
 let tokenClient;
@@ -2454,7 +2389,6 @@ async function downloadFromDrive() {
             const result = await gapi.client.drive.files.get({ fileId: fileId, alt: 'media' });
             
             const importedData = result.result;
-            // Usa a função de merge existente
             const mergedData = mergeImportedData({
                 entries: state.entries, 
                 hubs: state.hubs, 
