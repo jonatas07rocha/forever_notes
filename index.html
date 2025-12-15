@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    
+    <title>Synta Notes</title>
+    
+    <link rel="manifest" href="/manifest.json">
+    
+    <link rel="apple-touch-icon" href="/icons/icon-512x512.png">
+    
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    
+    <meta name="apple-mobile-web-app-title" content="Synta Notes">
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ctext x='4' y='14' font-family='sans-serif' font-weight='bold' font-size='16' fill='%23000'%3E/%3C/text%3E%3C/svg%3E" />
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class', 
+            theme: {
+                extend: {
+                    colors: {
+                        stone: {
+                            850: '#1f1f1e', 
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css"> 
+</head>
+<body class="bg-white text-stone-900 h-screen w-full flex overflow-hidden selection:bg-stone-200 selection:text-black dark:bg-stone-900 dark:text-stone-100 dark:selection:bg-stone-700 dark:selection:text-white transition-colors duration-200">
+
+    <aside class="w-64 bg-white border-r-2 border-stone-800 flex flex-col p-4 flex-shrink-0 z-30 hidden md:flex dark:bg-stone-900 dark:border-stone-700 transition-colors duration-200">
+        <div class="flex items-center gap-3 px-2 mb-8 mt-2 cursor-pointer" onclick="location.reload()">
+            <div class="w-8 h-8 bg-black flex items-center justify-center border border-black dark:border-stone-100">
+                <span class="text-white font-bold text-lg leading-none pt-[2px]">/</span>
+            </div>
+            <span class="font-bold text-lg tracking-tight dark:text-stone-100" id="app-branding">
+                Synta <span class="text-stone-500">Notes</span>
+            </span>
+        </div>
+
+        <nav class="space-y-1 flex-1" id="nav-menu"></nav>
+
+        <div class="pt-4 border-t-2 border-stone-800 space-y-1 dark:border-stone-700">
+            <button onclick="setActiveTab('settings')" class="w-full flex items-center gap-3 px-3 py-2 text-sm text-stone-600 hover:bg-stone-100 border border-transparent hover:border-black transition-colors dark:text-stone-400 dark:hover:bg-stone-800 dark:hover:border-stone-600">
+                <i data-lucide="settings" class="w-4 h-4 text-black dark:text-stone-300"></i>
+                <span id="nav-settings-text">Configurações</span>
+            </button>
+            <button onclick="openFeedbackModal()" class="w-full flex items-center gap-3 px-3 py-2 text-sm text-stone-600 hover:bg-stone-100 border border-transparent hover:border-black transition-colors dark:text-stone-400 dark:hover:bg-stone-800 dark:hover:border-stone-600">
+                <i data-lucide="mail" class="w-4 h-4 text-black dark:text-stone-300"></i>
+                <span id="nav-feedback-text">Feedback</span>
+            </button>
+        </div>
+    </aside>
+
+    <div class="flex-1 flex flex-col h-full overflow-hidden relative">
+        <div id="mobile-header" class="h-14 border-b-2 border-stone-800 bg-white/95 backdrop-blur-sm flex items-center justify-between px-4 absolute top-0 w-full z-10 md:hidden dark:bg-stone-900/95 dark:border-stone-700 transition-colors duration-200">
+            <span class="font-semibold text-lg text-black dark:text-white" id="mobile-branding">
+                Synta <span class="text-stone-500">Notes</span>
+            </span>
+            <button onclick="toggleMobileNav()" class="text-black border border-black p-1 dark:text-white dark:border-white">
+                <i data-lucide="menu" class="w-5 h-5"></i>
+            </button>
+        </div>
+        
+        <div id="mobile-nav" class="fixed inset-0 bg-white z-40 transform -translate-x-full transition-transform md:hidden p-4 flex flex-col border-r-2 border-stone-800 dark:bg-stone-900 dark:border-stone-700">
+            <div class="flex items-center justify-between mb-8 h-14">
+                 <span class="font-bold text-lg tracking-tight dark:text-white">Menu</span>
+                 <button onclick="toggleMobileNav()" class="text-black border border-black p-1 dark:text-white dark:border-white">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                 </button>
+            </div>
+            
+            <nav class="space-y-1 flex-1" id="nav-menu-mobile"></nav>
+
+            <div class="pt-4 border-t-2 border-stone-800 space-y-1 mt-auto dark:border-stone-700">
+                <button onclick="setActiveTab('settings'); toggleMobileNav()" class="w-full flex items-center gap-3 px-3 py-2 text-sm text-stone-600 hover:bg-stone-100 border border-transparent hover:border-black transition-colors dark:text-stone-400 dark:hover:bg-stone-800 dark:hover:border-stone-600">
+                    <i data-lucide="settings" class="w-4 h-4 text-black dark:text-stone-300"></i>
+                    <span id="mobile-settings-text">Configurações</span>
+                </button>
+                <button onclick="openFeedbackModal(); toggleMobileNav()" class="w-full flex items-center gap-3 px-3 py-2 text-sm text-stone-600 hover:bg-stone-100 border border-transparent hover:border-black transition-colors dark:text-stone-400 dark:hover:bg-stone-800 dark:hover:border-stone-600">
+                    <i data-lucide="mail" class="w-4 h-4 text-black dark:text-stone-300"></i>
+                    <span id="mobile-feedback-text">Feedback</span>
+                </button>
+            </div>
+        </div>
+
+        <main id="main-container" class="flex-1 overflow-y-auto p-4 md:p-8 lg:px-12 pt-16 lg:pt-8 max-w-5xl mx-auto w-full scrollbar-hide dark:text-stone-200">
+        </main>
+    </div>
+
+    <div id="app-modal" class="fixed inset-0 z-50 hidden opacity-0 transition-opacity duration-200" aria-hidden="true">
+        <div class="absolute inset-0 bg-stone-900/40 backdrop-blur-sm transition-opacity" onclick="closeModal()"></div>
+        
+        <div class="flex min-h-full items-center justify-center p-4 text-center">
+            <div class="relative transform overflow-hidden bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg border-2 border-black p-6 fade-in dark:bg-stone-900 dark:border-stone-600">
+                
+                <div class="sm:flex sm:items-start">
+                    <div class="mx-auto flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-stone-100 sm:mx-0 sm:h-10 sm:w-10 border border-stone-200 dark:bg-stone-800 dark:border-stone-700">
+                        <i data-lucide="alert-circle" class="h-6 w-6 text-black dark:text-white"></i>
+                    </div>
+                    <div class="mt-3 text-center sm:ml-4 sm:mt-0 sm:text-left">
+                        <h3 class="text-lg font-bold leading-6 text-black dark:text-white" id="modal-title">Título</h3>
+                        <div class="mt-2">
+                            <p class="text-sm text-stone-600 dark:text-stone-400" id="modal-message">Mensagem aqui.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-6 flex flex-row-reverse gap-2">
+                    <button type="button" id="modal-confirm" class="inline-flex w-full justify-center bg-black px-3 py-2 text-sm font-bold text-white shadow-sm hover:bg-stone-800 sm:w-auto border-2 border-transparent transition-colors dark:bg-white dark:text-black dark:hover:bg-stone-200">
+                        OK
+                    </button>
+                    <button type="button" id="modal-cancel" onclick="closeModal()" class="inline-flex w-full justify-center bg-white px-3 py-2 text-sm font-bold text-stone-900 shadow-sm ring-1 ring-inset ring-stone-300 hover:bg-stone-50 sm:w-auto border-2 border-transparent transition-colors dark:bg-stone-800 dark:text-stone-200 dark:border-stone-700 dark:hover:bg-stone-700">
+                        Cancelar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div id="feedback-modal" class="fixed inset-0 z-50 hidden opacity-0 transition-opacity duration-200" aria-hidden="true">
+        <div class="absolute inset-0 bg-stone-900/40 backdrop-blur-sm transition-opacity" onclick="closeFeedbackModal()"></div>
+        <div class="flex min-h-full items-center justify-center p-4 text-center">
+            <div class="relative transform overflow-hidden bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg border-2 border-black p-6 fade-in dark:bg-stone-900 dark:border-stone-600">
+                <div class="mb-4">
+                    <h3 class="text-lg font-bold leading-6 text-black dark:text-white" id="feedback-title-text">Enviar Feedback</h3>
+                    <p class="text-sm text-stone-600 mt-1 dark:text-stone-400" id="feedback-desc-text">Sua opinião é importante! Relate erros ou envie sugestões.</p>
+                </div>
+                
+                <textarea id="feedback-text" rows="4" class="w-full border-2 border-stone-200 p-2 text-sm rounded mb-4 focus:border-black outline-none resize-none font-sans dark:bg-stone-800 dark:border-stone-700 dark:text-white dark:focus:border-white" placeholder="Digite sua mensagem aqui..."></textarea>
+                
+                <div class="flex flex-row-reverse gap-2">
+                    <button type="button" onclick="sendFeedback()" class="inline-flex w-full justify-center bg-black px-3 py-2 text-sm font-bold text-white shadow-sm hover:bg-stone-800 sm:w-auto border-2 border-transparent transition-colors items-center gap-2 dark:bg-white dark:text-black dark:hover:bg-stone-200">
+                        <i data-lucide="send" class="w-3 h-3"></i> <span id="feedback-send-button-text">Enviar Feedback</span>
+                    </button>
+                    <button type="button" onclick="closeFeedbackModal()" class="inline-flex w-full justify-center bg-white px-3 py-2 text-sm font-bold text-stone-900 shadow-sm ring-1 ring-inset ring-stone-300 hover:bg-stone-50 sm:w-auto border-2 border-transparent transition-colors dark:bg-stone-800 dark:text-stone-200 dark:border-stone-700 dark:hover:bg-stone-700">
+                        <span id="feedback-cancel-button-text">Cancelar</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="global-input-modal" class="fixed inset-0 z-40 hidden opacity-0 transition-opacity duration-200" aria-hidden="true">
+        <div class="absolute inset-0 bg-stone-900/10 backdrop-blur-sm transition-opacity" onclick="closeGlobalInput()"></div>
+        
+        <div class="flex min-h-full items-center justify-center p-4">
+            <div id="global-input-container" class="relative transform transition-all sm:my-8 sm:w-full sm:max-w-xl p-3 bg-white border-2 border-black shadow-xl fade-in scale-95 dark:bg-stone-900 dark:border-stone-600">
+                 
+                <div class="relative z-20 group flex items-start gap-3">
+                    <button id="global-type-toggle" onclick="state.showSlashMenu = !state.showSlashMenu; state.showLinkMenu = false; renderGlobalInput()" class="flex-shrink-0 flex items-center gap-2 bg-white border border-stone-300 px-2 py-1.5 rounded-sm hover:border-black transition-colors dark:bg-stone-800 dark:border-stone-600 dark:hover:border-white">
+                        <i data-lucide="check-square" class="w-4 h-4 text-black dark:text-white" id="global-type-icon"></i>
+                        <span class="text-xs font-bold text-black hidden sm:inline-block dark:text-white" id="global-type-label">Tarefa</span>
+                        <i data-lucide="chevron-down" class="w-3 h-3 text-stone-400"></i>
+                    </button>
+                    
+                    <div class="flex-1 relative">
+                        <textarea id="global-entry-input" autocomplete="off" placeholder="Adicionar nova entrada (Nota, Tarefa, Evento...)" class="w-full bg-transparent text-sm outline-none font-medium placeholder:font-normal placeholder:text-stone-400 py-1.5 resize-none h-10 overflow-hidden dark:text-white" rows="1"></textarea>
+                        <div id="global-char-count" class="absolute right-0 top-1.5 text-[10px] font-mono text-stone-300">0/140</div>
+                    </div>
+
+                    <div id="global-slash-menu" class="absolute top-full left-0 mt-1 w-48 bg-white border-2 border-black shadow-xl z-50 fade-in py-1 hidden dark:bg-stone-800 dark:border-stone-600"></div>
+                    
+                    <div class="relative flex-shrink-0"><input type="date" id="global-date-picker-native" class="absolute inset-0 opacity-0 cursor-pointer" onchange="handleDateInput(this.value)"><button id="global-date-button" class="p-1.5 hover:bg-stone-200 rounded text-stone-400 hover:text-black dark:hover:bg-stone-700 dark:hover:text-white"><i data-lucide="calendar" class="w-4 h-4"></i></button></div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://accounts.google.com/gsi/client" onload="gisLoaded()" async defer></script>
+    <script src="https://apis.google.com/js/api.js" onload="gapiLoaded()" async defer></script>
+
+    <script src="app.js"></script>
+    
+    <script>
+        if ('serviceWorker' in navigator) {
+          window.addEventListener('load', () => {
+            navigator.serviceWorker.register('/sw.js')
+              .then(registration => {
+                console.log('Service Worker registrado com sucesso:', registration.scope);
+              })
+              .catch(error => {
+                console.error('Falha no registro do Service Worker:', error);
+              });
+          });
+        }
+    </script>
+</body>
+</html>
