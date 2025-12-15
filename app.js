@@ -367,7 +367,7 @@ function toggleTheme() {
     render(); 
 }
 
-// --- LÓGICA DE EDIAÇÃO INLINE ---
+// --- LÓGICA DE EDIAÇÃO COMPLETA (CORREÇÃO) ---
 function startEditEntry(id) {
     state.editingEntryId = id;
     // Reseta estados de input
@@ -378,29 +378,66 @@ function startEditEntry(id) {
         const textarea = document.getElementById(`edit-content-${id}`);
         if(textarea) {
             textarea.focus();
-            textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+            // A edição agora é assíncrona, o save é chamado por um botão ou Enter/Escape.
         }
     }, 50);
 }
 
-function saveEditEntry(id, newContent) {
+function saveEditEntry(id) {
     const entry = state.entries.find(e => e.id === id);
-    if (entry) {
-        if (!validateEntryContent(newContent, entry.type)) {
-             startEditEntry(id);
-             return;
-        }
-        const oldContent = entry.content;
-        entry.content = newContent.trim();
-        state.editingEntryId = null; 
-        
-        const oldTags = extractTags(oldContent);
-        const newTags = extractTags(entry.content);
-        newTags.forEach(t => boostTagRelevance(t));
+    if (!entry) return;
 
-        saveData();
-        render();
+    // 1. Read Inputs
+    const newContent = document.getElementById(`edit-content-${id}`)?.value.trim();
+    const newDateStr = document.getElementById(`edit-date-${id}`)?.value;
+    const newHubId = document.getElementById(`edit-hub-${id}`)?.value;
+    
+    // Contextual Toggles (only exist for specific types)
+    const isPriorityChecked = document.getElementById(`edit-priority-${id}`)?.checked || false;
+    const isInspirationChecked = document.getElementById(`edit-inspiration-${id}`)?.checked || false;
+    const isProgressChecked = document.getElementById(`edit-progress-${id}`)?.checked || false;
+
+
+    if (!validateEntryContent(newContent, entry.type)) {
+         startEditEntry(id);
+         return;
     }
+    
+    // 2. Process Content/Signifiers (BuJo Logic)
+    let content = newContent;
+    
+    // Clean existing signifiers from the content
+    content = content.replace(/[\*!✱]/g, '').trim();
+
+    // Re-apply BuJo signifiers based on toggles/type
+    if (entry.type === 'task') {
+        if (isPriorityChecked) {
+            content = `✱ ${content}`;
+        }
+    } else if (entry.type === 'note') {
+        if (isInspirationChecked) {
+            content = `! ${content}`;
+        }
+    }
+    
+    // 3. Update Entry Object
+    entry.content = content.trim();
+    entry.targetDate = newDateStr ? parseLocalInputDate(newDateStr) : null;
+    entry.hubId = newHubId ? parseInt(newHubId) : null;
+    
+    // Update Progress State
+    if (entry.type === 'task') {
+        entry.inProgress = isProgressChecked;
+    }
+
+    state.editingEntryId = null; 
+    
+    // Update Tags (logic retained from original saveEditEntry)
+    const newTags = extractTags(entry.content);
+    newTags.forEach(t => boostTagRelevance(t));
+
+    saveData();
+    render();
 }
 
 // --- LÓGICA DE LINKS ---
@@ -618,9 +655,17 @@ function selectEntryType(typeId) {
     if (state.inputText.startsWith('/')) {
         state.inputText = state.inputText.substring(1).trim();
     }
-    render();
+    
+    // Se estiver no input normal, renderiza a tela principal para atualizar os botões contextuais.
+    if (state.activeTab === 'journal' || state.activeTab === 'hubs' || state.activeTab === 'collections') {
+        render();
+    } else {
+        // Se estiver no input global, renderiza o input global.
+        renderGlobalInput();
+    }
+    
     setTimeout(() => {
-        const input = document.getElementById('entry-input');
+        const input = document.getElementById('entry-input') || document.getElementById('global-entry-input');
         if(input) {
             input.focus();
             const len = input.value.length;
@@ -947,7 +992,7 @@ async function shareEntry(id) {
     }
 }
 
-// --- GLOBAL SLASH COMMAND ---
+// --- GLOBAL SLASH COMMAND (CORRIGIDO) ---
 function handleGlobalKeydown(e) {
     if (e.key === '/') {
         if (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA') {
@@ -1001,6 +1046,7 @@ function renderGlobalInput() {
     const charCountEl = document.getElementById('global-char-count');
     const dateBtn = document.getElementById('global-date-button');
     const datePicker = document.getElementById('global-date-picker-native');
+    const globalActionButtons = document.getElementById('global-input-action-buttons'); // Novo ID para os botões contextuais
 
     if (!input || !menu) return;
     
@@ -1032,6 +1078,27 @@ function renderGlobalInput() {
         }
     }
     
+    // CORREÇÃO: Injetando os botões contextuais
+    if (globalActionButtons) {
+        let conditionalButtonsHTML = '';
+        if (config.id === 'task') {
+            conditionalButtonsHTML = `
+                <button onclick="togglePriorityInput(); renderGlobalInput();" title="${T('pt-BR') === currentLang ? 'Marcar como Prioridade (✱) - BuJo' : 'Mark as Priority (✱) - BuJo'}" 
+                        class="p-1.5 rounded transition-colors ${state.isPriorityInput ? 'bg-black text-white dark:bg-white dark:text-black' : 'text-stone-400 hover:text-black dark:hover:text-white'}">
+                    <i data-lucide="star" class="w-4 h-4 fill-current"></i>
+                </button>
+            `;
+        } else if (config.id === 'note') {
+             conditionalButtonsHTML = `
+                <button onclick="toggleInspirationInput(); renderGlobalInput();" title="${T('pt-BR') === currentLang ? 'Marcar como Inspiração (!) - BuJo' : 'Mark as Inspiration (!) - BuJo'}"
+                        class="p-1.5 rounded transition-colors ${state.isInspirationInput ? 'bg-blue-600 text-white dark:bg-blue-400 dark:text-black' : 'text-stone-400 hover:text-black dark:hover:text-white'}">
+                    <i data-lucide="zap" class="w-4 h-4 fill-current"></i> 
+                </button>
+             `;
+        }
+        globalActionButtons.innerHTML = conditionalButtonsHTML;
+    }
+
     if (input.tagName === 'TEXTAREA') {
         input.style.height = 'auto';
         input.style.height = (input.scrollHeight) + 'px';
@@ -1045,7 +1112,10 @@ function selectGlobalEntryType(typeId) {
     if (state.inputText.startsWith('/')) {
         state.inputText = state.inputText.substring(1).trim();
     }
+    
+    // Garante que o input global se atualize após a mudança de tipo
     renderGlobalInput();
+    
     setTimeout(() => {
         const input = document.getElementById('global-entry-input');
         if(input) {
@@ -1064,9 +1134,9 @@ function addNewGlobalEntry() {
     let type = state.selectedType;
     let targetDate = nlpResult.date || (state.inputDate ? parseLocalInputDate(state.inputDate) : null);
     
-    // Global input não tem botões de significador, mas deve respeitar a digitação
-    const isPriorityMarker = content.includes('*') || content.includes('✱');
-    const isInspirationMarker = content.includes('!');
+    // Global input processa o estado dos botões ou a digitação
+    const isPriorityMarker = content.includes('*') || content.includes('✱') || state.isPriorityInput;
+    const isInspirationMarker = content.includes('!') || state.isInspirationInput;
 
     // Prioridade (apenas para Tarefa)
     if (type === 'task' && isPriorityMarker) {
@@ -1086,6 +1156,11 @@ function addNewGlobalEntry() {
     if (type === 'event') {
         content = content.replace(/[\*!✱]/g, '').trim();
     }
+    
+    // Reset dos estados de botão após a adição
+    state.isPriorityInput = false;
+    state.isInspirationInput = false; 
+
 
     if (!validateEntryContent(content, type)) {
         return;
@@ -1657,21 +1732,70 @@ function renderEntry(entry) {
 
 function getEditEntryHTML(entry) {
     const config = ENTRY_TYPES[entry.type];
-    // CORRIGIDO: Verifica no prefs o modo
     const isClassic = state.prefs.viewMode === 'classic';
+    const isPriority = (entry.content.includes('✱') || entry.content.includes('*')) && entry.type === 'task';
+    const isInspiration = entry.content.includes('!') && entry.type === 'note'; 
+    const entryDate = entry.targetDate ? new Date(entry.targetDate).toISOString().split('T')[0] : '';
+    
+    const hubOptions = state.hubs.map(h => 
+        `<option value="${h.id}" ${entry.hubId == h.id ? 'selected' : ''}>${h.name}</option>`
+    ).join('');
+    
+    let contextualToggles = '';
+    if (entry.type === 'task') {
+        contextualToggles = `
+            <label class="flex items-center gap-2 text-sm font-medium cursor-pointer dark:text-stone-200">
+                <input type="checkbox" id="edit-priority-${entry.id}" ${isPriority ? 'checked' : ''} class="w-4 h-4 text-black bg-stone-100 border-stone-300 rounded focus:ring-black dark:ring-offset-stone-800 dark:bg-stone-700 dark:border-stone-600">
+                ${T('ui_important')} (✱)
+            </label>
+            <label class="flex items-center gap-2 text-sm font-medium cursor-pointer dark:text-stone-200">
+                <input type="checkbox" id="edit-progress-${entry.id}" ${entry.inProgress ? 'checked' : ''} class="w-4 h-4 text-green-600 bg-stone-100 border-stone-300 rounded focus:ring-green-500 dark:ring-offset-stone-800 dark:bg-stone-700 dark:border-stone-600">
+                ${T('pt-BR') === currentLang ? 'Em Progresso' : 'In Progress'} (<)
+            </label>
+        `;
+    } else if (entry.type === 'note') {
+        contextualToggles = `
+            <label class="flex items-center gap-2 text-sm font-medium cursor-pointer dark:text-stone-200">
+                <input type="checkbox" id="edit-inspiration-${entry.id}" ${isInspiration ? 'checked' : ''} class="w-4 h-4 text-blue-600 bg-stone-100 border-stone-300 rounded focus:ring-blue-500 dark:ring-offset-stone-800 dark:bg-stone-700 dark:border-stone-600">
+                ${T('type_inspiration')} (!)
+            </label>
+        `;
+    }
+    
+    // New HTML structure for editing
     return `
         <div class="p-3 bg-stone-50 border-2 border-black rounded shadow-md ${isClassic ? 'font-mono' : 'font-sans'} dark:bg-stone-800 dark:border-stone-600">
-            <div class="text-[10px] font-bold uppercase text-stone-600 mb-1 flex items-center gap-2 dark:text-stone-400">
+            <div class="text-[10px] font-bold uppercase text-stone-600 mb-2 flex items-center gap-2 dark:text-stone-400">
                  <i data-lucide="${config.icon}" class="w-3 h-3"></i> ${T('ui_edit')} ${T(config.label)}
             </div>
+
             <textarea 
                 id="edit-content-${entry.id}" 
-                class="w-full bg-white border border-stone-300 p-2 text-sm resize-none outline-none focus:border-black rounded-sm ${isClassic ? 'font-mono' : 'font-sans'} dark:bg-stone-900 dark:border-stone-700 dark:text-white dark:focus:border-white"
+                class="w-full bg-white border border-stone-300 p-2 text-sm resize-none outline-none focus:border-black rounded-sm ${isClassic ? 'font-mono' : 'font-sans'} dark:bg-stone-900 dark:border-stone-700 dark:text-white dark:focus:border-white mb-3"
                 rows="${Math.max(1, Math.ceil(entry.content.length / 80))}"
-                onblur="saveEditEntry(${entry.id}, this.value)"
-                onkeydown="if(event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); saveEditEntry(${entry.id}, this.value); } else if(event.key === 'Escape') { state.editingEntryId = null; render(); }"
+                onkeydown="if(event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); saveEditEntry(${entry.id}); } else if(event.key === 'Escape') { state.editingEntryId = null; render(); }"
             >${entry.content}</textarea>
-            <button onclick="saveEditEntry(${entry.id}, document.getElementById('edit-content-${entry.id}').value)" class="mt-2 bg-black text-white px-3 py-1 text-xs font-bold rounded hover:bg-stone-800 dark:bg-white dark:text-black dark:hover:bg-stone-200">
+
+            <div class="grid grid-cols-2 gap-4 mb-3">
+                <div>
+                    <label for="edit-date-${entry.id}" class="block text-xs font-bold uppercase text-stone-500 mb-1">${T('ui_date')}</label>
+                    <input type="date" id="edit-date-${entry.id}" value="${entryDate}" class="w-full p-2 border border-stone-300 rounded text-sm dark:bg-stone-900 dark:border-stone-700 dark:text-white">
+                </div>
+                
+                <div>
+                    <label for="edit-hub-${entry.id}" class="block text-xs font-bold uppercase text-stone-500 mb-1">Hub</label>
+                    <select id="edit-hub-${entry.id}" class="w-full p-2 border border-stone-300 rounded text-sm dark:bg-stone-900 dark:border-stone-700 dark:text-white">
+                        <option value="">${T('pt-BR') === currentLang ? 'Nenhum Hub' : 'No Hub'}</option>
+                        ${hubOptions}
+                    </select>
+                </div>
+            </div>
+
+            <div class="flex gap-4 mb-3">
+                ${contextualToggles}
+            </div>
+
+            <button onclick="saveEditEntry(${entry.id})" class="mt-2 bg-black text-white px-3 py-1 text-xs font-bold rounded hover:bg-stone-800 dark:bg-white dark:text-black dark:hover:bg-stone-200">
                 ${T('ui_save')} (Enter)
             </button>
             <button onclick="state.editingEntryId = null; render()" class="mt-2 bg-white text-black px-3 py-1 text-xs font-bold rounded border border-stone-300 hover:bg-stone-100 dark:bg-stone-800 dark:text-stone-200 dark:border-stone-700 dark:hover:bg-stone-700">
