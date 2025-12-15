@@ -40,7 +40,7 @@ const TRANSLATIONS = {
         ui_migrated: 'Migrado',
         ui_scheduled: 'Agendado',
         ui_completed: 'Concluído',
-        ui_add_note_placeholder: 'O que está acontecendo? (/ para comandos)',
+        ui_add_note_placeholder: 'O que está acontecendo?',
         ui_search_placeholder: 'Buscar itens',
         ui_item_long: 'Texto muito longo',
         ui_delete_item_q: 'Excluir item?',
@@ -83,7 +83,7 @@ const TRANSLATIONS = {
         ui_migrated: 'Migrated',
         ui_scheduled: 'Scheduled',
         ui_completed: 'Completed',
-        ui_add_note_placeholder: "What's happening? (/ for commands)",
+        ui_add_note_placeholder: "What's happening?",
         ui_search_placeholder: 'Search items',
         ui_item_long: 'Text too long',
         ui_delete_item_q: 'Delete item?',
@@ -106,7 +106,7 @@ const T = (key, lang = currentLang) => {
 
 // --- DEFINIÇÕES DO MÉTODO BULLET JOURNAL ---
 const ENTRY_TYPES = {
-    task: { id: 'task', label: 'type_task', icon: 'square', symbol: '•', limit: 140 }, 
+    task: { id: 'task', label: 'type_task', icon: 'check-square', symbol: '•', limit: 140 }, 
     event: { id: 'event', label: 'type_event', icon: 'circle', symbol: '○', limit: 140 },
     note: { id: 'note', label: 'type_note', icon: 'minus', symbol: '—', limit: null }
 };
@@ -136,7 +136,7 @@ let state = {
     calendarMonth: new Date(),
     inputText: '',
     inputDate: null,
-    inputSignifiers: { priority: false, inspiration: false }, // ESTADO DOS BOTÕES TOGGLE
+    inputSignifiers: { priority: false, inspiration: false }, 
     selectedType: 'task', 
     showSlashMenu: false, 
     showLinkMenu: false,
@@ -172,17 +172,13 @@ function init() {
     window.addEventListener('keydown', handleGlobalKeydown);
     setupUnloadAlert();
     
-    // Tenta rodar a revisão matinal após renderizar
     setTimeout(checkMorningReview, 1000);
 }
 
-// Adapta dados antigos para a nova estrutura estrita
 function migrateOldData() {
     let changed = false;
     state.entries = state.entries.map(e => {
         let newEntry = { ...e };
-        
-        // 1. Converte tipos antigos
         if (e.type === 'reflection') {
             newEntry.type = 'note';
             if (!newEntry.content.includes('#reflexao')) newEntry.content += ' #reflexao';
@@ -192,27 +188,21 @@ function migrateOldData() {
             newEntry.isInspiration = true;
             changed = true;
         }
-
-        // 2. Converte booleano completed para status
         if (!newEntry.status) {
             if (newEntry.completed) newEntry.status = TASK_STATUS.COMPLETED;
             else newEntry.status = TASK_STATUS.INCOMPLETE;
             delete newEntry.completed; 
             changed = true;
         }
-        
         if (typeof newEntry.migrationCount === 'undefined') {
             newEntry.migrationCount = 0;
         }
-
         return newEntry;
     });
-
     if (changed) saveData();
 }
 
 // --- RITUAIS & FRICÇÃO ---
-
 function checkMorningReview() {
     const todayStr = new Date().toISOString().split('T')[0];
     if (state.prefs.lastReviewDate === todayStr) return;
@@ -257,12 +247,10 @@ function closeReviewModal() {
 function renderReviewList() {
     const container = document.getElementById('review-list-container');
     if (!container) return;
-    
     if (state.pendingReviewEntries.length === 0) {
         closeReviewModal();
         return;
     }
-
     container.innerHTML = state.pendingReviewEntries.map(e => `
         <div class="bg-stone-50 p-4 rounded border border-stone-200 mb-3 dark:bg-stone-800 dark:border-stone-700">
             <p class="font-bold text-sm mb-3 text-stone-800 dark:text-stone-200">${e.content}</p>
@@ -280,7 +268,6 @@ function renderReviewList() {
 function reviewAction(id, action) {
     const entry = state.entries.find(e => e.id === id);
     if (!entry) return;
-
     if (action === 'keep') {
         entry.targetDate = new Date().getTime(); 
     } else if (action === 'migrate') {
@@ -290,7 +277,6 @@ function reviewAction(id, action) {
     } else if (action === 'delete') {
         state.entries = state.entries.filter(e => e.id !== id);
     }
-
     state.pendingReviewEntries = state.pendingReviewEntries.filter(e => e.id !== id);
     saveData();
     renderReviewList();
@@ -326,9 +312,7 @@ function handleScheduling(entry) {
         if (e.target.value) {
             const parts = e.target.value.split('-');
             const date = new Date(parts[0], parts[1] - 1, parts[2]);
-            
             entry.status = TASK_STATUS.SCHEDULED;
-            
             const newEntry = {
                 ...entry,
                 id: Date.now(),
@@ -347,7 +331,6 @@ function handleScheduling(entry) {
 function showFrictionModal(entry, intent) {
     const modal = document.getElementById('friction-modal');
     if(!modal) return;
-    
     document.getElementById('friction-btn-confirm').onclick = () => {
         const reason = document.getElementById('friction-input').value.trim();
         if (reason) {
@@ -359,7 +342,6 @@ function showFrictionModal(entry, intent) {
             closeFrictionModal();
         }
     };
-    
     modal.classList.remove('hidden');
     setTimeout(() => modal.classList.remove('opacity-0'), 10);
     document.getElementById('friction-input').focus();
@@ -373,28 +355,208 @@ function closeFrictionModal() {
     setTimeout(() => modal.classList.add('hidden'), 200);
 }
 
-// --- FUNÇÃO DE INPUT TOGGLE (NOVO) ---
+// --- LÓGICA DE INPUT E BOTÕES (ATUALIZADA) ---
+
 function toggleInputSignifier(type) {
+    // 1. Só permite toggle se o contexto for correto
+    // Prioridade (*) só para Tarefa
+    if (type === 'priority' && state.selectedType !== 'task') return;
+    // Inspiração (!) só para Nota
+    if (type === 'inspiration' && state.selectedType !== 'note') return;
+
+    // 2. Toggle do estado
     state.inputSignifiers[type] = !state.inputSignifiers[type];
     
-    const btn = document.getElementById(`btn-toggle-${type}`);
-    // O problema A estava aqui: a função toggleInputSignifier não estava
-    // garantindo a atualização visual se fosse chamada pelo menu de tipos.
-    // Isso é corrigido em renderGlobalInput, que chama esta função
-    // para sincronizar o estado visual.
+    // 3. Atualização visual imediata
+    updateSignifierButtons();
+}
+
+function updateSignifierButtons() {
+    const btnP = document.getElementById(`btn-toggle-priority`);
+    const btnI = document.getElementById(`btn-toggle-inspiration`);
     
-    // Atualização visual (Ajuste de estilos):
-    if (btn) {
-        const icon = btn.querySelector('i');
-        if (state.inputSignifiers[type]) {
-            btn.classList.add('bg-stone-100', 'text-black', 'dark:bg-stone-700', 'dark:text-white');
-            btn.classList.remove('text-stone-400');
-            if (type === 'priority') icon.setAttribute('fill', 'currentColor'); 
+    if (!btnP || !btnI) return;
+
+    const iconP = btnP.querySelector('i');
+    
+    // Renderiza Estado Ativo/Inativo Prioridade
+    if (state.inputSignifiers.priority) {
+        btnP.classList.add('bg-stone-100', 'text-black', 'dark:bg-stone-700', 'dark:text-white');
+        btnP.classList.remove('text-stone-400');
+        iconP.setAttribute('fill', 'currentColor'); 
+    } else {
+        btnP.classList.remove('bg-stone-100', 'text-black', 'dark:bg-stone-700', 'dark:text-white');
+        btnP.classList.add('text-stone-400');
+        iconP.setAttribute('fill', 'none');
+    }
+
+    // Renderiza Estado Ativo/Inativo Inspiração
+    if (state.inputSignifiers.inspiration) {
+        btnI.classList.add('bg-stone-100', 'text-black', 'dark:bg-stone-700', 'dark:text-white');
+        btnI.classList.remove('text-stone-400');
+    } else {
+        btnI.classList.remove('bg-stone-100', 'text-black', 'dark:bg-stone-700', 'dark:text-white');
+        btnI.classList.add('text-stone-400');
+    }
+}
+
+// Altera o tipo de entrada (Task, Event, Note)
+function setGlobalType(type) {
+    state.selectedType = type;
+    state.showSlashMenu = false; // Fecha o menu
+    
+    // Reseta significadores ao trocar de contexto
+    state.inputSignifiers = { priority: false, inspiration: false };
+    
+    renderGlobalInput();
+}
+
+function renderGlobalInput() {
+    const type = state.selectedType;
+    const config = ENTRY_TYPES[type];
+
+    // 1. Atualiza Ícone e Texto do Toggle Principal
+    const toggleIcon = document.getElementById('global-type-icon');
+    const toggleLabel = document.getElementById('global-type-label');
+    
+    if (toggleIcon && toggleLabel) {
+        toggleIcon.setAttribute('data-lucide', config.icon);
+        toggleLabel.textContent = T(config.label);
+    }
+
+    // 2. Renderiza Menu Dropdown (Slash Menu)
+    const slashMenu = document.getElementById('global-slash-menu');
+    if (state.showSlashMenu) {
+        slashMenu.classList.remove('hidden');
+        slashMenu.innerHTML = Object.values(ENTRY_TYPES).map(t => `
+            <button onclick="setGlobalType('${t.id}')" class="w-full text-left px-4 py-2 hover:bg-stone-100 flex items-center gap-2 dark:hover:bg-stone-700 dark:text-stone-200">
+                <i data-lucide="${t.icon}" class="w-4 h-4"></i>
+                <span class="text-sm font-medium">${T(t.label)}</span>
+                ${type === t.id ? '<i data-lucide="check" class="w-3 h-3 ml-auto"></i>' : ''}
+            </button>
+        `).join('');
+    } else {
+        slashMenu.classList.add('hidden');
+    }
+
+    // 3. Controle de Visibilidade dos Botões de Contexto
+    const btnPriority = document.getElementById('btn-toggle-priority');
+    const btnInspiration = document.getElementById('btn-toggle-inspiration');
+
+    if (btnPriority && btnInspiration) {
+        if (type === 'task') {
+            btnPriority.classList.remove('hidden');
+            btnInspiration.classList.add('hidden');
+        } else if (type === 'note') {
+            btnPriority.classList.add('hidden');
+            btnInspiration.classList.remove('hidden');
         } else {
-            btn.classList.remove('bg-stone-100', 'text-black', 'dark:bg-stone-700', 'dark:text-white');
-            btn.classList.add('text-stone-400');
-            if (type === 'priority') icon.setAttribute('fill', 'none');
+            // Evento (ou outros): Sem modificadores
+            btnPriority.classList.add('hidden');
+            btnInspiration.classList.add('hidden');
         }
+    }
+
+    // 4. Atualiza estado visual dos botões
+    updateSignifierButtons();
+    
+    lucide.createIcons();
+}
+
+function openGlobalInput() {
+    document.getElementById('global-input-modal').classList.remove('hidden');
+    setTimeout(() => {
+        document.getElementById('global-input-modal').classList.remove('opacity-0');
+        document.getElementById('global-entry-input').focus();
+    }, 10);
+    
+    // Garante que o input renderize com o estado correto ao abrir
+    renderGlobalInput();
+}
+
+function closeGlobalInput() {
+    document.getElementById('global-input-modal').classList.add('opacity-0');
+    setTimeout(() => {
+        document.getElementById('global-input-modal').classList.add('hidden');
+    }, 200);
+}
+
+function addNewEntry() {
+    if (!state.inputText.trim()) return;
+
+    const nlpResult = handleNaturalLanguageDate(state.inputText);
+    let content = nlpResult.text;
+    let type = state.selectedType;
+    
+    // Lógica de Significadores (Prioridade ou Inspiração)
+    // Combina Toggle UI com Sintaxe de Texto (* ou !)
+    
+    let isPriority = false;
+    let isInspiration = false;
+
+    // 1. Verifica Sintaxe de Texto primeiro (ex: "* Comprar pão")
+    if (content.startsWith('* ')) {
+        if (type === 'task') { 
+            isPriority = true;
+            content = content.substring(2);
+        }
+    } else if (content.startsWith('! ')) {
+        if (type === 'note') {
+            isInspiration = true;
+            content = content.substring(2);
+        }
+    }
+
+    // 2. Aplica estado dos Botões UI (se já não foi ativado por texto)
+    if (!isPriority && state.inputSignifiers.priority && type === 'task') {
+        isPriority = true;
+    }
+    if (!isInspiration && state.inputSignifiers.inspiration && type === 'note') {
+        isInspiration = true;
+    }
+
+    // 3. Cria a entrada
+    state.entries.unshift({
+        id: Date.now(),
+        type,
+        content,
+        status: TASK_STATUS.INCOMPLETE,
+        isPriority,     
+        isInspiration,  
+        migrationCount: 0,
+        hubId: state.activeHubId,
+        targetDate: nlpResult.date || (state.inputDate ? parseLocalInputDate(state.inputDate) : null),
+        recurring: nlpResult.recurring
+    });
+
+    // Reset UI
+    state.inputText = '';
+    state.inputDate = null;
+    state.inputSignifiers = { priority: false, inspiration: false }; // Reseta toggles
+
+    document.getElementById('global-entry-input').value = '';
+    
+    closeGlobalInput();
+    saveData();
+    render();
+}
+
+function handleGlobalKeydown(e) {
+    if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        openGlobalInput();
+    }
+    if (e.key === 'Escape') {
+        closeGlobalInput();
+        closeModal();
+        closeReviewModal();
+        closeFrictionModal();
+        closeFeedbackModal();
+    }
+    if (e.key === 'Enter' && !e.shiftKey && !document.getElementById('global-input-modal').classList.contains('hidden')) {
+        e.preventDefault();
+        state.inputText = document.getElementById('global-entry-input').value;
+        addNewEntry();
     }
 }
 
@@ -404,7 +566,6 @@ function render() {
     const navMenu = document.getElementById('nav-menu');
     const mobileNav = document.getElementById('nav-menu-mobile');
     const mainContainer = document.getElementById('main-container');
-    const globalInputContainer = document.getElementById('global-input-modal');
     
     if (navMenu) navMenu.innerHTML = getNavHtml();
     if (mobileNav) mobileNav.innerHTML = getNavHtml();
@@ -417,9 +578,6 @@ function render() {
     if (state.activeTab === 'home') {
         mainContainer.innerHTML = getHomeHtml();
         lucide.createIcons();
-        if (!globalInputContainer.classList.contains('hidden')) {
-            setTimeout(() => document.getElementById('global-entry-input').focus(), 50);
-        }
     } else if (state.activeTab === 'journal') {
         mainContainer.innerHTML = getJournalHtml();
         lucide.createIcons();
@@ -441,7 +599,7 @@ function renderVisualEntry(entry) {
     const isInspiration = entry.isInspiration;
     const contentHtml = formatContent(entry.content);
     
-    // Lógica de Precedência Visual: Significador substitui o ícone padrão
+    // Precedência Visual: Significador substitui o ícone padrão
     let iconName = config.icon; 
     let iconFill = "none";      
 
@@ -528,7 +686,6 @@ function renderClassicEntry(entry) {
         else if (entry.status === TASK_STATUS.SCHEDULED) symbol = '<';
     }
 
-    // Precedência Visual: Significador substitui bullet se incompleto
     if (entry.status === TASK_STATUS.INCOMPLETE) {
         if (isPriority) symbol = '*';
         else if (isInspiration) symbol = '!';
@@ -536,18 +693,15 @@ function renderClassicEntry(entry) {
 
     return `
         <div class="group flex items-baseline gap-2 py-1 px-1 hover:bg-stone-50 rounded -ml-1 transition-colors cursor-default dark:hover:bg-stone-800 font-mono text-sm">
-            
             <div class="w-8 text-right select-none font-bold text-black dark:text-white flex-shrink-0">
                 <button onclick="cycleTaskStatus(${entry.id})" class="hover:text-stone-500 transition-colors">
                     ${symbol}
                 </button>
             </div>
-
             <div class="flex-1 min-w-0 ${entry.status === TASK_STATUS.COMPLETED ? 'line-through text-stone-400' : 'text-stone-800 dark:text-stone-300'}" 
                  onclick="startEditEntry(${entry.id})">
                 ${contentHtml}
             </div>
-
              <div class="opacity-0 group-hover:opacity-100 flex gap-2 pl-2">
                 ${entry.type === 'task' && entry.status === TASK_STATUS.INCOMPLETE ? `
                     <button onclick="handleMigration(state.entries.find(e=>e.id===${entry.id}))" class="text-stone-300 hover:text-black dark:hover:text-white">></button>
@@ -604,7 +758,6 @@ function getHomeHtml() {
                            </div>`
                     }
                 </section>
-                
                  <section>
                     <div class="flex items-center gap-2 mb-4 text-stone-800 dark:text-stone-200">
                         <i data-lucide="clock" class="w-4 h-4"></i>
@@ -650,7 +803,6 @@ function getHomeHtml() {
 
 function getJournalHtml() {
     const renderer = state.prefs.viewMode === 'visual' ? renderVisualEntry : renderClassicEntry;
-    
     let filteredEntries = [];
     let title = "";
 
@@ -684,7 +836,6 @@ function getJournalHtml() {
                 `).join('')}
             </div>
         </div>
-        
         <div class="space-y-2">
             ${filteredEntries.length > 0 
                 ? filteredEntries.map(renderer).join('') 
@@ -726,9 +877,7 @@ function getCollectionsHtml() {
 function getSettingsHtml() {
     return `
         <h1 class="text-2xl font-bold mb-6 dark:text-white">${T('nav_settings')}</h1>
-        
         <div class="space-y-6 max-w-lg">
-            
             <div class="flex items-center justify-between p-4 border border-stone-200 rounded dark:border-stone-700">
                 <div>
                     <h3 class="font-bold dark:text-white">Modo de Visualização</h3>
@@ -738,7 +887,6 @@ function getSettingsHtml() {
                     ${state.prefs.viewMode === 'visual' ? 'Visual' : 'Clássico'}
                 </button>
             </div>
-
             <div class="flex items-center justify-between p-4 border border-stone-200 rounded dark:border-stone-700">
                 <div>
                     <h3 class="font-bold dark:text-white">Tema</h3>
@@ -748,7 +896,6 @@ function getSettingsHtml() {
                     ${state.prefs.theme === 'dark' ? 'Escuro' : 'Claro'}
                 </button>
             </div>
-
              <div class="flex items-center justify-between p-4 border border-stone-200 rounded dark:border-stone-700">
                 <div>
                     <h3 class="font-bold dark:text-white">Idioma / Language</h3>
@@ -758,21 +905,19 @@ function getSettingsHtml() {
                     ${state.prefs.lang === 'pt-BR' ? '🇧🇷 PT' : '🇺🇸 EN'}
                 </button>
             </div>
-
             <div class="pt-6 border-t border-stone-200 dark:border-stone-700">
                 <button onclick="backupData()" class="w-full bg-black text-white py-2 rounded font-bold mb-2 dark:bg-white dark:text-black">Backup dos Dados (JSON)</button>
                 <input type="file" id="restore-input" class="hidden" onchange="restoreData(this)">
                 <button onclick="document.getElementById('restore-input').click()" class="w-full bg-white border border-black text-black py-2 rounded font-bold dark:bg-stone-900 dark:text-white dark:border-stone-500">Restaurar Backup</button>
             </div>
              <div class="pt-6 text-center">
-                 <p class="text-xs text-stone-400">Versão 3.0 (Bullet Method Strict)</p>
+                 <p class="text-xs text-stone-400">Versão 3.1 (Context Aware)</p>
              </div>
         </div>
     `;
 }
 
-// --- HELPERS (Simplificados para brevidade, mas funcionais) ---
-
+// --- HELPERS ---
 function getNavHtml() {
     const items = [
         { id: 'home', icon: 'home', label: 'nav_home' },
@@ -780,7 +925,6 @@ function getNavHtml() {
         { id: 'hubs', icon: 'layout-grid', label: 'nav_hubs' },
         { id: 'collections', icon: 'hash', label: 'nav_collections' }
     ];
-    
     return items.map(item => `
         <button onclick="setActiveTab('${item.id}'); toggleMobileNav()" class="w-full flex items-center gap-3 px-3 py-2 text-sm rounded transition-all ${state.activeTab === item.id ? 'bg-stone-100 font-bold text-black dark:bg-stone-800 dark:text-white' : 'text-stone-600 hover:bg-stone-50 dark:text-stone-400 dark:hover:bg-stone-800'}">
             <i data-lucide="${item.icon}" class="w-4 h-4"></i>
@@ -824,147 +968,9 @@ function applyTheme(theme) {
     else document.documentElement.classList.remove('dark');
 }
 
-function openGlobalInput() {
-    document.getElementById('global-input-modal').classList.remove('hidden');
-    setTimeout(() => {
-        document.getElementById('global-input-modal').classList.remove('opacity-0');
-        document.getElementById('global-entry-input').focus();
-    }, 10);
-    renderGlobalInput();
-}
-
-function closeGlobalInput() {
-    document.getElementById('global-input-modal').classList.add('opacity-0');
-    setTimeout(() => {
-        document.getElementById('global-input-modal').classList.add('hidden');
-    }, 200);
-}
-
-function renderGlobalInput() {
-    // --------------------------------------------------------
-    // CORREÇÃO B (Semântica): Desabilita/habilita significadores
-    // --------------------------------------------------------
-    const isTask = state.selectedType === 'task';
-    const isNote = state.selectedType === 'note';
-    
-    const btnPriority = document.getElementById('btn-toggle-priority');
-    const btnInspiration = document.getElementById('btn-toggle-inspiration');
-    
-    // 1. Aplica Regras Semânticas (B)
-    if (btnPriority) {
-        btnPriority.disabled = !isTask;
-        btnPriority.classList.toggle('opacity-50', !isTask);
-        btnPriority.classList.toggle('cursor-not-allowed', !isTask);
-        
-        // Se mudou para NOTA/EVENTO, desativa Prioridade
-        if (!isTask && state.inputSignifiers.priority) {
-            toggleInputSignifier('priority');
-        }
-    }
-    
-    if (btnInspiration) {
-        btnInspiration.disabled = !isNote;
-        btnInspiration.classList.toggle('opacity-50', !isNote);
-        btnInspiration.classList.toggle('cursor-not-allowed', !isNote);
-        
-        // Se mudou para TAREFA/EVENTO, desativa Inspiração
-        if (!isNote && state.inputSignifiers.inspiration) {
-            toggleInputSignifier('inspiration');
-        }
-    }
-    
-    // 2. Sincroniza o estado visual dos botões (Correção A)
-    // Isso garante que os estilos aplicados em toggleInputSignifier sejam aplicados
-    // quando o modal é reaberto ou quando o tipo de input é alterado.
-    if (state.inputSignifiers.priority) toggleInputSignifier('priority');
-    if (state.inputSignifiers.inspiration) toggleInputSignifier('inspiration');
-    
-    // Atualiza o tipo selecionado no botão principal
-    const selectedTypeConfig = ENTRY_TYPES[state.selectedType];
-    document.getElementById('global-type-icon').setAttribute('data-lucide', selectedTypeConfig.icon);
-    document.getElementById('global-type-label').textContent = T(selectedTypeConfig.label);
-}
-
-function addNewEntry() {
-    if (!state.inputText.trim()) return;
-
-    const nlpResult = handleNaturalLanguageDate(state.inputText);
-    let content = nlpResult.text;
-    let type = state.selectedType;
-    
-    // Detecção: Combina botões visuais OU sintaxe de texto
-    let isPriority = state.inputSignifiers.priority;
-    let isInspiration = state.inputSignifiers.inspiration;
-
-    // Verifica sintaxe de texto (sobrescreve se encontrado)
-    if (content.startsWith('* ')) {
-        isPriority = true;
-        content = content.substring(2);
-    } else if (content.startsWith('! ')) {
-        isInspiration = true;
-        content = content.substring(2);
-    }
-    
-    // Garante a semântica final (última chance de limpar estados inválidos)
-    if (type !== 'task') isPriority = false;
-    if (type !== 'note') isInspiration = false;
-
-
-    state.entries.unshift({
-        id: Date.now(),
-        type,
-        content,
-        status: TASK_STATUS.INCOMPLETE,
-        isPriority,     
-        isInspiration,  
-        migrationCount: 0,
-        hubId: state.activeHubId,
-        targetDate: nlpResult.date || (state.inputDate ? parseLocalInputDate(state.inputDate) : null),
-        recurring: nlpResult.recurring
-    });
-
-    state.inputText = '';
-    state.inputDate = null;
-    
-    // Reseta o estado dos toggles (importante!)
-    if (state.inputSignifiers.priority) toggleInputSignifier('priority');
-    if (state.inputSignifiers.inspiration) toggleInputSignifier('inspiration');
-    
-    // Reset do selectedType para Task (padrão Bullet Journal)
-    state.selectedType = 'task';
-
-    document.getElementById('global-entry-input').value = '';
-    closeGlobalInput();
-    saveData();
-    render();
-}
-
-function handleGlobalKeydown(e) {
-    if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-        e.preventDefault();
-        openGlobalInput();
-    }
-    if (e.key === 'Escape') {
-        closeGlobalInput();
-        closeModal();
-        closeReviewModal();
-        closeFrictionModal();
-        closeFeedbackModal();
-    }
-    // Atalho para adicionar no Input Global
-    if (e.key === 'Enter' && !e.shiftKey && !document.getElementById('global-input-modal').classList.contains('hidden')) {
-        e.preventDefault();
-        state.inputText = document.getElementById('global-entry-input').value;
-        addNewEntry();
-    }
-}
-
-// Utilitários de Data e Backup (Mantidos simplificados)
 function handleNaturalLanguageDate(text) {
-    // Implementação simplificada de detecção de data (ex: "amanhã")
     let date = null;
     let cleanText = text;
-    // ... (lógica de NLP real iria aqui) ...
     return { text: cleanText, date: date, recurring: null };
 }
 
@@ -978,7 +984,6 @@ function handleDateInput(val) {
 }
 
 function formatContent(text) {
-    // Formata links e tags
     return text.replace(/#(\w+)/g, '<span class="text-blue-600 dark:text-blue-400">#$1</span>');
 }
 
@@ -1042,51 +1047,9 @@ function setupUnloadAlert() {
     };
 }
 
-// Funções de Modal simples
 function openFeedbackModal() { document.getElementById('feedback-modal').classList.remove('hidden'); setTimeout(() => document.getElementById('feedback-modal').classList.remove('opacity-0'), 10); }
 function closeFeedbackModal() { document.getElementById('feedback-modal').classList.add('opacity-0'); setTimeout(() => document.getElementById('feedback-modal').classList.add('hidden'), 200); }
 function sendFeedback() { alert("Feedback enviado!"); closeFeedbackModal(); }
 function closeModal() { document.getElementById('app-modal').classList.add('opacity-0'); setTimeout(() => document.getElementById('app-modal').classList.add('hidden'), 200); }
 
-// Funções de Backup/Restore (dummy, sem implementação real aqui)
-function backupData() {
-    const data = JSON.stringify({ entries: state.entries, prefs: state.prefs }, null, 2);
-    const blob = new Blob([data], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `synta_notes_backup_${new Date().toISOString().split('T')[0]}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    alert("Backup concluído!");
-}
-
-function restoreData(input) {
-    if (input.files.length === 0) return;
-    const file = input.files[0];
-    const reader = new FileReader();
-    reader.onload = (e) => {
-        try {
-            const loadedState = JSON.parse(e.target.result);
-            if (loadedState.entries && loadedState.prefs) {
-                if (confirm("Isto substituirá todos os seus dados atuais. Continuar?")) {
-                    state.entries = loadedState.entries;
-                    state.prefs = { ...state.prefs, ...loadedState.prefs };
-                    saveData();
-                    init(); // Re-inicializa o app
-                    alert("Dados restaurados com sucesso! O aplicativo será recarregado.");
-                    location.reload();
-                }
-            } else {
-                alert("Formato de arquivo de backup inválido.");
-            }
-        } catch (error) {
-            alert("Erro ao ler o arquivo: " + error.message);
-        }
-    };
-    reader.readAsText(file);
-}
-
-// --- BOOTSTRAP ---
 document.addEventListener('DOMContentLoaded', init);
