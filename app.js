@@ -19,8 +19,9 @@ const TRANSLATIONS = {
         type_note: 'Nota',
         type_task: 'Tarefa',
         type_event: 'Evento',
-        type_reflection: 'Reflexão',
-        type_idea: 'Ideia',
+        type_inspiration: 'Inspiração', // NOVO: Significador
+        // type_reflection: 'Reflexão', // REMOVIDO
+        // type_idea: 'Ideia', // REMOVIDO
         nav_home: 'Home',
         nav_journal: 'Diário',
         nav_hubs: 'Hubs',
@@ -104,8 +105,9 @@ const TRANSLATIONS = {
         type_note: 'Note',
         type_task: 'Task',
         type_event: 'Event',
-        type_reflection: 'Reflection',
-        type_idea: 'Idea',
+        type_inspiration: 'Inspiration', // NEW
+        // type_reflection: 'Reflection', // REMOVIDO
+        // type_idea: 'Idea', // REMOVIDO
         nav_home: 'Home',
         nav_journal: 'Journal',
         nav_hubs: 'Hubs',
@@ -209,8 +211,7 @@ const ENTRY_TYPES = {
     note: { id: 'note', label: 'type_note', icon: 'align-left', symbol: '—', color: 'text-stone-600 dark:text-stone-400', limit: null }, 
     task: { id: 'task', label: 'type_task', icon: 'check-square', symbol: '•', color: 'text-black dark:text-white', limit: 140 }, 
     event: { id: 'event', label: 'type_event', icon: 'calendar', symbol: '○', color: 'text-black dark:text-white', limit: 140 },
-    reflection: { id: 'reflection', label: 'type_reflection', icon: 'moon', symbol: '>', color: 'text-black dark:text-white', limit: 280 }, 
-    idea: { id: 'idea', label: 'type_idea', icon: 'lightbulb', symbol: '!', color: 'text-black dark:text-white', limit: 140 }, 
+    // Apenas os marcadores principais do BuJo (Tarefa, Evento e Nota)
 };
 
 // --- ESTADO ---
@@ -575,7 +576,7 @@ function handleDateInput(val) {
 
 // --- FUNÇÕES DE CONTEXTO INTELIGENTE (Ponto 2) ---
 function togglePriorityInput() {
-    // Só permite em 'task'
+    // Só permite em 'task' (Prioridade é um significador de Tarefa)
     if (state.selectedType === 'task') {
          state.isPriorityInput = !state.isPriorityInput;
          state.isInspirationInput = false; // Garante exclusividade
@@ -592,10 +593,12 @@ function togglePriorityInput() {
 }
 
 function toggleInspirationInput() {
-    // Só permite em 'note'
+    // Só permite em 'note' (Inspiração é um significador de Nota)
     if (state.selectedType === 'note') {
          state.isInspirationInput = !state.isInspirationInput;
          state.isPriorityInput = false; // Garante exclusividade
+    } else {
+         state.isInspirationInput = false; 
     }
     render(); 
     setTimeout(() => {
@@ -643,22 +646,29 @@ function addNewEntry() {
     }
 
     // NOVO: Lógica de Entrada Híbrida (Ponto 5) e Contexto Inteligente (Ponto 2)
-    const isPriorityMarker = content.includes('*') || content.includes('✱');
-    const isIdeaMarker = content.includes('!') || state.isInspirationInput;
+    // ✱ é o símbolo preferido, * é o atalho. ! é o atalho.
+    const isPriorityMarker = content.includes('*') || content.includes('✱') || state.isPriorityInput;
+    const isInspirationMarker = content.includes('!') || state.isInspirationInput;
     
-    if (type === 'task' && (state.isPriorityInput || isPriorityMarker)) {
+    // Prioridade (apenas para Tarefa)
+    if (type === 'task' && isPriorityMarker) {
         if (!content.includes('✱')) {
-             content = `✱ ${content.replace(/\*/g, '').trim()}`; // Garante ✱ no início
+             // Limpa * e ! do input antes de adicionar ✱ no início para evitar ruído e duplicidade
+             content = `✱ ${content.replace(/[\*!✱]/g, '').trim()}`; 
         }
     }
     
-    // Se for Nota e Inspiração estiver ativa, força o tipo para Ideia
-    if (type === 'note' && isIdeaMarker) {
-        type = 'idea';
-        if (!content.includes('!') && !content.includes('✱')) {
-            // Adiciona ! apenas se não tiver * (prioridade), o que é mais comum
-            content = `! ${content.trim()}`;
+    // Inspiração (apenas para Nota - NUNCA muda o tipo, apenas adiciona o significador)
+    if (type === 'note' && isInspirationMarker) {
+        if (!content.includes('!')) {
+             // Limpa * e ! do input antes de adicionar ! no início para evitar ruído e duplicidade
+             content = `! ${content.replace(/[\*!✱]/g, '').trim()}`;
         }
+    }
+    
+    // Certifica-se de que Eventos não podem ter significadores
+    if (type === 'event') {
+        content = content.replace(/[\*!✱]/g, '').trim();
     }
     
     // Reset dos estados de botão após a adição
@@ -1043,6 +1053,29 @@ function addNewGlobalEntry() {
     let type = state.selectedType;
     let targetDate = nlpResult.date || (state.inputDate ? parseLocalInputDate(state.inputDate) : null);
     
+    // Global input não tem botões de significador, mas deve respeitar a digitação
+    const isPriorityMarker = content.includes('*') || content.includes('✱');
+    const isInspirationMarker = content.includes('!');
+
+    // Prioridade (apenas para Tarefa)
+    if (type === 'task' && isPriorityMarker) {
+        if (!content.includes('✱')) {
+             content = `✱ ${content.replace(/[\*!✱]/g, '').trim()}`; 
+        }
+    }
+    
+    // Inspiração (apenas para Nota)
+    if (type === 'note' && isInspirationMarker) {
+        if (!content.includes('!')) {
+             content = `! ${content.replace(/[\*!✱]/g, '').trim()}`;
+        }
+    }
+    
+    // Certifica-se de que Eventos não podem ter significadores
+    if (type === 'event') {
+        content = content.replace(/[\*!✱]/g, '').trim();
+    }
+
     if (!validateEntryContent(content, type)) {
         return;
     }
@@ -1275,7 +1308,7 @@ function getHomeHTML() {
 
     const nextEvent = upcomingEvents[0];
     const priorities = state.entries
-        .filter(e => !e.completed && e.content.includes('✱'))
+        .filter(e => !e.completed && (e.content.includes('✱') || e.content.includes('*')))
         .sort((a,b) => (b.targetDate || b.id) - (a.targetDate || a.id));
 
     // NOVO: Recentes
@@ -1443,19 +1476,19 @@ function renderInputBlock(placeholder, isGlobal = false) {
     const datePickerId = isGlobal ? 'global-date-picker-native' : 'date-picker-native';
     const dateBtnId = isGlobal ? 'global-date-button' : 'date-btn-icon';
     
-    // Ponto 2: Contexto Inteligente - Botões Condicionais
+    // Ponto 2: Contexto Inteligente - Botões Condicionais (Fiel ao BuJo: Prioridade para Tarefa, Inspiração para Nota)
     let conditionalButtons = '';
     if (config.id === 'task') {
         conditionalButtons = `
-            <button onclick="togglePriorityInput();" title="${T('pt-BR') === currentLang ? 'Marcar como Prioridade (✱)' : 'Mark as Priority (✱)'}" 
+            <button onclick="togglePriorityInput();" title="${T('pt-BR') === currentLang ? 'Marcar como Prioridade (✱) - BuJo' : 'Mark as Priority (✱) - BuJo'}" 
                     class="p-1.5 rounded transition-colors ${state.isPriorityInput ? 'bg-black text-white dark:bg-white dark:text-black' : 'text-stone-400 hover:text-black dark:hover:text-white'}">
                 <i data-lucide="star" class="w-4 h-4 fill-current"></i>
             </button>
         `;
     } else if (config.id === 'note') {
          conditionalButtons = `
-            <button onclick="toggleInspirationInput();" title="${T('pt-BR') === currentLang ? 'Marcar como Inspiração (!) - Muda para tipo Ideia' : 'Mark as Inspiration (!) - Changes to Idea type'}"
-                    class="p-1.5 rounded transition-colors ${state.isInspirationInput ? 'bg-black text-white dark:bg-white dark:text-black' : 'text-stone-400 hover:text-black dark:hover:text-white'}">
+            <button onclick="toggleInspirationInput();" title="${T('pt-BR') === currentLang ? 'Marcar como Inspiração (!) - BuJo' : 'Mark as Inspiration (!) - BuJo'}"
+                    class="p-1.5 rounded transition-colors ${state.isInspirationInput ? 'bg-blue-600 text-white dark:bg-blue-400 dark:text-black' : 'text-stone-400 hover:text-black dark:hover:text-white'}">
                 <i data-lucide="zap" class="w-4 h-4 fill-current"></i> 
             </button>
          `;
@@ -1498,7 +1531,7 @@ function getCommonSingleViewHTML(title, closeFunc, placeholder, hubId = null) {
                     <button onclick="${closeFunc.name}()" class="p-2 hover:bg-stone-100 rounded-full transition-colors dark:hover:bg-stone-800"><i data-lucide="arrow-left" class="w-6 h-6 dark:text-white"></i></button>
                     <h2 class="text-2xl font-bold dark:text-white">${title}</h2>
                 </div>
-                ${hubId ? `<div class="flex items-center gap-2"><button onclick="deleteHub(${hubId})" class="p-2 text-stone-400 hover:text-red-600 transition-colors dark:hover:text-red-400"><i data-lucide="trash-2" class="w-5 h-5"></i></button><button onclick="toggleViewMode()" class="p-2 rounded hover:bg-stone-100 transition-colors dark:hover:bg-stone-800"><i data-lucide="${state.prefs.viewMode === 'visual' ? 'layout-list' : 'layout-template'}" class="w-5 h-5 text-stone-500 hover:text-black dark:hover:text-white"></i></button></div>` : `<button onclick="toggleViewMode()" class="p-2 rounded hover:bg-stone-100 transition-colors dark:hover:bg-stone-800"><i data-lucide="${state.prefs.viewMode === 'visual' ? 'layout-list' : 'layout-template'}" class="w-5 h-5 text-stone-500 hover:text-black dark:hover:text-white"></i></button>`}
+                ${hubId ? `<div class="flex items-center gap-2"><button onclick="deleteHub(${hubId})" class="p-2 text-stone-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"><i data-lucide="trash-2" class="w-5 h-5"></i></button><button onclick="toggleViewMode()" class="p-2 rounded hover:bg-stone-100 transition-colors dark:hover:bg-stone-800"><i data-lucide="${state.prefs.viewMode === 'visual' ? 'layout-list' : 'layout-template'}" class="w-5 h-5 text-stone-500 hover:text-black dark:hover:text-white"></i></button></div>` : `<button onclick="toggleViewMode()" class="p-2 rounded hover:bg-stone-100 transition-colors dark:hover:bg-stone-800"><i data-lucide="${state.prefs.viewMode === 'visual' ? 'layout-list' : 'layout-template'}" class="w-5 h-5 text-stone-500 hover:text-black dark:hover:text-white"></i></button>`}
             </div>
             
             ${inputBlock}
@@ -1665,18 +1698,35 @@ function formatContent(text) {
     return formatted;
 }
 
-// ♻️ ATUALIZADO: RENDERIZAÇÃO COM BOTÃO DE COMPARTILHAR
+// ♻️ ATUALIZADO: RENDERIZAÇÃO COM SIGNIFICADORES ORIGINAIS BUJO
 function renderVisualEntry(entry) {
     const config = ENTRY_TYPES[entry.type];
     const dateDisplay = entry.targetDate ? new Date(entry.targetDate).toLocaleDateString(currentLang, {day:'2-digit', month:'2-digit'}) : '';
     const isCompleted = entry.completed;
-    const isPriority = entry.content.includes('✱');
+    
+    // Verifica Significadores (BuJo Original)
+    const isPriority = (entry.content.includes('✱') || entry.content.includes('*')) && entry.type === 'task';
+    const isInspiration = entry.content.includes('!') && entry.type === 'note'; 
+
+    // Conteúdo limpo para exibição, removendo os símbolos BuJo.
+    const rawContentCleaned = entry.content.replace(/✱/g, '').replace(/\*/g, '').replace(/!/g, '').trim();
+    const contentHtml = formatContent(rawContentCleaned);
+    
     // NOVO: Exibe a contagem de migração
     const migrationCount = entry.migrationCount > 0 ? ` [${entry.migrationCount}x]` : '';
-    const contentHtml = formatContent(entry.content);
+    
+    // Determina a cor da borda baseado na prioridade/inspiração
+    let borderColor = 'border-stone-100 dark:border-stone-800';
+    if (!isCompleted) {
+        if (isPriority) {
+            borderColor = 'border-l-4 border-l-black border-y-stone-100 border-r-stone-100 dark:border-l-white dark:border-y-stone-800 dark:border-r-stone-800';
+        } else if (isInspiration) {
+            borderColor = 'border-l-4 border-l-blue-600 border-y-stone-100 border-r-stone-100 dark:border-l-blue-400 dark:border-y-stone-800 dark:border-r-stone-800';
+        }
+    }
     
     return `
-        <div class="flex items-start gap-3 p-3 bg-white border ${isPriority && !isCompleted ? 'border-l-4 border-l-black border-y-stone-100 border-r-stone-100 dark:border-l-white dark:border-y-stone-800 dark:border-r-stone-800' : 'border-stone-100 dark:border-stone-800'} hover:border-stone-400 group transition-all dark:bg-stone-900 dark:hover:border-stone-600">
+        <div class="flex items-start gap-3 p-3 bg-white border ${borderColor} hover:border-stone-400 group transition-all dark:bg-stone-900 dark:hover:border-stone-600">
             <button onclick="toggleEntry(${entry.id})" class="${config.color} mt-0.5">
                 <i data-lucide="${isCompleted && entry.type === 'task' ? 'check-square' : config.icon}" class="w-4 h-4 ${isCompleted ? 'opacity-30' : ''}"></i>
             </button>
@@ -1688,6 +1738,8 @@ function renderVisualEntry(entry) {
                 <div class="flex gap-3 mt-1">
                     <span class="text-[10px] text-stone-400 uppercase font-bold">${T(config.label)}${migrationCount}</span>
                     ${dateDisplay ? `<span class="text-[10px] bg-stone-100 text-stone-600 px-1 border border-stone-200 dark:bg-stone-800 dark:text-stone-400 dark:border-stone-700">${T('ui_date')}: ${dateDisplay}</span>` : ''}
+                    
+                    ${isInspiration && !isCompleted ? `<span class="text-[10px] bg-blue-600 text-white px-1 font-bold dark:bg-blue-400 dark:text-black">${T('type_inspiration').toUpperCase()}</span>` : ''}
                     ${isPriority && !isCompleted ? `<span class="text-[10px] bg-black text-white px-1 font-bold dark:bg-white dark:text-black">${T('ui_important')}</span>` : ''}
                 </div>
             </div>
@@ -1707,15 +1759,26 @@ function renderVisualEntry(entry) {
 function renderClassicEntry(entry) {
     const config = ENTRY_TYPES[entry.type];
     const isCompleted = entry.completed;
-    const isPriority = entry.content.includes('✱');
+    const isPriority = (entry.content.includes('✱') || entry.content.includes('*')) && entry.type === 'task';
+    const isInspiration = entry.content.includes('!') && entry.type === 'note';
     const dateDisplay = entry.targetDate ? new Date(entry.targetDate).toLocaleDateString(currentLang, {day:'2-digit', month:'2-digit'}) : '';
     const migrationCount = entry.migrationCount > 0 ? ` [${entry.migrationCount}x]` : '';
-    const contentHtml = formatContent(entry.content);
+    
+    // Conteúdo limpo para exibição, removendo os símbolos BuJo.
+    const rawContentCleaned = entry.content.replace(/✱/g, '').replace(/\*/g, '').replace(/!/g, '').trim();
+    const contentHtml = formatContent(rawContentCleaned);
+
+    // No modo Clássico, o símbolo do item muda para o Significador se for o caso
+    let bujoSymbol = config.symbol;
+    if (isCompleted && entry.type === 'task') bujoSymbol = 'x'; // Concluído
+    else if (isPriority) bujoSymbol = '✱'; // Prioridade
+    else if (isInspiration) bujoSymbol = '!'; // Inspiração
+
     return `
         <div class="group flex items-baseline gap-2 py-1 px-1 hover:bg-stone-50 rounded -ml-1 transition-colors cursor-default dark:hover:bg-stone-800">
             <button onclick="toggleEntry(${entry.id})" 
                 class="font-mono font-bold w-5 text-center select-none ${isCompleted ? 'text-stone-300' : 'text-black hover:text-stone-600 dark:text-white dark:hover:text-stone-300'}">
-                ${isCompleted && entry.type === 'task' ? 'x' : config.symbol}
+                ${bujoSymbol}
             </button>
             <div class="flex-1 min-w-0 font-mono text-sm leading-relaxed ${isCompleted ? 'line-through text-stone-400' : (isPriority ? 'text-black font-bold dark:text-white' : 'text-stone-800 dark:text-stone-300')} cursor-pointer" onclick="startEditEntry(${entry.id})" id="entry-content-view-${entry.id}">
                 ${contentHtml}
