@@ -1065,6 +1065,8 @@ function renderGlobalInput() {
     menu.classList.toggle('hidden', !state.showSlashMenu);
     
     if (dateBtn && datePicker) {
+        // Esta lógica de sincronização aqui fora só garante a cor do botão,
+        // mas o elemento de data agora é construído DENTRO do actionButtons.
         if (state.inputDate) {
             dateBtn.classList.add('text-black', 'font-bold', 'dark:text-white');
             datePicker.value = state.inputDate; 
@@ -1072,32 +1074,44 @@ function renderGlobalInput() {
             dateBtn.classList.remove('text-black', 'font-bold', 'dark:text-white');
             datePicker.value = '';
         }
-        datePicker.onchange = (e) => {
-             state.inputDate = e.target.value;
-             renderGlobalInput();
-        };
+        // O event listener de onchange foi movido para o HTML gerado abaixo.
     }
     
-    // Renderiza Botões Contextuais (CANÔNICO)
+    // --- TRECHO DE AJUSTE PARA CONSISTÊNCIA ---
     if (globalActionButtons) {
         let conditionalButtonsHTML = '';
+        
+        // Funções de toggle com renderização de input global
+        const toggleFunc = 'state.isPriorityInput = !state.isPriorityInput; state.isInspirationInput = false; renderGlobalInput();';
+        const inspToggleFunc = 'state.isInspirationInput = !state.isInspirationInput; state.isPriorityInput = false; renderGlobalInput();';
+
         if (config.id === 'task') {
             conditionalButtonsHTML = `
-                <button onclick="state.isPriorityInput = !state.isPriorityInput; state.isInspirationInput = false; renderGlobalInput();" title="${T('pt-BR') === currentLang ? 'Marcar como Prioridade (✱) - BuJo' : 'Mark as Priority (✱) - BuJo'}" 
+                <button onclick="${toggleFunc}" title="${T('pt-BR') === currentLang ? 'Marcar como Prioridade (✱) - BuJo' : 'Mark as Priority (✱) - BuJo'}" 
                         class="p-1.5 rounded transition-colors ${state.isPriorityInput ? 'bg-black text-white dark:bg-white dark:text-black' : 'text-stone-400 hover:text-black dark:hover:text-white'}">
                     <i data-lucide="star" class="w-4 h-4 fill-current"></i>
                 </button>
             `;
         } else if (config.id === 'note') {
              conditionalButtonsHTML = `
-                <button onclick="state.isInspirationInput = !state.isInspirationInput; state.isPriorityInput = false; renderGlobalInput();" title="${T('pt-BR') === currentLang ? 'Marcar como Inspiração (!) - BuJo' : 'Mark as Inspiration (!) - BuJo'}"
+                <button onclick="${inspToggleFunc}" title="${T('pt-BR') === currentLang ? 'Marcar como Inspiração (!) - BuJo' : 'Mark as Inspiration (!) - BuJo'}"
                         class="p-1.5 rounded transition-colors ${state.isInspirationInput ? 'bg-blue-600 text-white dark:bg-blue-400 dark:text-black' : 'text-stone-400 hover:text-black dark:hover:text-white'}">
                     <i data-lucide="zap" class="w-4 h-4 fill-current"></i> 
                 </button>
              `;
         }
-        globalActionButtons.innerHTML = conditionalButtonsHTML;
+        
+        // Adicionando o controle de data no mesmo contêiner, garantindo a mesma ordem do Diário
+        const dateButtonHTML = `
+            <div class="relative">
+                <input type="date" id="global-date-picker-native" value="${state.inputDate || ''}" class="absolute inset-0 opacity-0 cursor-pointer" onchange="handleDateInput(this.value); renderGlobalInput();">
+                <button id="global-date-button-icon" class="p-1.5 hover:bg-stone-200 rounded text-stone-400 hover:text-black dark:hover:text-white ${state.inputDate ? 'text-black font-bold dark:text-white' : ''}"><i data-lucide="calendar" class="w-4 h-4"></i></button>
+            </div>
+        `;
+
+        globalActionButtons.innerHTML = conditionalButtonsHTML + dateButtonHTML;
     }
+    // --- FIM DO TRECHO DE AJUSTE ---
 
     if (input.tagName === 'TEXTAREA') {
         input.style.height = 'auto';
@@ -1105,7 +1119,6 @@ function renderGlobalInput() {
     }
     lucide.createIcons();
 }
-
 function selectGlobalEntryType(typeId) {
     state.selectedType = typeId;
     state.showSlashMenu = false;
