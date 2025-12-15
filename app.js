@@ -367,7 +367,7 @@ function toggleTheme() {
     render(); 
 }
 
-// --- LÓGICA DE EDIAÇÃO COMPLETA (CORREÇÃO) ---
+// --- LÓGICA DE EDIAÇÃO COMPLETA (ATUALIZADA) ---
 function startEditEntry(id) {
     state.editingEntryId = id;
     // Reseta estados de input
@@ -392,11 +392,14 @@ function saveEditEntry(id) {
     const newDateStr = document.getElementById(`edit-date-${id}`)?.value;
     const newHubId = document.getElementById(`edit-hub-${id}`)?.value;
     
-    // Contextual Toggles (only exist for specific types)
-    const isPriorityChecked = document.getElementById(`edit-priority-${id}`)?.checked || false;
-    const isInspirationChecked = document.getElementById(`edit-inspiration-${id}`)?.checked || false;
-    const isProgressChecked = document.getElementById(`edit-progress-${id}`)?.checked || false;
+    // Ler estado dos botões (data-active='true')
+    const btnPriority = document.getElementById(`btn-edit-priority-${id}`);
+    const btnInspiration = document.getElementById(`btn-edit-inspiration-${id}`);
+    const btnProgress = document.getElementById(`btn-edit-progress-${id}`);
 
+    const isPriorityChecked = btnPriority ? btnPriority.dataset.active === 'true' : false;
+    const isInspirationChecked = btnInspiration ? btnInspiration.dataset.active === 'true' : false;
+    const isProgressChecked = btnProgress ? btnProgress.dataset.active === 'true' : false;
 
     if (!validateEntryContent(newContent, entry.type)) {
          startEditEntry(id);
@@ -992,7 +995,7 @@ async function shareEntry(id) {
     }
 }
 
-// --- GLOBAL SLASH COMMAND (CORRIGIDO) ---
+// --- GLOBAL SLASH COMMAND (ATUALIZADO) ---
 function handleGlobalKeydown(e) {
     if (e.key === '/') {
         if (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA') {
@@ -1047,7 +1050,6 @@ function renderGlobalInput() {
     const charCountEl = document.getElementById('global-char-count');
     const dateBtn = document.getElementById('global-date-button');
     const datePicker = document.getElementById('global-date-picker-native');
-    // CORREÇÃO: Pega o contêiner de botões contextuais
     const globalActionButtons = document.getElementById('global-input-action-buttons'); 
 
     if (!input || !menu) return;
@@ -1058,19 +1060,24 @@ function renderGlobalInput() {
     const isOver = limit && charCount > limit;
 
     input.value = state.inputText;
-    charCountEl.innerText = limit ? `${charCount}/${limit}` : charCount;
-    charCountEl.classList.toggle('text-red-600', isOver);
-    charCountEl.classList.toggle('font-bold', isOver);
-    charCountEl.classList.toggle('hidden', !limit);
+    
+    // Atualiza contagem de caracteres
+    if (charCountEl) {
+        charCountEl.innerText = limit ? `${charCount}/${limit}` : charCount;
+        charCountEl.classList.toggle('text-red-600', isOver);
+        charCountEl.classList.toggle('font-bold', isOver);
+        charCountEl.classList.toggle('hidden', !limit);
+    }
     
     if (typeIcon) typeIcon.setAttribute('data-lucide', config.icon);
     if (typeLabel) typeLabel.innerText = T(config.label);
     
-    // As opções de tipo na lista suspensa global precisam chamar selectGlobalEntryType()
+    // Renderiza menu de tipos
     const typeOptions = Object.values(ENTRY_TYPES).map(t => `<button onclick="selectGlobalEntryType('${t.id}')" class="w-full text-left flex items-center gap-3 p-2 hover:bg-stone-100 transition-colors dark:hover:bg-stone-700 ${state.selectedType === t.id ? 'bg-stone-50 font-bold dark:bg-stone-600' : ''}"><i data-lucide="${t.icon}" class="w-4 h-4 text-black dark:text-white"></i><span class="text-sm text-black dark:text-white">${T(t.label)}</span></button>`).join('');
     menu.innerHTML = typeOptions;
     menu.classList.toggle('hidden', !state.showSlashMenu);
     
+    // Sincroniza Date Picker
     if (dateBtn && datePicker) {
         if (state.inputDate) {
             dateBtn.classList.add('text-black', 'font-bold', 'dark:text-white');
@@ -1079,14 +1086,13 @@ function renderGlobalInput() {
             dateBtn.classList.remove('text-black', 'font-bold', 'dark:text-white');
             datePicker.value = '';
         }
-        // Listener para o date picker (necessário para atualizar o estado e re-renderizar)
         datePicker.onchange = (e) => {
              state.inputDate = e.target.value;
              renderGlobalInput();
         };
     }
     
-    // CORREÇÃO: Injetando os botões contextuais
+    // Renderiza Botões Contextuais (IDÊNTICO ao Input Principal)
     if (globalActionButtons) {
         let conditionalButtonsHTML = '';
         if (config.id === 'task') {
@@ -1104,6 +1110,7 @@ function renderGlobalInput() {
                 </button>
              `;
         }
+        // Adiciona o botão de Data aqui dentro para garantir a ordem visual
         globalActionButtons.innerHTML = conditionalButtonsHTML;
     }
 
@@ -1763,6 +1770,7 @@ function renderEntry(entry) {
     return renderVisualEntry(entry);
 }
 
+// ⚠️ ATUALIZADO: Interface de Edição Unificada (Substitui Checkboxes por Botões)
 function getEditEntryHTML(entry) {
     const config = ENTRY_TYPES[entry.type];
     const isClassic = state.prefs.viewMode === 'classic';
@@ -1774,66 +1782,88 @@ function getEditEntryHTML(entry) {
         `<option value="${h.id}" ${entry.hubId == h.id ? 'selected' : ''}>${h.name}</option>`
     ).join('');
     
-    let contextualToggles = '';
+    // BOTOES DE CONTEXTO (Padronizados com o Input Principal)
+    let contextualButtons = '';
+    
     if (entry.type === 'task') {
-        contextualToggles = `
-            <label class="flex items-center gap-2 text-sm font-medium cursor-pointer dark:text-stone-200">
-                <input type="checkbox" id="edit-priority-${entry.id}" ${isPriority ? 'checked' : ''} class="w-4 h-4 text-black bg-stone-100 border-stone-300 rounded focus:ring-black dark:ring-offset-stone-800 dark:bg-stone-700 dark:border-stone-600">
-                ${T('ui_important')} (✱)
-            </label>
-            <label class="flex items-center gap-2 text-sm font-medium cursor-pointer dark:text-stone-200">
-                <input type="checkbox" id="edit-progress-${entry.id}" ${entry.inProgress ? 'checked' : ''} class="w-4 h-4 text-green-600 bg-stone-100 border-stone-300 rounded focus:ring-green-500 dark:ring-offset-stone-800 dark:bg-stone-700 dark:border-stone-600">
-                ${T('pt-BR') === currentLang ? 'Em Progresso' : 'In Progress'} (<)
-            </label>
+        // Botão Prioridade (Task)
+        contextualButtons += `
+            <button type="button" id="btn-edit-priority-${entry.id}" 
+                onclick="this.dataset.active = this.dataset.active === 'true' ? 'false' : 'true'; this.className = this.dataset.active === 'true' ? 'p-1.5 rounded transition-colors bg-black text-white dark:bg-white dark:text-black' : 'p-1.5 rounded transition-colors text-stone-400 hover:text-black dark:hover:text-white'"
+                data-active="${isPriority}"
+                class="p-1.5 rounded transition-colors ${isPriority ? 'bg-black text-white dark:bg-white dark:text-black' : 'text-stone-400 hover:text-black dark:hover:text-white'}"
+                title="${T('ui_important')}">
+                <i data-lucide="star" class="w-4 h-4 fill-current"></i>
+            </button>
+            
+            <button type="button" id="btn-edit-progress-${entry.id}"
+                onclick="this.dataset.active = this.dataset.active === 'true' ? 'false' : 'true'; this.className = this.dataset.active === 'true' ? 'p-1.5 rounded transition-colors bg-green-600 text-white dark:bg-green-400 dark:text-black' : 'p-1.5 rounded transition-colors text-stone-400 hover:text-black dark:hover:text-white'"
+                data-active="${entry.inProgress}"
+                class="p-1.5 rounded transition-colors ${entry.inProgress ? 'bg-green-600 text-white dark:bg-green-400 dark:text-black' : 'text-stone-400 hover:text-black dark:hover:text-white'}"
+                title="${T('pt-BR') === currentLang ? 'Em Progresso' : 'In Progress'}">
+                <i data-lucide="${entry.inProgress ? 'pause' : 'chevrons-right'}" class="w-4 h-4"></i>
+            </button>
         `;
     } else if (entry.type === 'note') {
-        contextualToggles = `
-            <label class="flex items-center gap-2 text-sm font-medium cursor-pointer dark:text-stone-200">
-                <input type="checkbox" id="edit-inspiration-${entry.id}" ${isInspiration ? 'checked' : ''} class="w-4 h-4 text-blue-600 bg-stone-100 border-stone-300 rounded focus:ring-blue-500 dark:ring-offset-stone-800 dark:bg-stone-700 dark:border-stone-600">
-                ${T('type_inspiration')} (!)
-            </label>
+        // Botão Inspiração (Note)
+        contextualButtons += `
+            <button type="button" id="btn-edit-inspiration-${entry.id}"
+                onclick="this.dataset.active = this.dataset.active === 'true' ? 'false' : 'true'; this.className = this.dataset.active === 'true' ? 'p-1.5 rounded transition-colors bg-blue-600 text-white dark:bg-blue-400 dark:text-black' : 'p-1.5 rounded transition-colors text-stone-400 hover:text-black dark:hover:text-white'"
+                data-active="${isInspiration}"
+                class="p-1.5 rounded transition-colors ${isInspiration ? 'bg-blue-600 text-white dark:bg-blue-400 dark:text-black' : 'text-stone-400 hover:text-black dark:hover:text-white'}"
+                title="${T('type_inspiration')}">
+                <i data-lucide="zap" class="w-4 h-4 fill-current"></i> 
+            </button>
         `;
     }
-    
-    // New HTML structure for editing
+
     return `
         <div class="p-3 bg-stone-50 border-2 border-black rounded shadow-md ${isClassic ? 'font-mono' : 'font-sans'} dark:bg-stone-800 dark:border-stone-600">
-            <div class="text-[10px] font-bold uppercase text-stone-600 mb-2 flex items-center gap-2 dark:text-stone-400">
-                 <i data-lucide="${config.icon}" class="w-3 h-3"></i> ${T('ui_edit')} ${T(config.label)}
+            <div class="text-[10px] font-bold uppercase text-stone-600 mb-2 flex items-center justify-between dark:text-stone-400">
+                 <div class="flex items-center gap-2">
+                    <i data-lucide="${config.icon}" class="w-3 h-3"></i> ${T('ui_edit')} ${T(config.label)}
+                 </div>
+                 <div class="flex gap-1">
+                    ${contextualButtons}
+                 </div>
             </div>
 
             <textarea 
                 id="edit-content-${entry.id}" 
                 class="w-full bg-white border border-stone-300 p-2 text-sm resize-none outline-none focus:border-black rounded-sm ${isClassic ? 'font-mono' : 'font-sans'} dark:bg-stone-900 dark:border-stone-700 dark:text-white dark:focus:border-white mb-3"
-                rows="${Math.max(1, Math.ceil(entry.content.length / 80))}"
+                rows="${Math.max(2, Math.ceil(entry.content.length / 60))}"
                 onkeydown="if(event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); saveEditEntry(${entry.id}); } else if(event.key === 'Escape') { state.editingEntryId = null; render(); }"
             >${entry.content}</textarea>
 
-            <div class="grid grid-cols-2 gap-4 mb-3">
-                <div>
-                    <label for="edit-date-${entry.id}" class="block text-xs font-bold uppercase text-stone-500 mb-1">${T('ui_date')}</label>
-                    <input type="date" id="edit-date-${entry.id}" value="${entryDate}" class="w-full p-2 border border-stone-300 rounded text-sm dark:bg-stone-900 dark:border-stone-700 dark:text-white">
+            <div class="flex items-end gap-3">
+                <div class="flex-1">
+                    <label for="edit-date-${entry.id}" class="block text-[10px] font-bold uppercase text-stone-500 mb-1">${T('ui_date')}</label>
+                    <div class="relative">
+                        <input type="date" id="edit-date-${entry.id}" value="${entryDate}" class="w-full p-1.5 pl-8 border border-stone-300 rounded text-sm dark:bg-stone-900 dark:border-stone-700 dark:text-white focus:border-black outline-none">
+                        <i data-lucide="calendar" class="absolute left-2 top-2 w-4 h-4 text-stone-400"></i>
+                    </div>
                 </div>
                 
-                <div>
-                    <label for="edit-hub-${entry.id}" class="block text-xs font-bold uppercase text-stone-500 mb-1">Hub</label>
-                    <select id="edit-hub-${entry.id}" class="w-full p-2 border border-stone-300 rounded text-sm dark:bg-stone-900 dark:border-stone-700 dark:text-white">
-                        <option value="">${T('pt-BR') === currentLang ? 'Nenhum Hub' : 'No Hub'}</option>
-                        ${hubOptions}
-                    </select>
+                <div class="flex-1">
+                    <label for="edit-hub-${entry.id}" class="block text-[10px] font-bold uppercase text-stone-500 mb-1">Hub</label>
+                    <div class="relative">
+                        <select id="edit-hub-${entry.id}" class="w-full p-1.5 pl-2 border border-stone-300 rounded text-sm dark:bg-stone-900 dark:border-stone-700 dark:text-white appearance-none focus:border-black outline-none">
+                            <option value="">${T('pt-BR') === currentLang ? 'Sem Hub' : 'No Hub'}</option>
+                            ${hubOptions}
+                        </select>
+                        <i data-lucide="chevron-down" class="absolute right-2 top-2 w-4 h-4 text-stone-400 pointer-events-none"></i>
+                    </div>
+                </div>
+
+                <div class="flex gap-2">
+                    <button onclick="saveEditEntry(${entry.id})" class="bg-black text-white px-3 py-1.5 text-xs font-bold rounded hover:bg-stone-800 dark:bg-white dark:text-black dark:hover:bg-stone-200 shadow-sm">
+                        ${T('ui_save')}
+                    </button>
+                    <button onclick="state.editingEntryId = null; render()" class="bg-white text-black px-3 py-1.5 text-xs font-bold rounded border border-stone-300 hover:bg-stone-100 dark:bg-stone-800 dark:text-stone-200 dark:border-stone-700 dark:hover:bg-stone-700">
+                        ${T('ui_cancel')}
+                    </button>
                 </div>
             </div>
-
-            <div class="flex gap-4 mb-3">
-                ${contextualToggles}
-            </div>
-
-            <button onclick="saveEditEntry(${entry.id})" class="mt-2 bg-black text-white px-3 py-1 text-xs font-bold rounded hover:bg-stone-800 dark:bg-white dark:text-black dark:hover:bg-stone-200">
-                ${T('ui_save')} (Enter)
-            </button>
-            <button onclick="state.editingEntryId = null; render()" class="mt-2 bg-white text-black px-3 py-1 text-xs font-bold rounded border border-stone-300 hover:bg-stone-100 dark:bg-stone-800 dark:text-stone-200 dark:border-stone-700 dark:hover:bg-stone-700">
-                ${T('ui_cancel')} (Esc)
-            </button>
         </div>
     `;
 }
