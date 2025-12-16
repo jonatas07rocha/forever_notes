@@ -1649,50 +1649,42 @@ function getCommonSingleViewHTML(title, closeFunc, placeholder, hubId = null) {
 function getFilteredEntries() {
     let list = [];
     
-    // Função auxiliar para garantir que o iOS entenda a data como LOCAL e não UTC
-    // Substitui hífens por barras, que é o formato universal aceito pelo Safari
-    const parseSafeDate = (dateStr) => {
-        if (!dateStr) return null;
-        if (typeof dateStr === 'number') return new Date(dateStr); // Caso seja o e.id (timestamp)
-        return new Date(dateStr.replace(/-/g, '/'));
+    // Função de limpeza de data para garantir que o Safari não use UTC/fuso horário
+    const toDateTimestamp = (val) => {
+        if (!val) return null;
+        // Se for string (YYYY-MM-DD), troca '-' por '/' para o Safari tratar como Local
+        let d = typeof val === 'string' ? new Date(val.replace(/-/g, '/')) : new Date(val);
+        d.setHours(0, 0, 0, 0);
+        return d.getTime();
     };
 
     if (state.searchQuery) {
         const q = state.searchQuery.toLowerCase();
         list = state.entries.filter(e => e.content.toLowerCase().includes(q));
     } else if (state.activeTab === 'journal') {
-        const now = new Date();
-        now.setHours(0,0,0,0);
-        const todayTime = now.getTime();
+        const todayTimestamp = toDateTimestamp(new Date());
         
         if (state.activeJournalPeriod === 'Todos') {
             list = state.entries;
         } else if (state.activeJournalPeriod === 'Hoje') {
             list = state.entries.filter(e => {
-                const target = e.targetDate ? parseSafeDate(e.targetDate) : new Date(e.id);
-                if (!target) return false;
-                target.setHours(0,0,0,0);
-                return target.getTime() === todayTime;
+                const target = toDateTimestamp(e.targetDate || e.id);
+                return target === todayTimestamp;
             });
         } else if (state.activeJournalPeriod === 'Futuro') {
             list = state.entries.filter(e => {
-                const target = e.targetDate ? parseSafeDate(e.targetDate) : new Date(e.id);
-                if (!target) return false;
-                target.setHours(0,0,0,0);
-                return target.getTime() > todayTime;
+                const target = toDateTimestamp(e.targetDate || e.id);
+                return target > todayTimestamp;
             });
         } else if (state.activeJournalPeriod === 'Período') {
+            // Se não houver datas selecionadas, não mostra nada
             if (!state.filterStartDate || !state.filterEndDate) return [];
             
-            const start = parseSafeDate(state.filterStartDate);
-            start.setHours(0,0,0,0);
-            
-            const end = parseSafeDate(state.filterEndDate);
-            end.setHours(23,59,59,999);
+            const start = toDateTimestamp(state.filterStartDate);
+            const end = toDateTimestamp(state.filterEndDate);
             
             list = state.entries.filter(e => {
-                const target = e.targetDate ? parseSafeDate(e.targetDate) : new Date(e.id);
-                if (!target) return false;
+                const target = toDateTimestamp(e.targetDate || e.id);
                 return target >= start && target <= end;
             });
         }
@@ -1702,8 +1694,7 @@ function getFilteredEntries() {
         list = state.entries.filter(e => e.content.includes(state.activeTag));
     }
 
-    // Ordenação robusta: garante que se o id for nulo, o app não quebre
-    return list.sort((a,b) => (b.id || 0) - (a.id || 0));
+    return list.sort((a, b) => (b.id || 0) - (a.id || 0));
 }
 
 function getJournalHTML() {
