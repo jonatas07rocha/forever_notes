@@ -3,7 +3,6 @@
 // Dados antigos salvos como 'forever_v3_data' não serão carregados automaticamente.
 const APP_VERSION = '3.0.0-build2024'; // Versão semântica para controle
 const STORAGE_KEY = 'synta_v3_data';
-const STORAGE_KEY = 'synta_v3_data';
 const PREFS_KEY = 'synta_v3_prefs';
 
 let currentLang = 'pt-BR'; 
