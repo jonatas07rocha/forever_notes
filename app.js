@@ -1,6 +1,7 @@
 // --- CONSTANTES ---
 // ⚠️ ATENÇÃO: As chaves foram alteradas para o novo branding. 
 // Dados antigos salvos como 'forever_v3_data' não serão carregados automaticamente.
+const APP_VERSION = '3.0.1';
 const STORAGE_KEY = 'synta_v3_data';
 const PREFS_KEY = 'synta_v3_prefs';
 
