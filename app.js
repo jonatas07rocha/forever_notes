@@ -1,6 +1,8 @@
 // --- CONSTANTES ---
 // ⚠️ ATENÇÃO: As chaves foram alteradas para o novo branding. 
 // Dados antigos salvos como 'forever_v3_data' não serão carregados automaticamente.
+const APP_VERSION = '3.0.0-build2024'; // Versão semântica para controle
+const STORAGE_KEY = 'synta_v3_data';
 const STORAGE_KEY = 'synta_v3_data';
 const PREFS_KEY = 'synta_v3_prefs';
 
@@ -16,6 +18,7 @@ const PERIOD_MAP = {
 const TRANSLATIONS = {
     'pt-BR': {
         app_title: 'Synta Notes',
+        settings_version: 'Versão do Aplicativo',
         type_note: 'Nota',
         type_task: 'Tarefa',
         type_event: 'Evento',
@@ -100,6 +103,7 @@ const TRANSLATIONS = {
     },
     'en-US': {
         app_title: 'Synta Notes',
+        settings_version: 'App Version',
         type_note: 'Note',
         type_task: 'Task',
         type_event: 'Event',
@@ -2104,10 +2108,16 @@ function getSettingsHTML() {
                     </button>
                     <input type="file" id="import-file" class="hidden" accept=".json" onchange="importData(this)">
                 </div>
+
+                <div class="flex justify-between items-center pt-4 opacity-40 hover:opacity-100 transition-opacity border-t border-stone-200 dark:border-stone-800">
+                    <span class="text-[10px] font-bold uppercase tracking-widest dark:text-white">${T('settings_version')}</span>
+                    <span class="text-[10px] font-mono bg-stone-100 dark:bg-stone-800 px-2 py-0.5 rounded dark:text-stone-400">${APP_VERSION}</span>
+                </div>
             </div>
         </div>
     `;
 }
+
 
 function exportData() {
     const dataStr = JSON.stringify(state);
