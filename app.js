@@ -2117,7 +2117,6 @@ function getSettingsHTML() {
     `;
 }
 
-
 function exportData() {
     const dataStr = JSON.stringify(state);
     const blob = new Blob([dataStr], {type: "application/json"});
