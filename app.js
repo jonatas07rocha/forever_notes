@@ -1649,43 +1649,51 @@ function getCommonSingleViewHTML(title, closeFunc, placeholder, hubId = null) {
 function getFilteredEntries() {
     let list = [];
     
-    // Função de limpeza de data para garantir que o Safari não use UTC/fuso horário
-    const toDateTimestamp = (val) => {
+    // Auxiliar: Pega o INÍCIO do dia (00:00:00) com correção pro Safari
+    const getStartOfDay = (val) => {
         if (!val) return null;
-        // Se for string (YYYY-MM-DD), troca '-' por '/' para o Safari tratar como Local
+        // Se for string, troca hífen por barra pro Safari não usar UTC
         let d = typeof val === 'string' ? new Date(val.replace(/-/g, '/')) : new Date(val);
         d.setHours(0, 0, 0, 0);
         return d.getTime();
     };
 
+    // Auxiliar: Pega o FIM do dia (23:59:59)
+    const getEndOfDay = (val) => {
+        if (!val) return null;
+        let d = typeof val === 'string' ? new Date(val.replace(/-/g, '/')) : new Date(val);
+        d.setHours(23, 59, 59, 999);
+        return d.getTime();
+    };
+
+    const todayStart = getStartOfDay(new Date());
+
     if (state.searchQuery) {
         const q = state.searchQuery.toLowerCase();
         list = state.entries.filter(e => e.content.toLowerCase().includes(q));
     } else if (state.activeTab === 'journal') {
-        const todayTimestamp = toDateTimestamp(new Date());
         
         if (state.activeJournalPeriod === 'Todos') {
             list = state.entries;
         } else if (state.activeJournalPeriod === 'Hoje') {
-            list = state.entries.filter(e => {
-                const target = toDateTimestamp(e.targetDate || e.id);
-                return target === todayTimestamp;
-            });
+            list = state.entries.filter(e => getStartOfDay(e.targetDate || e.id) === todayStart);
         } else if (state.activeJournalPeriod === 'Futuro') {
-            list = state.entries.filter(e => {
-                const target = toDateTimestamp(e.targetDate || e.id);
-                return target > todayTimestamp;
-            });
+            list = state.entries.filter(e => getStartOfDay(e.targetDate || e.id) > todayStart);
         } else if (state.activeJournalPeriod === 'Período') {
-            // Se não houver datas selecionadas, não mostra nada
-            if (!state.filterStartDate || !state.filterEndDate) return [];
+            // 1. CORREÇÃO DO PADRÃO: Se não tiver data no state, usa HOJE
+            // Isso garante que a lista não venha vazia se o usuário não tocar no filtro
+            const nowStr = new Date().toISOString().split('T')[0];
+            const startStr = state.filterStartDate || nowStr;
+            const endStr = state.filterEndDate || nowStr;
             
-            const start = toDateTimestamp(state.filterStartDate);
-            const end = toDateTimestamp(state.filterEndDate);
+            // 2. CORREÇÃO DO INTERVALO: Define o limite exato de tempo
+            const startLimit = getStartOfDay(startStr);
+            const endLimit = getEndOfDay(endStr); 
             
             list = state.entries.filter(e => {
-                const target = toDateTimestamp(e.targetDate || e.id);
-                return target >= start && target <= end;
+                // Compara o momento exato da nota contra o intervalo inclusivo
+                const entryTime = new Date(e.targetDate || e.id).getTime();
+                return entryTime >= startLimit && entryTime <= endLimit;
             });
         }
     } else if (state.activeTab === 'hubs' && state.activeHubId) {
@@ -1694,6 +1702,7 @@ function getFilteredEntries() {
         list = state.entries.filter(e => e.content.includes(state.activeTag));
     }
 
+    // Proteção extra no sort
     return list.sort((a, b) => (b.id || 0) - (a.id || 0));
 }
 
