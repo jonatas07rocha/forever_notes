@@ -2038,15 +2038,13 @@ function toggleBackupAlert() {
 function getSettingsHTML() {
     const isDark = state.prefs.theme === 'dark'; 
     return `
-        <div class="fade-in max-w-xl">
+        <div class="fade-in max-w-xl mx-auto pb-20">
             <h2 class="text-2xl font-bold mb-6 dark:text-white">${T('settings_title')}</h2>
             
             <div class="bg-white border-2 border-stone-200 p-6 mb-6 relative overflow-hidden dark:bg-stone-800 dark:border-stone-700">
-                                
                 <h3 class="font-bold mb-2 text-black dark:text-white flex items-center gap-2">
                     <i data-lucide="cloud" class="w-5 h-5"></i> ${T('settings_gdrive_title')}
                 </h3>
-                                
                 <p class="text-sm text-stone-500 mb-4 dark:text-stone-400">
                     ${T('settings_gdrive_desc')}
                 </p>
@@ -2093,7 +2091,7 @@ function getSettingsHTML() {
                 </label>
             </div>
 
-            <div class="bg-white border-2 border-stone-200 p-6 mb-4 dark:bg-stone-800 dark:border-stone-700">
+            <div class="bg-white border-2 border-stone-200 p-6 mb-6 dark:bg-stone-800 dark:border-stone-700">
                 <h3 class="font-bold mb-2 text-black dark:text-white">${T('settings_backup_data')}</h3>
                 <p class="text-sm text-stone-500 mb-4 dark:text-stone-400">${T('settings_backup_data_desc')}</p>
                 <div class="flex gap-2">
@@ -2105,6 +2103,11 @@ function getSettingsHTML() {
                     </button>
                     <input type="file" id="import-file" class="hidden" accept=".json" onchange="importData(this)">
                 </div>
+            </div>
+
+            <div class="flex justify-between items-center pt-4 opacity-40 hover:opacity-100 transition-opacity border-t border-stone-200 dark:border-stone-800">
+                <span class="text-[10px] font-bold uppercase tracking-widest dark:text-white">${T('settings_version')}</span>
+                <span class="text-[10px] font-mono bg-stone-100 dark:bg-stone-800 px-2 py-0.5 rounded dark:text-stone-400">${APP_VERSION}</span>
             </div>
         </div>
     `;
