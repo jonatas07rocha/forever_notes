@@ -173,7 +173,7 @@ const TRANSLATIONS = {
         settings_gdrive_beta_badge: 'BETA',
         settings_gdrive_beta_msg: 'Experimental feature. Use with caution and keep local backups.',
         settings_gdrive_title: 'Google Drive Sync',
-        settings_gdrive_desc: 'Mantenha seus dados seguros na nuvem e sincronize entre dispositivos.',
+        settings_gdrive_desc: 'Keep your data safe in the cloud and sync across devices.',
         settings_gdrive_btn_upload: 'UPLOAD TO CLOUD',
         settings_gdrive_btn_download: 'DOWNLOAD FROM CLOUD',
         feedback_send: 'Send Feedback',
@@ -1613,7 +1613,7 @@ function renderInputBlock(placeholder, isGlobal = false) {
                 ${conditionalButtons}
                 <div class="relative">
                     <input type="date" id="${datePickerId}" value="${state.inputDate || ''}" class="absolute inset-0 opacity-0 cursor-pointer" onchange="handleDateInput(this.value)">
-                    <button id="${dateBtnId}" class="p-1.5 hover:bg-stone-200 rounded text-stone-400 hover:text-black dark:hover:bg-stone-700 dark:hover:text-white ${state.inputDate ? 'text-black font-bold dark:text-white' : ''}"><i data-lucide="calendar" class="w-4 h-4"></i></button>
+                    <button id="${dateBtnId}" class="p-1.5 hover:bg-stone-200 rounded text-stone-400 hover:text-black dark:hover:text-white ${state.inputDate ? 'text-black font-bold dark:text-white' : ''}"><i data-lucide="calendar" class="w-4 h-4"></i></button>
                 </div>
             </div>
         </div>
