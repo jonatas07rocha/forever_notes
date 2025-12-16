@@ -2290,10 +2290,12 @@ function handleBeforeUnload(e) {
 // ☁️ INTEGRAÇÃO GOOGLE DRIVE
 // ==========================================
 
-const CLIENT_ID = '173913188559-olttmpg5f7i6c8dje4as4rldqfn85tnv.apps.googleusercontent.com'; // SEU ID
+const CLIENT_ID = '173913188559-olttmpg5j7i6c8dje4as4rldqfn85tnv.apps.googleusercontent.com'; // SEU ID
 const SCOPES = 'https://www.googleapis.com/auth/drive.file';
 const DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest';
+// ⚠️ ATUALIZADO: Nome do arquivo no Google Drive
 const DRIVE_FILE_NAME = 'synta_notes_v3_data.json';
+
 
 let tokenClient;
 let gapiInited = false;
