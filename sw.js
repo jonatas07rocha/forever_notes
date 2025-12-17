@@ -1,6 +1,6 @@
-// Nome do Cache estático (Versão 4 - Atualizado para refletir mudanças no front-end)
-// ⚠️ ALTERADO PARA v4 PARA FORÇAR A ATUALIZAÇÃO DO CACHE EM TODOS OS CLIENTES
-const CACHE_NAME = 'synta-notes-cache-v8';
+// Nome do Cache estático (Versão 9 - Atualizado para refletir mudanças no front-end)
+// ⚠️ ALTERADO PARA v9 PARA FORÇAR A ATUALIZAÇÃO DO CACHE EM TODOS OS CLIENTES
+const CACHE_NAME = 'synta-notes-cache-v9';
 
 // Lista de arquivos essenciais para o funcionamento offline
 const urlsToCache = [
