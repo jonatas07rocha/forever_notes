@@ -208,7 +208,7 @@ const ENTRY_TYPES = {
     note: { id: 'note', label: 'type_note', icon: 'align-left', symbol: '—', color: 'text-stone-600 dark:text-stone-400', limit: null }, 
     task: { id: 'task', label: 'type_task', icon: 'check-square', symbol: '•', color: 'text-black dark:text-white', limit: 140 }, 
     event: { id: 'event', label: 'type_event', icon: 'calendar', symbol: '○', color: 'text-black dark:text-white', limit: 140 },
-    // Apenas os marcadores principais do BuJo (Tarefa, Evento e Nota)
+    mood: { id: 'mood', label: 'type_mood', icon: 'smile', symbol: '=', color: 'text-stone-700 dark:text-stone-300', limit: 140 },
 };
 
 // --- ESTADO ---
@@ -1890,6 +1890,7 @@ function renderVisualEntry(entry) {
     
     const isPriority = (entry.content.includes('✱') || entry.content.includes('*')) && entry.type === 'task';
     const isInspiration = entry.content.includes('!') && entry.type === 'note'; 
+    const isMood = entry.type === 'mood'; // 1. Identifica se é Humor
     
     const rawContentCleaned = entry.content.replace(/✱/g, '').replace(/\*/g, '').replace(/!/g, '').replace(/[<>]/g, '').trim();
     const contentHtml = formatContent(rawContentCleaned);
@@ -1902,6 +1903,9 @@ function renderVisualEntry(entry) {
             borderColor = 'border-l-4 border-l-black border-y-stone-100 border-r-stone-100 dark:border-l-white dark:border-y-stone-800 dark:border-r-stone-800';
         } else if (isInspiration) {
             borderColor = 'border-l-4 border-l-blue-600 border-y-stone-100 border-r-stone-100 dark:border-l-blue-400 dark:border-y-stone-800 dark:border-r-stone-800';
+        } else if (isMood) {
+            // 2. Borda Cinza Escuro (Stone-600) para manter o P&B
+            borderColor = 'border-l-4 border-l-stone-600 border-y-stone-100 border-r-stone-100 dark:border-l-stone-400 dark:border-y-stone-800 dark:border-r-stone-800';
         }
     }
     
@@ -1921,6 +1925,8 @@ function renderVisualEntry(entry) {
                     
                     ${isInspiration && !isCompleted ? `<span class="text-[10px] bg-blue-600 text-white px-1 font-bold dark:bg-blue-400 dark:text-black">${T('type_inspiration').toUpperCase()}</span>` : ''}
                     ${isPriority && !isCompleted ? `<span class="text-[10px] bg-black text-white px-1 font-bold dark:bg-white dark:text-black">${T('ui_important')}</span>` : ''}
+                    
+                    ${isMood && !isCompleted ? `<span class="text-[10px] bg-stone-700 text-white px-1 font-bold dark:bg-stone-300 dark:text-black">${T('type_mood').toUpperCase()}</span>` : ''}
                 </div>
             </div>
             
@@ -1953,16 +1959,19 @@ function renderClassicEntry(entry) {
     const isScheduledToFuture = targetDateStart > todayStart && entry.type === 'task'; // Tarefa agendada/migrada
     const isScheduledToPast = targetDateStart < todayStart && !entry.completed && entry.type === 'task'; // Tarefa atrasada
 
-    // Marcadores BuJo Canônicos para Tarefas
+    // Marcadores BuJo Canônicos
     let bujoSymbol = config.symbol;
+    
     if (entry.type === 'task') {
         if (isCompleted) bujoSymbol = 'x'; // Concluído
         else if (isScheduledToFuture) bujoSymbol = '>'; // Migrado/Agendado
-        else if (isScheduledToPast) bujoSymbol = '<'; // Agendado (Originalmente não é um símbolo BuJo para *atrasado*, mas o `<` é usado para *reagendado* no BuJo original (Future Log))
-        else if (isPriority) bujoSymbol = '✱'; // Prioridade (Significador)
+        else if (isScheduledToPast) bujoSymbol = '<'; // Agendado/Atrasado
+        else if (isPriority) bujoSymbol = '✱'; // Prioridade
         else bujoSymbol = '•'; // Padrão
     } else if (entry.type === 'note' && isInspiration) {
         bujoSymbol = '!'; // Inspiração
+    } else if (entry.type === 'mood') {
+        bujoSymbol = '='; // Humor/Sentimento (Adicionado aqui)
     }
 
     return `
