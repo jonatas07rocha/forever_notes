@@ -20,7 +20,8 @@ const TRANSLATIONS = {
         type_note: 'Nota',
         type_task: 'Tarefa',
         type_event: 'Evento',
-        type_inspiration: 'Inspiração', // NOVO: Significador
+        type_inspiration: 'Inspiração', 
+        type_mood: 'Humor', // NOVO: Significador
         nav_home: 'Home',
         nav_journal: 'Diário',
         nav_hubs: 'Hubs',
@@ -104,7 +105,8 @@ const TRANSLATIONS = {
         type_note: 'Note',
         type_task: 'Task',
         type_event: 'Event',
-        type_inspiration: 'Inspiration', // NEW
+        type_inspiration: 'Inspiration', 
+        type_mood: 'Mood', // NEW
         nav_home: 'Home',
         nav_journal: 'Journal',
         nav_hubs: 'Hubs',
