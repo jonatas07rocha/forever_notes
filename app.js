@@ -18,7 +18,7 @@ const TRANSLATIONS = {
     'pt-BR': {
         app_title: 'Synta Notes',
         type_note: 'Nota',
-        type_task: 'Tarefa',
+        type_task: 'Ação', // ALTERADO: De 'Tarefa' para 'Ação'
         type_event: 'Evento',
         type_inspiration: 'Inspiração', 
         type_mood: 'Humor', // NOVO: Significador
@@ -103,7 +103,7 @@ const TRANSLATIONS = {
     'en-US': {
         app_title: 'Synta Notes',
         type_note: 'Note',
-        type_task: 'Task',
+        type_task: 'Action', // ALTERADO: De 'Task' para 'Action'
         type_event: 'Event',
         type_inspiration: 'Inspiration', 
         type_mood: 'Mood', // NEW
