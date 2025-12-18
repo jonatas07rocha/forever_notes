@@ -1,5 +1,5 @@
 // --- CONSTANTES ---
-const APP_VERSION = '3.1.2'; // Bugfix: Restauração de Backup Manual e Drive
+const APP_VERSION = '3.1.3'; // Bugfix: Restauração de Backup Manual e Drive
 const STORAGE_KEY = 'synta_v3_data';
 const PREFS_KEY = 'synta_v3_prefs';
 
@@ -2465,9 +2465,16 @@ async function downloadFromDrive() {
         const files = res.result.files;
         if (files && files.length > 0) {
             const fileId = files[0].id;
-            const result = await gapi.client.drive.files.get({ fileId: fileId, alt: 'media' });
+            const result = await gapi.client.drive.files.get({ 
+				fileId: fileId, 
+				alt: 'media' 
+			});
             
-            const rawData = result.result || result.body;
+            const rawData =
+				result.result ||
+				result.body ||
+				(result.response && result.response.body);
+
 
 			if (!rawData) {
 				throw new Error('Nenhum dado retornado pelo Google Drive.');
