@@ -1,4 +1,4 @@
-const CACHE_NAME = 'synta-notes-cache-v12';
+const CACHE_NAME = 'synta-notes-cache-v13';
 
 // Lista de arquivos essenciais para o funcionamento offline
 const urlsToCache = [
