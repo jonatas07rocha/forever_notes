@@ -1,5 +1,5 @@
 // --- CONSTANTES ---
-const APP_VERSION = '3.1.0'; // Atualizado de 3.0.1 para 3.1.0 (Feature Moods + Rename Actions)
+const APP_VERSION = '3.1.1'; // Bugfix: Restauração de Backup Manual e Drive
 const STORAGE_KEY = 'synta_v3_data';
 const PREFS_KEY = 'synta_v3_prefs';
 
@@ -2155,6 +2155,15 @@ function exportData() {
     URL.revokeObjectURL(url);
 }
 
+function isValidBackup(data) {
+    return (
+        data &&
+        typeof data === 'object' &&
+        Array.isArray(data.entries) &&
+        Array.isArray(data.hubs)
+    );
+}
+
 function mergeImportedData(currentData, importedData) {
     const currentEntries = Array.isArray(currentData.entries) ? currentData.entries : [];
     const importedEntries = Array.isArray(importedData.entries) ? importedData.entries : [];
@@ -2408,12 +2417,11 @@ async function uploadToDrive() {
 
         const files = res.result.files;
         const content = JSON.stringify({
-            entries: state.entries,
-            hubs: state.hubs,
-            tagUsage: state.tagUsage,
-            prefs: state.prefs,
-            backupDate: new Date().toISOString()
-        });
+			...state,
+			backupDate: new Date().toISOString(),
+			backupSource: 'google-drive'
+		});
+
 
         if (files && files.length > 0) {
             // Atualiza existente
@@ -2459,13 +2467,25 @@ async function downloadFromDrive() {
             const fileId = files[0].id;
             const result = await gapi.client.drive.files.get({ fileId: fileId, alt: 'media' });
             
-            const importedData = result.result;
-            const mergedData = mergeImportedData({
-                entries: state.entries, 
-                hubs: state.hubs, 
-                tagUsage: state.tagUsage, 
-                prefs: state.prefs
-            }, importedData);
+            const importedData =
+				typeof result.result === 'string'
+				? JSON.parse(result.result)
+				: result.result;
+
+			if (!isValidBackup(importedData)) {
+				throw new Error('Arquivo do Drive não é um backup válido.');
+			}
+
+
+			const mergedData = mergeImportedData({
+				entries: state.entries,
+				hubs: state.hubs,
+				tagUsage: state.tagUsage,
+				prefs: state.prefs
+			}, importedData);
+
+			saveState(mergedData);
+
 
             state.entries = mergedData.entries;
             state.hubs = mergedData.hubs;
