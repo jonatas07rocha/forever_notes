@@ -1,5 +1,5 @@
 // --- CONSTANTES ---
-const APP_VERSION = '3.1.3'; // Bugfix: Restauração de Backup Manual e Drive
+const APP_VERSION = '3.1.4'; // Bugfix: Restauração de Backup Manual e Drive
 const STORAGE_KEY = 'synta_v3_data';
 const PREFS_KEY = 'synta_v3_prefs';
 
@@ -2466,46 +2466,40 @@ async function downloadFromDrive() {
         if (files && files.length > 0) {
             const fileId = files[0].id;
             const result = await gapi.client.drive.files.get({ 
-				fileId: fileId, 
-				alt: 'media' 
-			});
+                fileId: fileId, 
+                alt: 'media' 
+            });
             
-            const rawData =
-				result.result ||
-				result.body ||
-				(result.response && result.response.body);
+            // 1. Captura o conteúdo bruto de forma segura
+            const rawData = result.result || result.body;
 
+            if (!rawData) {
+                throw new Error('Nenhum dado retornado pelo Google Drive.');
+            }
 
-			if (!rawData) {
-				throw new Error('Nenhum dado retornado pelo Google Drive.');
-			}
+            // 2. Converte para objeto se for string
+            const importedData = typeof rawData === 'string' ? JSON.parse(rawData) : rawData;
 
-			const importedData =
-				typeof rawData === 'string'
-					? JSON.parse(rawData)
-					: rawData;
+            // 3. Valida a estrutura
+            if (!isValidBackup(importedData)) {
+                throw new Error('Arquivo do Drive não é um backup válido.');
+            }
 
+            // 4. Faz a mesclagem
+            const mergedData = mergeImportedData({
+                entries: state.entries,
+                hubs: state.hubs,
+                tagUsage: state.tagUsage,
+                prefs: state.prefs
+            }, importedData);
 
-			if (!isValidBackup(importedData)) {
-				throw new Error('Arquivo do Drive não é um backup válido.');
-			}
-
-
-			const mergedData = mergeImportedData({
-				entries: state.entries,
-				hubs: state.hubs,
-				tagUsage: state.tagUsage,
-				prefs: state.prefs
-			}, importedData);
-
-			saveState(mergedData);
-
-
+            // 5. ATUALIZAÇÃO DO ESTADO (Removida a função saveState inexistente)
             state.entries = mergedData.entries;
             state.hubs = mergedData.hubs;
             state.tagUsage = mergedData.tagUsage;
             state.prefs = mergedData.prefs;
             
+            // 6. Persiste e renderiza
             saveData();
             render();
             showModal('Sucesso', 'Dados sincronizados do Google Drive!');
@@ -2513,8 +2507,8 @@ async function downloadFromDrive() {
             showModal('Aviso', 'Nenhum backup encontrado no Drive.');
         }
     } catch (err) {
-        console.error(err);
-        showModal('Erro', 'Falha ao baixar do Drive.');
+        console.error("Erro no download do Drive:", err);
+        showModal('Erro', 'Falha ao baixar do Drive. Verifique o console.');
     }
 }
 
