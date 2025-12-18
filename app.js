@@ -1,5 +1,5 @@
 // --- CONSTANTES ---
-const APP_VERSION = '3.1.4'; // Bugfix: Restauração de Backup Manual e Drive
+const APP_VERSION = '3.1.5'; // Bugfix: Restauração de Backup Manual e Drive
 const STORAGE_KEY = 'synta_v3_data';
 const PREFS_KEY = 'synta_v3_prefs';
 
@@ -2452,7 +2452,37 @@ async function uploadToDrive() {
     }
 }
 
+// 1. Função de Validação (Certifique-se de que ela esteja no app.js)
+function isValidBackup(data) {
+    return (
+        data &&
+        typeof data === 'object' &&
+        Array.isArray(data.entries) &&
+        Array.isArray(data.hubs)
+    );
+}
+
+// 2. Função Principal de Chamada
 async function downloadFromDrive() {
+    try {
+        // Verifica se temos permissão, se não, pede login (igual ao seu upload)
+        if (gapi.client.getToken() === null) {
+            tokenClient.callback = async (resp) => {
+                if (resp.error !== undefined) throw (resp);
+                await performDownload();
+            };
+            tokenClient.requestAccessToken({prompt: 'consent'});
+        } else {
+            await performDownload();
+        }
+    } catch (err) {
+        console.error("Erro de autorização:", err);
+        showModal('Erro', 'Acesso ao Google Drive não autorizado.');
+    }
+}
+
+// 3. Função que executa o trabalho pesado
+async function performDownload() {
     try {
         showModal('Google Drive', 'Buscando dados na nuvem...');
         
@@ -2470,44 +2500,37 @@ async function downloadFromDrive() {
                 alt: 'media' 
             });
             
-            // 1. Captura o conteúdo bruto de forma segura
             const rawData = result.result || result.body;
+            if (!rawData) throw new Error('Dados vazios.');
 
-            if (!rawData) {
-                throw new Error('Nenhum dado retornado pelo Google Drive.');
-            }
-
-            // 2. Converte para objeto se for string
             const importedData = typeof rawData === 'string' ? JSON.parse(rawData) : rawData;
 
-            // 3. Valida a estrutura
-            if (!isValidBackup(importedData)) {
-                throw new Error('Arquivo do Drive não é um backup válido.');
+            if (isValidBackup(importedData)) {
+                // Mesclagem
+                const mergedData = mergeImportedData({
+                    entries: state.entries,
+                    hubs: state.hubs,
+                    tagUsage: state.tagUsage,
+                    prefs: state.prefs
+                }, importedData);
+
+                // Atualização do Estado
+                state.entries = mergedData.entries;
+                state.hubs = mergedData.hubs;
+                state.tagUsage = mergedData.tagUsage;
+                state.prefs = mergedData.prefs;
+                
+                saveData();
+                render();
+                showModal('Sucesso', 'Dados sincronizados com o Google Drive!');
+            } else {
+                showModal('Erro', 'O arquivo no Drive não é um backup válido.');
             }
-
-            // 4. Faz a mesclagem
-            const mergedData = mergeImportedData({
-                entries: state.entries,
-                hubs: state.hubs,
-                tagUsage: state.tagUsage,
-                prefs: state.prefs
-            }, importedData);
-
-            // 5. ATUALIZAÇÃO DO ESTADO (Removida a função saveState inexistente)
-            state.entries = mergedData.entries;
-            state.hubs = mergedData.hubs;
-            state.tagUsage = mergedData.tagUsage;
-            state.prefs = mergedData.prefs;
-            
-            // 6. Persiste e renderiza
-            saveData();
-            render();
-            showModal('Sucesso', 'Dados sincronizados do Google Drive!');
         } else {
             showModal('Aviso', 'Nenhum backup encontrado no Drive.');
         }
     } catch (err) {
-        console.error("Erro no download do Drive:", err);
+        console.error("Erro no download:", err);
         showModal('Erro', 'Falha ao baixar do Drive. Verifique o console.');
     }
 }
