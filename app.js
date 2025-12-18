@@ -2156,18 +2156,40 @@ function exportData() {
 }
 
 function mergeImportedData(currentData, importedData) {
-    const existingEntryIds = new Set(currentData.entries.map(e => e.id));
-    const uniqueImportedEntries = importedData.entries.filter(importedEntry => !existingEntryIds.has(importedEntry.id));
-    const newEntries = [...currentData.entries, ...uniqueImportedEntries];
-    const existingHubIds = new Set(currentData.hubs.map(h => h.id));
-    const uniqueImportedHubs = importedData.hubs.filter(importedHub => !existingHubIds.has(importedHub.id));
-    const newHubs = [...currentData.hubs, ...uniqueImportedHubs];
-    const newTagUsage = { ...currentData.tagUsage };
+    const currentEntries = Array.isArray(currentData.entries) ? currentData.entries : [];
+    const importedEntries = Array.isArray(importedData.entries) ? importedData.entries : [];
+
+    const currentHubs = Array.isArray(currentData.hubs) ? currentData.hubs : [];
+    const importedHubs = Array.isArray(importedData.hubs) ? importedData.hubs : [];
+
+    const currentTagUsage = currentData.tagUsage || {};
     const importedTagUsage = importedData.tagUsage || {};
+
+    const currentPrefs = currentData.prefs || {};
+    const importedPrefs = importedData.prefs || {};
+
+    const existingEntryIds = new Set(currentEntries.map(e => e.id));
+    const uniqueImportedEntries = importedEntries.filter(
+        entry => entry && !existingEntryIds.has(entry.id)
+    );
+    const newEntries = [...currentEntries, ...uniqueImportedEntries];
+
+    const existingHubIds = new Set(currentHubs.map(h => h.id));
+    const uniqueImportedHubs = importedHubs.filter(
+        hub => hub && !existingHubIds.has(hub.id)
+    );
+    const newHubs = [...currentHubs, ...uniqueImportedHubs];
+
+    const newTagUsage = { ...currentTagUsage };
     for (const tag in importedTagUsage) {
         newTagUsage[tag] = (newTagUsage[tag] || 0) + importedTagUsage[tag];
     }
-    const newPrefs = {...currentData.prefs, ...importedData.prefs};
+
+    const newPrefs = {
+        ...currentPrefs,
+        ...importedPrefs
+    };
+
     return {
         entries: newEntries,
         hubs: newHubs,
@@ -2175,6 +2197,7 @@ function mergeImportedData(currentData, importedData) {
         prefs: newPrefs
     };
 }
+
 
 function importData(inputElement) {
     const file = inputElement.files[0];
